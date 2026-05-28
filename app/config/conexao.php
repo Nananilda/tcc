@@ -33,6 +33,8 @@ try {
 // senha: gabi.moura, gabi3A@@
 // senha: bianca, 123
 
+// temperatura, ruído, qualidade do ar, umidade, pressão, UV
+
 // administrador
 // confere graficos (1 grafico por sensor) - grafico_sensores.php
 // ve relatórios (aplicar filtros de relatórios) - relatorio_qualidade.php
