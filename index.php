@@ -21,27 +21,18 @@ if (function_exists('verificarBloqueioIP') && verificarBloqueioIP($pdo, $ip)) {
 }
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && !$tentativas_bloqueadas) {
-    $login      = trim($_POST['login'] ?? '');
-    $senha      = $_POST['senha'] ?? '';
+    $login    = trim($_POST['login'] ?? '');
+    $senha    = $_POST['senha'] ?? '';
     $token_csrf = $_POST['csrf_token'] ?? '';
 
     // Valida token CSRF
     if (!function_exists('validarCSRF') || !validarCSRF($token_csrf)) {
-        $erro = 'Requisição inválida. Tente novamente.';
+        $erro = 'Requisição inválida.  tente novamente.';
     } elseif (empty($login) || empty($senha)) {
         $erro = 'Preencha todos os campos.';
         if (function_exists('registrarLog')) {
             registrarLog($pdo, null, 'LOGIN_FALHA', "Campos vazios - IP: $ip");
         }
-    } elseif (!preg_match('/^[a-zA-Z0-9._\-]{3,50}$/', $login)) {
-        // Validação de formato da identificação
-        $erro = 'Identificação inválida.';
-        if (function_exists('registrarLog')) {
-            registrarLog($pdo, null, 'LOGIN_FALHA', "Login com formato inválido - IP: $ip");
-        }
-    } elseif (strlen($senha) < 8) {
-        // Validação mínima de credencial antes de consultar o banco
-        $erro = 'Credencial de acesso inválida.';
     } else {
         if (!function_exists('autenticarUsuario')) {
             $erro = 'Erro interno: função de autenticação não encontrada.';
@@ -92,28 +83,15 @@ $csrf_token = $_SESSION['csrf_token'];
 </head>
 <body>
 
-    <div>Sistema de Monitoramento Industrial v2.0</div>
+        <div>Sistema de Monitoramento Industrial v2.0</div>
+    
 
     <div>
-        <div>Autenticação</div>
+        <div>autenticação</div>
 
         <?php if ($erro): ?>
-            <div style="color:red;">
+            <div>
                 <?php echo htmlspecialchars($erro, ENT_QUOTES, 'UTF-8'); ?>
-            </div>
-        <?php endif; ?>
-
-        <?php
-        // Erros vindos de redirecionamentos (sessão expirada, segurança etc.)
-        $erros_redir = [
-            'sessao'  => 'Sessão não iniciada ou expirada. Faça login novamente.',
-            'timeout' => 'Sua sessão expirou por inatividade.',
-            'seguranca' => 'Sessão encerrada por motivo de segurança.',
-        ];
-        $erro_redir = $_GET['erro'] ?? '';
-        if ($erro_redir && isset($erros_redir[$erro_redir])): ?>
-            <div style="color:orange;">
-                <?php echo htmlspecialchars($erros_redir[$erro_redir], ENT_QUOTES, 'UTF-8'); ?>
             </div>
         <?php endif; ?>
 
@@ -129,8 +107,6 @@ $csrf_token = $_SESSION['csrf_token'];
                         name="login"
                         placeholder="usuario.nome"
                         maxlength="50"
-                        pattern="[a-zA-Z0-9._\-]{3,50}"
-                        title="Use apenas letras, números, ponto, hífen ou underscore (3–50 caracteres)"
                         <?php echo $tentativas_bloqueadas ? 'disabled' : ''; ?>
                         value="<?php echo isset($_POST['login']) ? htmlspecialchars($_POST['login'], ENT_QUOTES, 'UTF-8') : ''; ?>"
                         autocomplete="username"
@@ -148,7 +124,6 @@ $csrf_token = $_SESSION['csrf_token'];
                         name="senha"
                         placeholder="••••••••"
                         maxlength="128"
-                        minlength="8"
                         <?php echo $tentativas_bloqueadas ? 'disabled' : ''; ?>
                         autocomplete="current-password"
                         required
@@ -164,8 +139,9 @@ $csrf_token = $_SESSION['csrf_token'];
                 AUTENTICAR ACESSO
             </button>
         </form>
-    </div>
 
-    <script src="public/assets/js/login.js"></script>
+       
+</div>
+
 </body>
 </html>

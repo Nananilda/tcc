@@ -9,8 +9,7 @@
 /**
  * Autentica usuário verificando login, senha hash, status e tipo
  */
-function autenticarUsuario(PDO $pdo, string $login, string $senha): array
-{
+function autenticarUsuario(PDO $pdo, string $login, string $senha): array {
     // Sanitiza input
     $login = preg_replace('/[^a-zA-Z0-9._\-@]/', '', $login);
 
@@ -24,7 +23,7 @@ function autenticarUsuario(PDO $pdo, string $login, string $senha): array
         WHERE login = :login
         LIMIT 1
     ");
-    $stmt->execute([':login' => $login]);
+    $stmt->execute([':login' => $login]); 
     $usuario = $stmt->fetch(PDO::FETCH_ASSOC);
 
     if (!$usuario) {
@@ -58,16 +57,14 @@ function autenticarUsuario(PDO $pdo, string $login, string $senha): array
 
 // ─── CSRF ─────────────────────────────────────────────────────────────────────
 
-function validarCSRF(string $token): bool
-{
+function validarCSRF(string $token): bool {
     if (!isset($_SESSION) || empty($_SESSION['csrf_token']) || empty($token)) {
         return false;
     }
     return hash_equals($_SESSION['csrf_token'], $token);
 }
 
-function gerarCSRF(): string
-{
+function gerarCSRF(): string {
     if (!isset($_SESSION)) {
         session_start();
     }
@@ -82,8 +79,7 @@ function gerarCSRF(): string
 /**
  * Verifica se o IP está bloqueado por excesso de tentativas (5 em 15 min)
  */
-function verificarBloqueioIP(PDO $pdo, string $ip): bool
-{
+function verificarBloqueioIP(PDO $pdo, string $ip): bool {
     $stmt = $pdo->prepare("
         SELECT COUNT(*) as tentativas
         FROM logs_acesso
@@ -93,7 +89,7 @@ function verificarBloqueioIP(PDO $pdo, string $ip): bool
     ");
     $stmt->execute([':ip' => $ip]);
     $row = $stmt->fetch(PDO::FETCH_ASSOC);
-    return (int) $row['tentativas'] >= 5;
+    return (int)$row['tentativas'] >= 5;
 }
 
 // ─── SESSÃO E PERMISSÕES ──────────────────────────────────────────────────────
@@ -101,8 +97,7 @@ function verificarBloqueioIP(PDO $pdo, string $ip): bool
 /**
  * Garante que o usuário está autenticado; redireciona caso contrário
  */
-function exigirLogin(): void
-{
+function exigirLogin(): void {
     if (session_status() === PHP_SESSION_NONE) {
         session_start();
     }
@@ -134,8 +129,7 @@ function exigirLogin(): void
 /**
  * Exige que o usuário seja administrador
  */
-function exigirAdmin(): void
-{
+function exigirAdmin(): void {
     exigirLogin();
     if ($_SESSION['usuario_tipo'] !== 'admin') {
         http_response_code(403);
@@ -152,16 +146,14 @@ function exigirAdmin(): void
 /**
  * Verifica se o usuário logado é admin
  */
-function ehAdmin(): bool
-{
+function ehAdmin(): bool {
     return isset($_SESSION['usuario_tipo']) && $_SESSION['usuario_tipo'] === 'admin';
 }
 
 /**
  * Encerra sessão com segurança
  */
-function encerrarSessao(): void
-{
+function encerrarSessao(): void {
     $_SESSION = [];
     if (ini_get('session.use_cookies')) {
         $p = session_get_cookie_params();
@@ -188,19 +180,18 @@ function encerrarSessao(): void
  * @param string     $acao        Ex: LOGIN_SUCESSO, LOGIN_FALHA, CADASTRO_USUARIO
  * @param string     $descricao   Detalhes livres
  */
-function registrarLog(PDO $pdo, ?int $usuario_id, string $acao, string $descricao = ''): void
-{
+function registrarLog(PDO $pdo, ?int $usuario_id, string $acao, string $descricao = ''): void {
     try {
         $stmt = $pdo->prepare("
             INSERT INTO logs_acesso (usuario_id, acao, descricao, ip, user_agent, criado_em)
             VALUES (:uid, :acao, :desc, :ip, :ua, NOW())
         ");
         $stmt->execute([
-            ':uid' => $usuario_id,
+            ':uid'  => $usuario_id,
             ':acao' => $acao,
             ':desc' => mb_substr($descricao, 0, 500),
-            ':ip' => $_SERVER['REMOTE_ADDR'] ?? 'desconhecido',
-            ':ua' => mb_substr($_SERVER['HTTP_USER_AGENT'] ?? '', 0, 255),
+            ':ip'   => $_SERVER['REMOTE_ADDR'] ?? 'desconhecido',
+            ':ua'   => mb_substr($_SERVER['HTTP_USER_AGENT'] ?? '', 0, 255),
         ]);
     } catch (PDOException $e) {
         error_log('Log error: ' . $e->getMessage());
@@ -209,25 +200,18 @@ function registrarLog(PDO $pdo, ?int $usuario_id, string $acao, string $descrica
 
 // ─── VALIDAÇÃO DE DADOS ───────────────────────────────────────────────────────
 
-function validarLogin(string $login): bool
-{
+function validarLogin(string $login): bool {
     // Apenas letras, números, ponto, hífen e underscore. 3–50 chars.
     return (bool) preg_match('/^[a-zA-Z0-9._\-]{3,50}$/', $login);
 }
 
-function validarSenha(string $senha): array
-{
+function validarSenha(string $senha): array {
     $erros = [];
-    if (strlen($senha) < 8)
-        $erros[] = 'Mínimo 8 caracteres.';
-    if (!preg_match('/[A-Z]/', $senha))
-        $erros[] = 'Pelo menos uma letra maiúscula.';
-    if (!preg_match('/[a-z]/', $senha))
-        $erros[] = 'Pelo menos uma letra minúscula.';
-    if (!preg_match('/[0-9]/', $senha))
-        $erros[] = 'Pelo menos um número.';
-    if (!preg_match('/[\W_]/', $senha))
-        $erros[] = 'Pelo menos um caractere especial.';
+    if (strlen($senha) < 8)                        $erros[] = 'Mínimo 8 caracteres.';
+    if (!preg_match('/[A-Z]/', $senha))            $erros[] = 'Pelo menos uma letra maiúscula.';
+    if (!preg_match('/[a-z]/', $senha))            $erros[] = 'Pelo menos uma letra minúscula.';
+    if (!preg_match('/[0-9]/', $senha))            $erros[] = 'Pelo menos um número.';
+    if (!preg_match('/[\W_]/', $senha))            $erros[] = 'Pelo menos um caractere especial.';
     return $erros;
 }
 ?>

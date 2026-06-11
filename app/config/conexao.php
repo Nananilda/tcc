@@ -1,13 +1,10 @@
 <?php
 
-$host = "10.140.169.71";
+$host = "10.140.170.170";
 $banco = "banco_tcc";
 $usuario = "root";
 $senha = "123456";
 $port = "3307";
-
-// bianca
-// 123
 
 try {
 

@@ -13,8 +13,8 @@ require_once __DIR__ . '/../models/Usuario.php';
 exigirAdmin();
 
 $sucesso = '';
-$erros = [];
-$dados = ['nome' => '', 'login' => '', 'tipo' => 'usuario', 'status' => 'ativo'];
+$erros   = [];
+$dados   = ['nome' => '', 'login' => '', 'tipo' => 'usuario', 'status' => 'ativo'];
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
@@ -22,12 +22,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (!validarCSRF($_POST['csrf_token'] ?? '')) {
         $erros[] = 'Token de segurança inválido. Recarregue a página.';
     } else {
-        $nome = trim($_POST['nome'] ?? '');
-        $login = trim($_POST['login'] ?? '');
-        $senha = $_POST['senha'] ?? '';
-        $conf = $_POST['confirmar'] ?? '';
-        $tipo = $_POST['tipo'] ?? 'usuario';
-        $status = $_POST['status'] ?? 'ativo';
+        $nome   = trim($_POST['nome']   ?? '');
+        $login  = trim($_POST['login']  ?? '');
+        $senha  = $_POST['senha']       ?? '';
+        $conf   = $_POST['confirmar']   ?? '';
+        $tipo   = $_POST['tipo']        ?? 'usuario';
+        $status = $_POST['status']      ?? 'ativo';
 
         $dados = compact('nome', 'login', 'tipo', 'status');
 
@@ -61,16 +61,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $novo_id = $usuario->criar($nome, $login, $senha, $tipo, $status);
 
             if (function_exists('registrarLog')) {
-                registrarLog(
-                    $pdo,
-                    $_SESSION['usuario_id'],
-                    'CADASTRO_USUARIO',
-                    "Novo usuário: $login (ID $novo_id) - Tipo: $tipo"
-                );
+                registrarLog($pdo, $_SESSION['usuario_id'], 'CADASTRO_USUARIO',
+                    "Novo usuário: $login (ID $novo_id) - Tipo: $tipo");
             }
 
             $sucesso = "Usuário <strong>" . htmlspecialchars($login, ENT_QUOTES, 'UTF-8') . "</strong> cadastrado com sucesso.";
-            $dados = ['nome' => '', 'login' => '', 'tipo' => 'usuario', 'status' => 'ativo'];
+            $dados   = ['nome' => '', 'login' => '', 'tipo' => 'usuario', 'status' => 'ativo'];
         }
     }
 }

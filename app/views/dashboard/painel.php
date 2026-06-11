@@ -10,12 +10,10 @@ exigirLogin();
 
 <!DOCTYPE html>
 <html lang="pt-BR">
-
 <head>
     <meta charset="UTF-8">
     <title>Painel</title>
 </head>
-
 <body>
 
     <h1>Painel</h1>
@@ -38,9 +36,16 @@ exigirLogin();
     <?php if ($_SESSION['usuario_tipo'] === 'admin'): ?>
         <a href="../usuarios/cadastro.php">Realizar Cadastro</a><br><br>
     <?php endif; ?>
+    <?php if ($_SESSION['usuario_tipo'] === 'admin'): ?>
+        <a href="../usuarios/editar.php">Editar Usuário</a><br><br>
+    <?php endif; ?>
+    <?php if ($_SESSION['usuario_tipo'] === 'admin'): ?>
+        <a href="../usuarios/excluir.php">Excluir Cadastro</a><br><br>
+    <?php endif; ?>
+
+
 
     <a href="/tcc/routes/logout.php">Logout</a><br>
 
 </body>
-
 </html>

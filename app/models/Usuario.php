@@ -35,10 +35,10 @@ class Usuario
             VALUES (:nome, :login, :senha, :tipo, :status, NOW())
         ");
         $stmt->execute([
-            ':nome' => $nome,
-            ':login' => $login,
-            ':senha' => $hash,
-            ':tipo' => $tipo,
+            ':nome'   => $nome,
+            ':login'  => $login,
+            ':senha'  => $hash,
+            ':tipo'   => $tipo,
             ':status' => $status,
         ]);
 
