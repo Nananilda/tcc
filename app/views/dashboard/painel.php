@@ -10,10 +10,12 @@ exigirLogin();
 
 <!DOCTYPE html>
 <html lang="pt-BR">
+
 <head>
     <meta charset="UTF-8">
     <title>Painel</title>
 </head>
+
 <body>
 
     <h1>Painel</h1>
@@ -40,4 +42,5 @@ exigirLogin();
     <a href="/tcc/routes/logout.php">Logout</a><br>
 
 </body>
+
 </html>
