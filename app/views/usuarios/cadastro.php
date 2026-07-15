@@ -159,12 +159,12 @@ if (!isset($dados, $csrf_token)) {
             <div>
                
                 <button type="submit">CADASTRAR USUÁRIO</button><br><br>
-
+                  <a href="/tcc/app/views/usuarios/gestao_usuarios.php">Voltar a gestão cadastro</a><br><br>
                   <a href="/tcc/app/views/dashboard/painel.php">Voltar ao dashboard</a><br><br>
 
                 
             </div>
-
+            
         </div>
     </form>
 </main>
