@@ -1,0 +1,54 @@
+/* usuarios.css — referente a app/views/usuarios/*.php
+   (cadastro.php, editar.php, excluir.php, gestao_usuarios.php) */
+
+.usuarios-secao {
+    margin-bottom: 22px;
+    padding-bottom: 18px;
+    border-bottom: 1px solid var(--cor-borda);
+}
+
+.usuarios-secao:last-of-type {
+    border-bottom: none;
+}
+
+.usuarios-secao-titulo {
+    font-size: 0.78rem;
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+    color: var(--cor-primaria);
+    margin-bottom: 14px;
+}
+
+.usuarios-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 16px;
+}
+
+.usuarios-dica {
+    font-size: 0.78rem;
+    color: var(--cor-texto-suave);
+    margin-top: 6px;
+}
+
+.usuarios-menu-lista a.menu-item {
+    display: block;
+    background: var(--cor-fundo-card);
+    border: 1px solid var(--cor-borda);
+    border-radius: var(--raio);
+    padding: 16px 18px;
+    margin-bottom: 12px;
+    color: var(--cor-texto);
+}
+
+.usuarios-menu-lista a.menu-item:hover {
+    border-color: var(--cor-primaria);
+    text-decoration: none;
+}
+
+.usuarios-perigo-box {
+    border: 1px solid rgba(255, 93, 108, 0.35);
+    background: var(--cor-erro-fundo);
+    border-radius: var(--raio);
+    padding: 16px 18px;
+}
