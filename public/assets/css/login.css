@@ -1,0 +1,54 @@
+/* login.css — referente a index.php (tela de autenticação) */
+
+body.tela-login {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    background: radial-gradient(circle at top, #16202c 0%, #0f1620 70%);
+}
+
+.login-titulo-sistema {
+    position: fixed;
+    top: 20px;
+    left: 28px;
+    color: var(--cor-texto-suave);
+    font-size: 0.85rem;
+    letter-spacing: 0.5px;
+}
+
+.login-box {
+    width: 100%;
+    max-width: 380px;
+    background: var(--cor-fundo-card);
+    border: 1px solid var(--cor-borda);
+    border-radius: var(--raio);
+    box-shadow: var(--sombra);
+    padding: 32px 30px;
+}
+
+.login-box h2 {
+    text-align: center;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    font-size: 1.1rem;
+    color: var(--cor-primaria);
+    margin-bottom: 22px;
+}
+
+.login-campo {
+    margin-bottom: 18px;
+}
+
+.login-box button {
+    width: 100%;
+    margin-top: 8px;
+    letter-spacing: 0.5px;
+}
+
+.login-credenciais-teste {
+    margin-top: 18px;
+    text-align: center;
+    font-size: 0.78rem;
+    color: var(--cor-texto-suave);
+}
