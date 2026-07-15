@@ -1,0 +1,23 @@
+/* relatorios.css — referente a app/views/relatorios/relatorio_qualidade.php */
+
+.relatorio-resumo-tabela td:nth-child(n+2),
+.relatorio-resumo-tabela th:nth-child(n+2) {
+    text-align: center;
+}
+
+.relatorio-contagem {
+    color: var(--cor-texto-suave);
+    font-size: 0.85rem;
+    font-weight: 400;
+}
+
+.relatorio-tabela-detalhe {
+    max-height: 480px;
+    overflow-y: auto;
+    border: 1px solid var(--cor-borda);
+    border-radius: var(--raio);
+}
+
+.relatorio-tabela-detalhe table {
+    border-radius: 0;
+}
