@@ -1,0 +1,260 @@
+/* ============================================================
+   style.css — Base do sistema (IndustrialOS)
+   Variáveis, reset e componentes reaproveitados em TODAS as
+   páginas. Cada view também carrega um CSS próprio (ex:
+   painel.css, graficos.css) só com o que é específico dela.
+   ============================================================ */
+
+:root {
+    --cor-fundo: #0f1620;
+    --cor-fundo-card: #16202c;
+    --cor-fundo-card-alt: #1c2836;
+    --cor-borda: #26343f;
+    --cor-texto: #e6edf3;
+    --cor-texto-suave: #9fb1c1;
+    --cor-primaria: #2ea8ff;
+    --cor-primaria-escura: #1c7fd1;
+    --cor-sucesso: #2fd48b;
+    --cor-sucesso-fundo: rgba(47, 212, 139, 0.12);
+    --cor-erro: #ff5d6c;
+    --cor-erro-fundo: rgba(255, 93, 108, 0.12);
+    --cor-alerta: #ffb020;
+    --cor-alerta-fundo: rgba(255, 176, 32, 0.12);
+    --raio: 10px;
+    --sombra: 0 8px 24px rgba(0, 0, 0, 0.35);
+    --fonte: 'Segoe UI', Roboto, Arial, sans-serif;
+}
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    font-family: var(--fonte);
+    background: var(--cor-fundo);
+    color: var(--cor-texto);
+    line-height: 1.5;
+}
+
+a {
+    color: var(--cor-primaria);
+    text-decoration: none;
+}
+
+a:hover {
+    text-decoration: underline;
+}
+
+h1, h2, h3 {
+    font-weight: 600;
+    margin-top: 0;
+}
+
+hr {
+    border: none;
+    border-top: 1px solid var(--cor-borda);
+    margin: 20px 0;
+}
+
+/* ── Barra superior padrão de todas as telas internas ───────── */
+.topbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: var(--cor-fundo-card);
+    border-bottom: 1px solid var(--cor-borda);
+    padding: 14px 28px;
+}
+
+.topbar .marca {
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    color: var(--cor-texto);
+}
+
+.topbar .usuario-info {
+    font-size: 0.9rem;
+    color: var(--cor-texto-suave);
+}
+
+.topbar .usuario-info strong {
+    color: var(--cor-texto);
+}
+
+/* ── Container geral de conteúdo ─────────────────────────────── */
+.container {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 28px 20px 60px;
+}
+
+.card {
+    background: var(--cor-fundo-card);
+    border: 1px solid var(--cor-borda);
+    border-radius: var(--raio);
+    box-shadow: var(--sombra);
+    padding: 22px 24px;
+    margin-bottom: 20px;
+}
+
+/* ── Botões ──────────────────────────────────────────────────── */
+button, .btn {
+    font-family: var(--fonte);
+    background: var(--cor-primaria);
+    color: #06111c;
+    border: none;
+    border-radius: 8px;
+    padding: 10px 18px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.15s ease, transform 0.05s ease;
+}
+
+button:hover, .btn:hover {
+    background: var(--cor-primaria-escura);
+    text-decoration: none;
+}
+
+button:active, .btn:active {
+    transform: translateY(1px);
+}
+
+button.btn-perigo {
+    background: var(--cor-erro);
+    color: #240007;
+}
+
+button.btn-perigo:hover {
+    background: #d8404d;
+}
+
+button.btn-secundario {
+    background: transparent;
+    color: var(--cor-texto);
+    border: 1px solid var(--cor-borda);
+}
+
+button.btn-secundario:hover {
+    background: var(--cor-fundo-card-alt);
+}
+
+/* ── Formulários ─────────────────────────────────────────────── */
+label {
+    display: block;
+    font-size: 0.85rem;
+    color: var(--cor-texto-suave);
+    margin-bottom: 6px;
+}
+
+input, select, textarea {
+    font-family: var(--fonte);
+    width: 100%;
+    background: var(--cor-fundo);
+    border: 1px solid var(--cor-borda);
+    color: var(--cor-texto);
+    border-radius: 8px;
+    padding: 10px 12px;
+    font-size: 0.95rem;
+}
+
+input:focus, select:focus, textarea:focus {
+    outline: none;
+    border-color: var(--cor-primaria);
+}
+
+fieldset {
+    border: 1px solid var(--cor-borda);
+    border-radius: var(--raio);
+    padding: 18px 20px;
+    margin-bottom: 20px;
+}
+
+legend {
+    padding: 0 8px;
+    color: var(--cor-texto-suave);
+    font-weight: 600;
+}
+
+/* ── Tabelas ─────────────────────────────────────────────────── */
+table {
+    width: 100%;
+    border-collapse: collapse;
+    background: var(--cor-fundo-card);
+    border-radius: var(--raio);
+    overflow: hidden;
+}
+
+th, td {
+    padding: 10px 12px;
+    text-align: left;
+    border-bottom: 1px solid var(--cor-borda);
+    font-size: 0.92rem;
+}
+
+th {
+    background: var(--cor-fundo-card-alt);
+    color: var(--cor-texto-suave);
+    text-transform: uppercase;
+    font-size: 0.75rem;
+    letter-spacing: 0.4px;
+}
+
+tr:last-child td {
+    border-bottom: none;
+}
+
+/* ── Mensagens de feedback ───────────────────────────────────── */
+.msg-sucesso, .msg-erro, .msg-alerta {
+    border-radius: var(--raio);
+    padding: 12px 16px;
+    margin-bottom: 18px;
+    font-size: 0.92rem;
+}
+
+.msg-sucesso {
+    background: var(--cor-sucesso-fundo);
+    color: var(--cor-sucesso);
+    border: 1px solid rgba(47, 212, 139, 0.35);
+}
+
+.msg-erro {
+    background: var(--cor-erro-fundo);
+    color: var(--cor-erro);
+    border: 1px solid rgba(255, 93, 108, 0.35);
+}
+
+.msg-alerta {
+    background: var(--cor-alerta-fundo);
+    color: var(--cor-alerta);
+    border: 1px solid rgba(255, 176, 32, 0.35);
+}
+
+/* ── Badges de status ────────────────────────────────────────── */
+.badge {
+    display: inline-block;
+    padding: 3px 10px;
+    border-radius: 100px;
+    font-size: 0.78rem;
+    font-weight: 600;
+}
+
+.badge-ativo {
+    background: var(--cor-sucesso-fundo);
+    color: var(--cor-sucesso);
+}
+
+.badge-inativo {
+    background: var(--cor-erro-fundo);
+    color: var(--cor-erro);
+}
+
+/* ── Navegação de voltar / rodapé de página ──────────────────── */
+.nav-rodape {
+    margin-top: 24px;
+    font-size: 0.9rem;
+}
+
+.nav-rodape a {
+    margin-right: 16px;
+}
