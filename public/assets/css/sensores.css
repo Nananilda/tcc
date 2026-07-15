@@ -1,0 +1,21 @@
+/* sensores.css — referente a app/views/sensores/*.php
+   (gestao_sensores.php e listar_sensores.php) */
+
+.sensores-form-novo {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 16px;
+    align-items: end;
+}
+
+.sensores-form-novo .campo-full {
+    grid-column: 1 / -1;
+}
+
+.sensor-status-ativo {
+    color: var(--cor-sucesso);
+}
+
+.sensor-status-inativo {
+    color: var(--cor-erro);
+}
