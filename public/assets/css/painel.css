@@ -1,0 +1,71 @@
+/* painel.css — referente a app/views/dashboard/painel.php */
+
+.painel-boas-vindas {
+    margin-bottom: 8px;
+}
+
+.painel-boas-vindas .subtitulo {
+    color: var(--cor-texto-suave);
+    margin-top: -6px;
+}
+
+.painel-stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 16px;
+    margin: 22px 0 28px;
+}
+
+.stat-card {
+    background: var(--cor-fundo-card-alt);
+    border: 1px solid var(--cor-borda);
+    border-radius: var(--raio);
+    padding: 16px 18px;
+}
+
+.stat-card .stat-valor {
+    font-size: 1.8rem;
+    font-weight: 700;
+    color: var(--cor-primaria);
+}
+
+.stat-card .stat-label {
+    font-size: 0.8rem;
+    color: var(--cor-texto-suave);
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+}
+
+.painel-menu {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 16px;
+}
+
+.painel-menu a.menu-item {
+    display: block;
+    background: var(--cor-fundo-card);
+    border: 1px solid var(--cor-borda);
+    border-radius: var(--raio);
+    padding: 18px;
+    color: var(--cor-texto);
+    text-decoration: none;
+    transition: border-color 0.15s ease, transform 0.05s ease;
+}
+
+.painel-menu a.menu-item:hover {
+    border-color: var(--cor-primaria);
+    text-decoration: none;
+}
+
+.painel-menu a.menu-item .icone {
+    font-size: 1.4rem;
+    margin-bottom: 8px;
+    display: block;
+}
+
+.painel-logout {
+    display: inline-block;
+    margin-top: 30px;
+    color: var(--cor-erro);
+}
