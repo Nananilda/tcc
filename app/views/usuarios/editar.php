@@ -380,8 +380,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['atualizar_usuario']))
 <?php endif; ?>
 
 <br>
+<a href="../usuarios/gestao_usuarios.php">Voltar a gestão cadastro</a><br><br>
+
 <a href="../dashboard/painel.php">← Voltar ao dashboard</a><br>
-<a href="excluir.php">Excluir Usuário</a>
+
 
 <hr>
 
