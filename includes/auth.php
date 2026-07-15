@@ -5,63 +5,49 @@
  */
 
 // ─── AUTENTICAÇÃO ─────────────────────────────────────────────────────────────
+// ─── AUTENTICAÇÃO MOCKADA PARA TESTE DE CSS ────────────────────────────────────
 
 /**
- * Autentica usuário verificando login, senha hash, status e tipo
+ * Versão de testes: Ignora o banco e aceita logins fixos para testar CSS
  */
-function autenticarUsuario(PDO $pdo, string $login, string $senha): array {
+function autenticarUsuario(?PDO $pdo, string $login, string $senha): array {
     // Sanitiza input
-    $login = preg_replace('/[^a-zA-Z0-9._\-@]/', '', $login);
+    $login = preg_replace('/[^a-zA-Z0-9._\- @]/', '', $login);
 
     if (empty($login) || empty($senha)) {
         return ['sucesso' => false, 'mensagem' => 'Credenciais inválidas.'];
     }
 
-    $stmt = $pdo->prepare("
-        SELECT id, nome, login, senha, tipo, status
-        FROM usuario
-        WHERE login = :login
-        LIMIT 1
-    ");
-    $stmt->execute([':login' => $login]); 
-    $usuario = $stmt->fetch(PDO::FETCH_ASSOC);
-
-    if (!$usuario) {
-        // Timing-safe: simula verificação mesmo quando usuário não existe
-        password_verify('dummy', '$2y$12$dummyhashtopreventtiming');
-        return ['sucesso' => false, 'mensagem' => 'Usuário ou senha incorretos.'];
+    // Se o login digitado for exatamente "admin", cria sessão de administrador
+    if ($login === 'admin') {
+        $usuario = [
+            'id' => 1,
+            'nome' => 'Admin de Testes',
+            'login' => 'admin',
+            'tipo' => 'admin', // Garante que a função exigirAdmin() aprove
+            'status' => 'ativo'
+        ];
+        return ['sucesso' => true, 'usuario' => $usuario];
+    } 
+    
+    // Qualquer outro login digitado vai entrar como usuário comum
+    else {
+        $usuario = [
+            'id' => 2,
+            'nome' => 'Usuário Comum',
+            'login' => $login,
+            'tipo' => 'comum', // Cai no painel padrão
+            'status' => 'ativo'
+        ];
+        return ['sucesso' => true, 'usuario' => $usuario];
     }
-
-    if (!password_verify($senha, $usuario['senha'])) {
-        return ['sucesso' => false, 'mensagem' => 'Usuário ou senha incorretos.'];
-    }
-
-    if ($usuario['status'] !== 'ativo') {
-        return ['sucesso' => false, 'mensagem' => 'Conta desativada. Contate o administrador.'];
-    }
-
-    // Re-hash se o custo do algoritmo foi atualizado
-    if (password_needs_rehash($usuario['senha'], PASSWORD_BCRYPT, ['cost' => 12])) {
-        $novoHash = password_hash($senha, PASSWORD_BCRYPT, ['cost' => 12]);
-        $upd = $pdo->prepare("UPDATE usuario SET senha = ? WHERE id = ?");
-        $upd->execute([$novoHash, $usuario['id']]);
-    }
-
-    // Atualiza último acesso
-    $atualiza = $pdo->prepare("UPDATE usuario SET ultimo_acesso = NOW() WHERE id = ?");
-    $atualiza->execute([$usuario['id']]);
-
-    unset($usuario['senha']); // Nunca mantém o hash na sessão
-    return ['sucesso' => true, 'usuario' => $usuario];
 }
 
 // ─── CSRF ─────────────────────────────────────────────────────────────────────
 
 function validarCSRF(string $token): bool {
-    if (!isset($_SESSION) || empty($_SESSION['csrf_token']) || empty($token)) {
-        return false;
-    }
-    return hash_equals($_SESSION['csrf_token'], $token);
+    // Retorna true para evitar que o token de formulários trave o CSS
+    return true; 
 }
 
 function gerarCSRF(): string {
@@ -74,23 +60,24 @@ function gerarCSRF(): string {
     return $_SESSION['csrf_token'];
 }
 
-// ─── BLOQUEIO POR IP ──────────────────────────────────────────────────────────
+// ─── BLOQUEIO POR IP MOCKADO ──────────────────────────────────────────────────
 
 /**
- * Verifica se o IP está bloqueado por excesso de tentativas (5 em 15 min)
+ * Força o retorno falso para nunca bloquear seu IP durante os testes
  */
-function verificarBloqueioIP(PDO $pdo, string $ip): bool {
-    $stmt = $pdo->prepare("
-        SELECT COUNT(*) as tentativas
-        FROM logs_acesso
-        WHERE ip = :ip
-          AND acao = 'LOGIN_FALHA'
-          AND criado_em >= DATE_SUB(NOW(), INTERVAL 15 MINUTE)
-    ");
-    $stmt->execute([':ip' => $ip]);
-    $row = $stmt->fetch(PDO::FETCH_ASSOC);
-    return (int)$row['tentativas'] >= 5;
+function verificarBloqueioIP(?PDO $pdo, string $ip): bool {
+    return false;
 }
+
+// ─── LOGS MOCKADOS ────────────────────────────────────────────────────────────
+
+/**
+ * Ignora o salvamento no banco e joga o log no arquivo de erros do PHP
+ */
+function registrarLog(?PDO $pdo, ?int $usuario_id, string $acao, string $descricao = ''): void {
+    error_log("Log Simulado - Ação: $acao | Descrição: $descricao");
+}
+
 
 // ─── SESSÃO E PERMISSÕES ──────────────────────────────────────────────────────
 
@@ -102,10 +89,31 @@ function exigirLogin(): void {
         session_start();
     }
 
+    // Se não tiver ID do usuário, manda direto para a raiz do localhost sem acumular pastas
     if (empty($_SESSION['usuario_id'])) {
-        header('Location: /index.php?erro=sessao');
+        header('Location: http://localhost:8000/index.php?erro=sessao');
         exit;
     }
+
+    // Timeout de sessão: 2 horas
+    $timeout = 7200;
+    if (isset($_SESSION['login_hora'])) {
+        $inicio = strtotime($_SESSION['login_hora']);
+        if ((time() - $inicio) > $timeout) {
+            encerrarSessao();
+            header('Location: http://localhost:8000/index.php?erro=timeout');
+            exit;
+        }
+    }
+
+    // Proteção contra session hijacking: valida IP
+    if (isset($_SESSION['ip_login']) && $_SESSION['ip_login'] !== $_SERVER['REMOTE_ADDR']) {
+        encerrarSessao();
+        header('Location: http://localhost:8000/index.php?erro=seguranca');
+        exit;
+    }
+}
+
 
     // Timeout de sessão: 2 horas
     $timeout = 7200;
@@ -124,7 +132,6 @@ function exigirLogin(): void {
         header('Location: /index.php?erro=seguranca');
         exit;
     }
-}
 
 /**
  * Exige que o usuário seja administrador
@@ -180,23 +187,6 @@ function encerrarSessao(): void {
  * @param string     $acao        Ex: LOGIN_SUCESSO, LOGIN_FALHA, CADASTRO_USUARIO
  * @param string     $descricao   Detalhes livres
  */
-function registrarLog(PDO $pdo, ?int $usuario_id, string $acao, string $descricao = ''): void {
-    try {
-        $stmt = $pdo->prepare("
-            INSERT INTO logs_acesso (usuario_id, acao, descricao, ip, user_agent, criado_em)
-            VALUES (:uid, :acao, :desc, :ip, :ua, NOW())
-        ");
-        $stmt->execute([
-            ':uid'  => $usuario_id,
-            ':acao' => $acao,
-            ':desc' => mb_substr($descricao, 0, 500),
-            ':ip'   => $_SERVER['REMOTE_ADDR'] ?? 'desconhecido',
-            ':ua'   => mb_substr($_SERVER['HTTP_USER_AGENT'] ?? '', 0, 255),
-        ]);
-    } catch (PDOException $e) {
-        error_log('Log error: ' . $e->getMessage());
-    }
-}
 
 // ─── VALIDAÇÃO DE DADOS ───────────────────────────────────────────────────────
 
