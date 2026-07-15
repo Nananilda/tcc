@@ -2,102 +2,17 @@
 session_start();
 require_once '../../../includes/auth.php';
 exigirLogin();
-
 require_once '../../config/conexao.php';
+require_once '../../controllers/SensorController.php';
 
-$eh_admin = ehAdmin();
-$mensagem = '';
-$erros = [];
+$eh_admin   = ehAdmin();
+$controller = new SensorController($pdo, $eh_admin);
 
-// ── Cadastro de novo sensor (somente admin) ───────────────────────────────────
-if ($eh_admin && $_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['acao']) && $_POST['acao'] === 'cadastrar') {
+['mensagem' => $mensagem, 'erros' => $erros] = $controller->processarRequisicao();
 
-    if (!validarCSRF($_POST['csrf_token'] ?? '')) {
-        $erros[] = 'Token de segurança inválido.';
-    } else {
-        $nome = trim($_POST['nome'] ?? '');
-        $tipo = trim($_POST['tipo'] ?? '');
-        $localizacao = trim($_POST['localizacao'] ?? '');
-        $status = $_POST['status'] ?? 'ativo';
-
-        $tipos_validos = ['temperatura', 'ruido', 'qualidade_ar', 'umidade', 'pressao', 'uv'];
-
-        if (strlen($nome) < 3)
-            $erros[] = 'Nome do sensor deve ter ao menos 3 caracteres.';
-        if (!in_array($tipo, $tipos_validos))
-            $erros[] = 'Tipo de sensor inválido.';
-        if (!in_array($status, ['ativo', 'inativo']))
-            $erros[] = 'Status inválido.';
-
-        if (empty($erros)) {
-            try {
-                $stmt = $pdo->prepare("
-                    INSERT INTO sensor (nome, tipo, localizacao, status, criado_em)
-                    VALUES (:nome, :tipo, :loc, :status, NOW())
-                ");
-                $stmt->execute([
-                    ':nome' => $nome,
-                    ':tipo' => $tipo,
-                    ':loc' => $localizacao,
-                    ':status' => $status,
-                ]);
-                if (function_exists('registrarLog')) {
-                    registrarLog($pdo, $_SESSION['usuario_id'], 'SENSOR_CADASTRO', "Sensor: $nome ($tipo)");
-                }
-                $mensagem = "Sensor <strong>" . htmlspecialchars($nome, ENT_QUOTES) . "</strong> cadastrado com sucesso.";
-            } catch (PDOException $e) {
-                $erros[] = 'Erro ao salvar sensor: ' . $e->getMessage();
-            }
-        }
-    }
-}
-
-// ── Alteração de status (somente admin) ──────────────────────────────────────
-if ($eh_admin && $_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['acao']) && $_POST['acao'] === 'toggle_status') {
-
-    if (!validarCSRF($_POST['csrf_token'] ?? '')) {
-        $erros[] = 'Token de segurança inválido.';
-    } else {
-        $sensor_id = (int) ($_POST['sensor_id'] ?? 0);
-        $novo_status = $_POST['novo_status'] ?? '';
-
-        if ($sensor_id > 0 && in_array($novo_status, ['ativo', 'inativo'])) {
-            try {
-                $stmt = $pdo->prepare("UPDATE sensor SET status = :s WHERE id = :id");
-                $stmt->execute([':s' => $novo_status, ':id' => $sensor_id]);
-                if (function_exists('registrarLog')) {
-                    registrarLog($pdo, $_SESSION['usuario_id'], 'SENSOR_STATUS', "Sensor ID $sensor_id → $novo_status");
-                }
-                $mensagem = "Status do sensor atualizado para <strong>$novo_status</strong>.";
-            } catch (PDOException $e) {
-                $erros[] = 'Erro ao alterar status: ' . $e->getMessage();
-            }
-        }
-    }
-}
-
-// ── Lista sensores ────────────────────────────────────────────────────────────
-$sensores = [];
-try {
-    $sensores = $pdo->query("
-        SELECT id, nome, tipo, localizacao, status, criado_em
-        FROM sensor
-        ORDER BY status DESC, nome ASC
-    ")->fetchAll(PDO::FETCH_ASSOC);
-} catch (PDOException $e) {
-    $erros[] = 'Tabela de sensores não encontrada.';
-}
-
-$csrf_token = gerarCSRF();
-
-$labels_tipo = [
-    'temperatura' => 'Temperatura',
-    'ruido' => 'Ruído',
-    'qualidade_ar' => 'Qualidade do Ar',
-    'umidade' => 'Umidade',
-    'pressao' => 'Pressão',
-    'uv' => 'UV',
-];
+$sensores    = $controller->listarSensores($erros);
+$csrf_token  = gerarCSRF();
+$labels_tipo = SensorController::TIPOS_VALIDOS;
 ?>
 <!DOCTYPE html>
 <html lang="pt-BR">
@@ -105,21 +20,30 @@ $labels_tipo = [
 <head>
     <meta charset="UTF-8">
     <title>Gestão de Sensores</title>
+    <link rel="stylesheet" href="../../../public/assets/css/style.css">
+    <link rel="stylesheet" href="../../../public/assets/css/sensores.css">
 </head>
 
 <body>
 
+    <div class="topbar">
+        <div class="marca">IndustrialOS — Sensores</div>
+        <div class="usuario-info">
+            Usuário: <strong><?php echo htmlspecialchars($_SESSION['usuario_nome']); ?></strong>
+            | Tipo: <?php echo $eh_admin ? 'Administrador' : 'Funcionário'; ?>
+        </div>
+    </div>
+
+    <div class="container">
+
     <h1>Gestão de Sensores</h1>
 
-    <p>Usuário: <strong><?php echo htmlspecialchars($_SESSION['usuario_nome']); ?></strong>
-        | Tipo: <?php echo $eh_admin ? 'Administrador' : 'Funcionário'; ?></p>
-
     <?php if ($mensagem): ?>
-        <div style="color:green;"><?php echo $mensagem; ?></div>
+        <div class="msg-sucesso"><?php echo $mensagem; ?></div>
     <?php endif; ?>
 
     <?php if (!empty($erros)): ?>
-        <div style="color:red;">
+        <div class="msg-erro">
             <ul><?php foreach ($erros as $e): ?>
                     <li><?php echo htmlspecialchars($e); ?></li><?php endforeach; ?>
             </ul>
@@ -128,46 +52,57 @@ $labels_tipo = [
 
     <!-- ── Cadastro de novo sensor (somente admin) ──────────────────────── -->
     <?php if ($eh_admin): ?>
-        <hr>
+        <div class="card">
         <h2>Adicionar Novo Sensor</h2>
-        <form method="POST">
+        <form method="POST" class="sensores-form-novo">
             <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($csrf_token); ?>">
             <input type="hidden" name="acao" value="cadastrar">
 
-            <label>Nome do sensor: <input type="text" name="nome" maxlength="100" required
-                    placeholder="Ex: Sensor Galpão A"></label><br><br>
+            <div>
+                <label>Nome do sensor</label>
+                <input type="text" name="nome" maxlength="100" required
+                    placeholder="Ex: Sensor Galpão A">
+            </div>
 
-            <label>Tipo:
+            <div>
+                <label>Tipo</label>
                 <select name="tipo" required>
                     <option value="">— selecione —</option>
                     <?php foreach ($labels_tipo as $v => $l): ?>
                         <option value="<?php echo $v; ?>"><?php echo $l; ?></option>
                     <?php endforeach; ?>
                 </select>
-            </label><br><br>
+            </div>
 
-            <label>Localização: <input type="text" name="localizacao" maxlength="150"
-                    placeholder="Ex: Setor B, linha 3"></label><br><br>
+            <div>
+                <label>Localização</label>
+                <input type="text" name="localizacao" maxlength="150"
+                    placeholder="Ex: Setor B, linha 3">
+            </div>
 
-            <label>Status:
+            <div>
+                <label>Status</label>
                 <select name="status">
                     <option value="ativo">Ativo</option>
                     <option value="inativo">Inativo</option>
                 </select>
-            </label><br><br>
+            </div>
 
-            <button type="submit">Cadastrar Sensor</button>
+            <div class="campo-full">
+                <button type="submit">Cadastrar Sensor</button>
+            </div>
         </form>
+        </div>
     <?php endif; ?>
 
     <!-- ── Lista de sensores ────────────────────────────────────────────── -->
-    <hr>
+    <div class="card">
     <h2>Sensores Cadastrados</h2>
 
     <?php if (empty($sensores)): ?>
         <p><em>Nenhum sensor cadastrado.</em></p>
     <?php else: ?>
-        <table border="1" cellpadding="5" cellspacing="0">
+        <table>
             <thead>
                 <tr>
                     <th>ID</th>
@@ -187,7 +122,11 @@ $labels_tipo = [
                         <td><?php echo htmlspecialchars($s['nome']); ?></td>
                         <td><?php echo htmlspecialchars($labels_tipo[$s['tipo']] ?? $s['tipo']); ?></td>
                         <td><?php echo htmlspecialchars($s['localizacao'] ?? '—'); ?></td>
-                        <td><?php echo $s['status'] === 'ativo' ? '✅ Ativo' : '❌ Inativo'; ?></td>
+                        <td>
+                            <span class="badge badge-<?php echo $s['status'] === 'ativo' ? 'ativo' : 'inativo'; ?>">
+                                <?php echo $s['status'] === 'ativo' ? 'Ativo' : 'Inativo'; ?>
+                            </span>
+                        </td>
                         <td><?php echo htmlspecialchars($s['criado_em']); ?></td>
                         <?php if ($eh_admin): ?>
                             <td>
@@ -197,7 +136,7 @@ $labels_tipo = [
                                     <input type="hidden" name="acao" value="toggle_status">
                                     <input type="hidden" name="sensor_id" value="<?php echo (int) $s['id']; ?>">
                                     <input type="hidden" name="novo_status" value="<?php echo $novo; ?>">
-                                    <button type="submit">
+                                    <button type="submit" class="btn-secundario">
                                         <?php echo $s['status'] === 'ativo' ? 'Desativar' : 'Ativar'; ?>
                                     </button>
                                 </form>
@@ -208,9 +147,14 @@ $labels_tipo = [
             </tbody>
         </table>
     <?php endif; ?>
+    </div>
 
-    <br>
-    <a href="/tcc/app/views/dashboard/painel.php">← Voltar ao painel</a>
+    <div class="nav-rodape">
+        <a href="listar_sensores.php">Consulta somente leitura →</a>
+        <a href="../dashboard/painel.php">← Voltar ao painel</a>
+    </div>
+
+    </div>
 
 </body>
 
