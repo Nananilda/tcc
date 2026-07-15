@@ -1,0 +1,88 @@
+/* graficos.css — referente a app/views/graficos/*.php
+   (graficos_sensores.php e alerta.php) */
+
+.graficos-filtros {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    gap: 16px;
+    margin-bottom: 20px;
+}
+
+.graficos-filtros .campo {
+    min-width: 180px;
+}
+
+.grafico-wrapper {
+    background: var(--cor-fundo-card-alt);
+    border: 1px solid var(--cor-borda);
+    border-radius: var(--raio);
+    padding: 20px;
+}
+
+.grafico-wrapper canvas {
+    max-width: 100%;
+}
+
+.grafico-total-leituras {
+    margin-top: 12px;
+    font-size: 0.85rem;
+    color: var(--cor-texto-suave);
+}
+
+.grafico-status-tempo-real {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.8rem;
+    color: var(--cor-texto-suave);
+    margin-left: 14px;
+}
+
+.grafico-status-tempo-real .ponto {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--cor-sucesso);
+    box-shadow: 0 0 6px var(--cor-sucesso);
+}
+
+.alertas-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 14px;
+    margin-bottom: 22px;
+}
+
+.alertas-cards .card-severidade {
+    border-radius: var(--raio);
+    padding: 14px 16px;
+    border: 1px solid var(--cor-borda);
+}
+
+.card-severidade.critico   { background: var(--cor-erro-fundo); }
+.card-severidade.atencao   { background: var(--cor-alerta-fundo); }
+.card-severidade.info      { background: rgba(46, 168, 255, 0.12); }
+
+.card-severidade .valor {
+    font-size: 1.6rem;
+    font-weight: 700;
+}
+
+.lista-alertas li {
+    list-style: none;
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--cor-borda);
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.lista-alertas {
+    margin: 0;
+    padding: 0;
+}
+
+.lista-alertas li:last-child {
+    border-bottom: none;
+}
