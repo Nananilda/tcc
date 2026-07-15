@@ -15,10 +15,12 @@ $tentativas_bloqueadas = false;
 
 // Verifica bloqueio por tentativas excessivas (5 tentativas em 15 min)
 $ip = $_SERVER['REMOTE_ADDR'];
-if (function_exists('verificarBloqueioIP') && verificarBloqueioIP($pdo, $ip)) {
+// Adicionado: Só executa a função se a variável $pdo for um objeto de conexão válido
+if ($pdo !== null && function_exists('verificarBloqueioIP') && verificarBloqueioIP($pdo, $ip)) {
     $tentativas_bloqueadas = true;
     $erro = 'Acesso temporariamente bloqueado. Tente novamente em 15 minutos.';
 }
+
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && !$tentativas_bloqueadas) {
     $login    = trim($_POST['login'] ?? '');
@@ -80,17 +82,19 @@ $csrf_token = $_SESSION['csrf_token'];
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>IndustrialOS — Sistema de Monitoramento</title>
+    <link rel="stylesheet" href="public/assets/css/style.css">
+    <link rel="stylesheet" href="public/assets/css/login.css">
 </head>
-<body>
+<body class="tela-login">
 
-        <div>Sistema de Monitoramento Industrial v2.0</div>
+        <div class="login-titulo-sistema">Sistema de Monitoramento Industrial v2.0</div>
     
 
-    <div>
-        <div>autenticação</div>
+    <div class="login-box">
+        <h2>autenticação</h2>
 
         <?php if ($erro): ?>
-            <div>
+            <div class="msg-erro">
                 <?php echo htmlspecialchars($erro, ENT_QUOTES, 'UTF-8'); ?>
             </div>
         <?php endif; ?>
@@ -98,7 +102,7 @@ $csrf_token = $_SESSION['csrf_token'];
         <form method="POST" id="loginForm" autocomplete="off">
             <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($csrf_token, ENT_QUOTES, 'UTF-8'); ?>">
 
-            <div>
+            <div class="login-campo">
                 <label for="login">Identificação do Usuário</label>
                 <div>
                     <input
@@ -115,7 +119,7 @@ $csrf_token = $_SESSION['csrf_token'];
                 </div>
             </div>
 
-            <div>
+            <div class="login-campo">
                 <label for="senha">Credencial de Acesso</label>
                 <div>
                     <input
@@ -140,7 +144,10 @@ $csrf_token = $_SESSION['csrf_token'];
             </button>
         </form>
 
-       
+        <div class="login-credenciais-teste">
+            Ambiente de testes — login <strong>admin</strong> entra como administrador,<br>qualquer outro login entra como usuário comum.
+        </div>
+
 </div>
 
 </body>
