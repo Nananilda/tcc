@@ -28,7 +28,7 @@ function autenticarUsuario(?PDO $pdo, string $login, string $senha): array
     }
 
     $stmt = $pdo->prepare(
-        "SELECT id, nome, login, senha, tipo, status FROM usuario WHERE login = :login LIMIT 1"
+        "SELECT * FROM usuario WHERE login = :login LIMIT 1"
     );
     $stmt->execute([':login' => $login]);
     $usuario = $stmt->fetch();

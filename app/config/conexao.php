@@ -10,11 +10,11 @@
  * já tipados, sem emulação de prepared statements).
  */
 
-$host   = "10.140.170.170";
+$host   = "10.140.169.14"; // verificar toda aula
 $banco  = "banco_tcc";
 $usuario = "root";
 $senha  = "123456";
-$port   = "3307";
+$port   = "3306";
 
 try {
     $pdo = new PDO(
