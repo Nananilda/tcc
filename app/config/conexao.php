@@ -2,12 +2,16 @@
 /**
  * app/config/conexao.php
  * Conexão única com o MySQL (banco_tcc), usada por todo o backend
- * (páginas antigas em app/views/*.php e os endpoints JSON em api/*.php).
+ * (controllers e views em app/*).
  *
  * Mantém os mesmos parâmetros de servidor já em uso; apenas corrige o
  * charset (utf8mb4, compatível com as tabelas InnoDB/utf8mb4 do projeto)
  * e deixa a conexão mais robusta (erros sempre como exceção, resultados
  * já tipados, sem emulação de prepared statements).
+ *
+ * IMPORTANTE: ajuste $host/$port abaixo para o endereço real do MySQL
+ * no seu ambiente (o valor abaixo é o do laboratório da faculdade e
+ * muda a cada aula — confirme com o professor/rede antes de rodar).
  */
 
 $host   = "10.140.169.14"; // verificar toda aula
@@ -28,16 +32,5 @@ try {
         ]
     );
 } catch (PDOException $e) {
-    // Endpoints da API (api/*.php) tratam a ausência de conexão retornando
-    // JSON de erro; páginas antigas (app/views/*.php) continuam parando aqui.
-    if (defined('API_CONTEXT') && API_CONTEXT === true) {
-        http_response_code(500);
-        header('Content-Type: application/json; charset=utf-8');
-        echo json_encode([
-            'sucesso'  => false,
-            'mensagem' => 'Erro de conexão com o banco de dados.',
-        ]);
-        exit;
-    }
     die("Erro de conexão: " . $e->getMessage());
 }
