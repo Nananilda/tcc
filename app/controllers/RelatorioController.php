@@ -1,9 +1,9 @@
 <?php
-require_once '../../includes/auth.php';
+require_once __DIR__ . '/../../includes/auth.php';
 exigirLogin(); // já chama session_start() internamente
 
-require_once '../config/conexao.php';
-require_once '../models/Relatorio.php';
+require_once __DIR__ . '/../config/conexao.php';
+require_once __DIR__ . '/../models/Relatorio.php';
 
 // ── Instancia o model ────────────────────────────────────────────────────────
 $relatorioModel = new Relatorio($pdo);
@@ -47,4 +47,4 @@ $sensor_tipos = $relatorioModel->getSensorTipos();
 $labels_pt    = $relatorioModel->getLabels();
 
 // ── Carrega a view ───────────────────────────────────────────────────────────
-require_once '../views/relatorios/relatorio_qualidade.php';
+require_once __DIR__ . '/../views/relatorios/relatorio_qualidade.php';
