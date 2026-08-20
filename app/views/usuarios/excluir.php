@@ -1,14 +1,15 @@
 <?php
+/**
+ * excluir.php
+ * Busca um usuário pelo login e permite excluí-lo, com etapa de confirmação
+ * (somente admin; não é possível excluir o próprio usuário logado).
+ */
+
 session_start();
+require_once __DIR__ . '/../../../includes/auth.php';
+exigirAdmin();
 
-// Ajuste o caminho conforme sua estrutura de pastas
-require_once '../../config/conexao.php';
-
-// Verificar se usuário está logado e é admin
-if (!isset($_SESSION['usuario_id']) || $_SESSION['usuario_tipo'] !== 'admin') {
-    header('Location: ../../login.php');
-    exit;
-}
+require_once __DIR__ . '/../../config/conexao.php';
 
 // Inicializar variáveis
 $usuario_encontrado = null;
@@ -24,19 +25,15 @@ $dados = [
     'status' => ''
 ];
 
-// Gerar token CSRF se não existir
-if (empty($_SESSION['csrf_token'])) {
-    $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
-}
-$csrf_token = $_SESSION['csrf_token'];
+$csrf_token = gerarCSRF();
 
 // Processar busca de usuário
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['buscar_usuario'])) {
-    if (!isset($_POST['csrf_token']) || $_POST['csrf_token'] !== $_SESSION['csrf_token']) {
+    if (!validarCSRF($_POST['csrf_token'] ?? '')) {
         $erros[] = 'Token de segurança inválido.';
     } else {
-        $login_busca = trim($_POST['login_busca']);
-        
+        $login_busca = trim($_POST['login_busca'] ?? '');
+
         if (empty($login_busca)) {
             $erros[] = 'Digite um login para buscar.';
         } else {
@@ -45,10 +42,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['buscar_usuario'])) {
                 $stmt->execute([':login' => $login_busca]);
                 $usuario_encontrado = $stmt->fetch(PDO::FETCH_ASSOC);
                 $busca_realizada = true;
-                
+
                 if ($usuario_encontrado) {
-                    // Verificar se é o próprio usuário tentando se excluir
-                    if ($usuario_encontrado['id'] == $_SESSION['usuario_id']) {
+                    if ((int) $usuario_encontrado['id'] === (int) $_SESSION['usuario_id']) {
                         $erros[] = 'Você não pode excluir seu próprio usuário.';
                         $usuario_encontrado = null;
                     } else {
@@ -72,32 +68,32 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['buscar_usuario'])) {
 
 // Processar exclusão de usuário
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['excluir_usuario'])) {
-    if (!isset($_POST['csrf_token']) || $_POST['csrf_token'] !== $_SESSION['csrf_token']) {
+    if (!validarCSRF($_POST['csrf_token'] ?? '')) {
         $erros[] = 'Token de segurança inválido.';
     } else {
         $id = filter_input(INPUT_POST, 'id', FILTER_VALIDATE_INT);
-        
+
         if (!$id) {
             $erros[] = 'ID do usuário inválido.';
-        }
-        
-        // Verificar se não é o próprio usuário
-        if ($id == $_SESSION['usuario_id']) {
+        } elseif ($id === (int) $_SESSION['usuario_id']) {
             $erros[] = 'Você não pode excluir seu próprio usuário.';
         }
-        
+
         if (empty($erros)) {
             try {
                 $stmt = $pdo->prepare("DELETE FROM usuario WHERE id = :id");
                 $stmt->execute([':id' => $id]);
-                
+
                 if ($stmt->rowCount() > 0) {
+                    if (function_exists('registrarLog')) {
+                        registrarLog($pdo, $_SESSION['usuario_id'], 'EXCLUSAO_USUARIO', "Usuário ID $id excluído");
+                    }
+
                     $sucesso = 'Usuário excluído com sucesso!';
                     $usuario_encontrado = null;
                     $busca_realizada = false;
                     $confirmar_exclusao = false;
-                    
-                    // Regenerar token CSRF
+
                     $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
                     $csrf_token = $_SESSION['csrf_token'];
                 } else {
@@ -112,7 +108,32 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['excluir_usuario'])) {
 
 // Processar confirmação de exclusão
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['confirmar_exclusao'])) {
-    $confirmar_exclusao = true;
+    if (!validarCSRF($_POST['csrf_token'] ?? '')) {
+        $erros[] = 'Token de segurança inválido.';
+    } else {
+        $confirmar_exclusao = true;
+        // Reidrata os dados a partir do id enviado no passo anterior, já que
+        // o usuário não foi re-buscado no banco nesta requisição.
+        $id_confirmacao = filter_input(INPUT_POST, 'id', FILTER_VALIDATE_INT);
+        if ($id_confirmacao) {
+            try {
+                $stmt = $pdo->prepare("SELECT * FROM usuario WHERE id = :id");
+                $stmt->execute([':id' => $id_confirmacao]);
+                $usuario_encontrado = $stmt->fetch(PDO::FETCH_ASSOC);
+                if ($usuario_encontrado) {
+                    $dados = [
+                        'id' => $usuario_encontrado['id'],
+                        'nome' => $usuario_encontrado['nome'],
+                        'login' => $usuario_encontrado['login'],
+                        'tipo' => $usuario_encontrado['tipo'],
+                        'status' => $usuario_encontrado['status']
+                    ];
+                }
+            } catch (PDOException $e) {
+                $erros[] = 'Erro ao carregar dados do usuário: ' . $e->getMessage();
+            }
+        }
+    }
 }
 ?>
 <!DOCTYPE html>
@@ -120,192 +141,119 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['confirmar_exclusao'])
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Excluir Usuários</title>
+    <title>Excluir Usuário — IndustrialOS</title>
+    <link rel="stylesheet" href="../../../public/assets/css/style.css">
+    <link rel="stylesheet" href="../../../public/assets/css/usuarios.css">
 </head>
 <body>
 
-<hr>
-<table width="100%" cellpadding="10">
-    <tr>
-        <td>
-            <strong>Sistema de Sensores</strong>
-        </td>
-        <td align="right">
+    <div class="topbar">
+        <div class="marca">IndustrialOS — Usuários</div>
+        <div class="usuario-info">
             Usuário: <strong><?php echo htmlspecialchars($_SESSION['usuario_nome'], ENT_QUOTES, 'UTF-8'); ?></strong>
-        </td>
-    </tr>
-</table>
-<hr>
+        </div>
+    </div>
 
-<h1 align="center">EXCLUIR USUÁRIO</h1>
-<p align="center">Busque um usuário pelo login e exclua suas informações</p>
-<hr>
+    <div class="container">
 
-<br>
+        <h1>Excluir Usuário</h1>
+        <p class="usuarios-dica">Busque um usuário pelo login e exclua seu cadastro.</p>
 
-<?php if ($sucesso): ?>
-    <table width="100%" cellpadding="10" bgcolor="#d4edda" border="1">
-        <tr>
-            <td>
-                ✔ <?php echo htmlspecialchars($sucesso, ENT_QUOTES, 'UTF-8'); ?>
-            </td>
-        </tr>
-    </table>
-    <br>
-<?php endif; ?>
+        <?php if ($sucesso): ?>
+            <div class="msg-sucesso">✔ <?php echo htmlspecialchars($sucesso, ENT_QUOTES, 'UTF-8'); ?></div>
+        <?php endif; ?>
 
-<?php if (!empty($erros)): ?>
-    <table width="100%" cellpadding="10" bgcolor="#f8d7da" border="1">
-        <tr>
-            <td>
-                <strong>⚠ Atenção! Corrija os seguintes erros:</strong>
+        <?php if (!empty($erros)): ?>
+            <div class="msg-erro">
+                <strong>Atenção:</strong>
                 <ul>
                     <?php foreach ($erros as $e): ?>
                         <li><?php echo htmlspecialchars($e, ENT_QUOTES, 'UTF-8'); ?></li>
                     <?php endforeach; ?>
                 </ul>
-            </td>
-        </tr>
-    </table>
-    <br>
-<?php endif; ?>
+            </div>
+        <?php endif; ?>
 
-<fieldset>
-    <legend><strong>Buscar Usuário</strong></legend>
-    <form method="POST" autocomplete="off">
-        <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($csrf_token, ENT_QUOTES, 'UTF-8'); ?>">
-        <table cellpadding="5">
-            <tr>
-                <td><strong>Login:</strong></td>
-                <td>
-                    <input 
-                        type="text" 
-                        name="login_busca" 
-                        placeholder="Digite o login do usuário"
-                        value="<?php echo isset($_POST['login_busca']) ? htmlspecialchars($_POST['login_busca'], ENT_QUOTES, 'UTF-8') : ''; ?>"
-                        required
-                        size="30"
-                    >
-                </td>
-                <td>
-                    <button type="submit" name="buscar_usuario">BUSCAR</button>
-                </td>
-            </tr>
-        </table>
-    </form>
-</fieldset>
+        <div class="card">
+            <form method="POST" autocomplete="off">
+                <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($csrf_token, ENT_QUOTES, 'UTF-8'); ?>">
+                <div class="usuarios-grid">
+                    <div>
+                        <label>Login do usuário a buscar</label>
+                        <input
+                            type="text"
+                            name="login_busca"
+                            placeholder="Digite o login do usuário"
+                            value="<?php echo isset($_POST['login_busca']) ? htmlspecialchars($_POST['login_busca'], ENT_QUOTES, 'UTF-8') : ''; ?>"
+                            required
+                        >
+                    </div>
+                    <div>
+                        <label>&nbsp;</label>
+                        <button type="submit" name="buscar_usuario" value="1">Buscar</button>
+                    </div>
+                </div>
+            </form>
+        </div>
 
-<br>
-
-<?php if ($usuario_encontrado && !$confirmar_exclusao): ?>
-    <fieldset>
-        <legend><strong>Usuário Encontrado</strong></legend>
-        <table cellpadding="8" border="1">
-            <tr>
-                <td width="150"><strong>ID:</strong></td>
-                <td><?php echo $dados['id']; ?></td>
-            </tr>
-            <tr>
-                <td><strong>Nome:</strong></td>
-                <td><?php echo htmlspecialchars($dados['nome'], ENT_QUOTES, 'UTF-8'); ?></td>
-            </tr>
-            <tr>
-                <td><strong>Login:</strong></td>
-                <td><?php echo htmlspecialchars($dados['login'], ENT_QUOTES, 'UTF-8'); ?></td>
-            </tr>
-            <tr>
-                <td><strong>Tipo:</strong></td>
-                <td>
-                    <?php 
-                    if ($dados['tipo'] === 'admin') {
-                        echo 'Administrador';
-                    } else {
-                        echo 'Funcionário';
-                    }
-                    ?>
-                </td>
-            </tr>
-            <tr>
-                <td><strong>Status:</strong></td>
-                <td>
-                    <?php 
-                    if ($dados['status'] === 'ativo') {
-                        echo '<font color="green">Ativo</font>';
-                    } else {
-                        echo '<font color="red">Inativo</font>';
-                    }
-                    ?>
-                </td>
-            </tr>
-            <tr>
-                <td colspan="2" align="center">
-                    <form method="POST">
-                        <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($csrf_token, ENT_QUOTES, 'UTF-8'); ?>">
-                        <input type="hidden" name="confirmar_exclusao" value="1">
-                        <button type="submit" style="background-color: #ff9800; color: black;">CONTINUAR PARA EXCLUSÃO</button>
-                        <a href="excluir.php"><button type="button">CANCELAR</button></a>
-                    </form>
-                 </td>
-            </tr>
-        </table>
-    </fieldset>
-<?php elseif ($usuario_encontrado && $confirmar_exclusao): ?>
-    <fieldset>
-        <legend><strong>Confirmar Exclusão</strong></legend>
-        <table width="100%" cellpadding="10" bgcolor="#f8d7da" border="1">
-            <tr>
-                <td align="center">
-                    <strong>⚠ ATENÇÃO! Você está prestes a excluir o seguinte usuário:</strong>
-                    <br><br>
-                    <table align="center" cellpadding="5">
+        <?php if ($usuario_encontrado && !$confirmar_exclusao): ?>
+            <div class="card">
+                <h2>Usuário encontrado</h2>
+                <table>
+                    <tbody>
+                        <tr><td><strong>ID</strong></td><td><?php echo htmlspecialchars((string) $dados['id'], ENT_QUOTES, 'UTF-8'); ?></td></tr>
+                        <tr><td><strong>Nome</strong></td><td><?php echo htmlspecialchars($dados['nome'], ENT_QUOTES, 'UTF-8'); ?></td></tr>
+                        <tr><td><strong>Login</strong></td><td><?php echo htmlspecialchars($dados['login'], ENT_QUOTES, 'UTF-8'); ?></td></tr>
+                        <tr><td><strong>Tipo</strong></td><td><?php echo $dados['tipo'] === 'admin' ? 'Administrador' : 'Funcionário'; ?></td></tr>
                         <tr>
-                            <td><strong>ID:</strong></td>
-                            <td><?php echo $dados['id']; ?></td>
-                         </tr>
-                        <tr>
-                            <td><strong>Nome:</strong></td>
-                            <td><?php echo htmlspecialchars($dados['nome'], ENT_QUOTES, 'UTF-8'); ?></td>
-                         </tr>
-                        <tr>
-                            <td><strong>Login:</strong></td>
-                            <td><?php echo htmlspecialchars($dados['login'], ENT_QUOTES, 'UTF-8'); ?></td>
-                         </tr>
-                    </table>
-                    <br>
-                    <strong><font color="red">Esta ação é irreversível!</font></strong>
-                    <br><br>
-                    <form method="POST">
-                        <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($csrf_token, ENT_QUOTES, 'UTF-8'); ?>">
-                        <input type="hidden" name="id" value="<?php echo $dados['id']; ?>">
-                        <input type="hidden" name="excluir_usuario" value="1">
-                        <button type="submit" style="background-color: #f44336; color: white;">SIM, EXCLUIR USUÁRIO</button>
-                        <a href="excluir.php"><button type="button">NÃO, CANCELAR</button></a>
-                    </form>
-                </td>
-            </tr>
-        </table>
-    </fieldset>
-<?php elseif ($busca_realizada && !$usuario_encontrado): ?>
-    <table width="100%" cellpadding="15" bgcolor="#f8d7da" border="1">
-        <tr>
-            <td align="center">
-                <strong>⚠ Nenhum usuário encontrado com este login!</strong>
-                <br><br>
-                Verifique o login digitado.
-             </td>
-         </tr>
-     </table>
-<?php elseif (!$busca_realizada): ?>
-    <table width="100%" cellpadding="15" bgcolor>
-       
-     </table>
-<?php endif; ?>
+                            <td><strong>Status</strong></td>
+                            <td>
+                                <span class="badge badge-<?php echo $dados['status'] === 'ativo' ? 'ativo' : 'inativo'; ?>">
+                                    <?php echo $dados['status'] === 'ativo' ? 'Ativo' : 'Inativo'; ?>
+                                </span>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+                <br>
+                <form method="POST">
+                    <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($csrf_token, ENT_QUOTES, 'UTF-8'); ?>">
+                    <input type="hidden" name="id" value="<?php echo htmlspecialchars((string) $dados['id'], ENT_QUOTES, 'UTF-8'); ?>">
+                    <input type="hidden" name="confirmar_exclusao" value="1">
+                    <button type="submit" class="btn-perigo">Continuar para exclusão</button>
+                    <a href="excluir.php" class="btn btn-secundario">Cancelar</a>
+                </form>
+            </div>
+        <?php elseif ($usuario_encontrado && $confirmar_exclusao): ?>
+            <div class="card usuarios-perigo-box">
+                <h2>⚠ Confirmar exclusão</h2>
+                <p>Você está prestes a excluir permanentemente o seguinte usuário:</p>
+                <table>
+                    <tbody>
+                        <tr><td><strong>ID</strong></td><td><?php echo htmlspecialchars((string) $dados['id'], ENT_QUOTES, 'UTF-8'); ?></td></tr>
+                        <tr><td><strong>Nome</strong></td><td><?php echo htmlspecialchars($dados['nome'], ENT_QUOTES, 'UTF-8'); ?></td></tr>
+                        <tr><td><strong>Login</strong></td><td><?php echo htmlspecialchars($dados['login'], ENT_QUOTES, 'UTF-8'); ?></td></tr>
+                    </tbody>
+                </table>
+                <p><strong>Esta ação é irreversível!</strong></p>
+                <form method="POST">
+                    <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($csrf_token, ENT_QUOTES, 'UTF-8'); ?>">
+                    <input type="hidden" name="id" value="<?php echo htmlspecialchars((string) $dados['id'], ENT_QUOTES, 'UTF-8'); ?>">
+                    <input type="hidden" name="excluir_usuario" value="1">
+                    <button type="submit" class="btn-perigo">Sim, excluir usuário</button>
+                    <a href="excluir.php" class="btn btn-secundario">Não, cancelar</a>
+                </form>
+            </div>
+        <?php elseif ($busca_realizada && !$usuario_encontrado): ?>
+            <div class="msg-erro">⚠ Nenhum usuário encontrado com este login.</div>
+        <?php endif; ?>
 
-<br>
-<a href="../usuarios/gestao_usuarios.php">Voltar a gestão cadastro</a><br><br>
-<a href="../dashboard/painel.php">← Voltar ao dashboard</a><br>
+        <div class="nav-rodape">
+            <a href="gestao_usuarios.php">← Voltar à gestão de usuários</a>
+            <a href="../dashboard/painel.php">← Voltar ao painel</a>
+        </div>
 
-
+    </div>
 
 </body>
 </html>

@@ -77,7 +77,7 @@ $resumo    = $dashboard->obterResumo();
             <?php endif; ?>
         </div>
 
-        <a class="painel-logout" href="http://localhost:8000/routes/logout.php">Logout</a>
+        <a class="painel-logout" href="../../../routes/logout.php">Logout</a>
 
     </div>
 

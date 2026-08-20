@@ -1,7 +1,8 @@
 <?php
 // Segurança: bloqueia acesso direto à view
 if (!isset($leituras, $resumo, $sensor_tipos, $labels_pt)) {
-    header('Location: /tcc/app/views/dashboard/painel.php');
+    // Caminho relativo à URL de RelatorioController.php (app/controllers/)
+    header('Location: ../views/dashboard/painel.php');
     exit;
 }
 
@@ -72,7 +73,7 @@ $filtro_max      = $filtro_max      ?? '';
 
             &nbsp;
             <button type="submit">Filtrar</button>
-            <a href="/tcc/app/controllers/RelatorioController.php">Limpar filtros</a>
+            <a href="RelatorioController.php">Limpar filtros</a>
         </fieldset>
     </form>
 
