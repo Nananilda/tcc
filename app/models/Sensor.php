@@ -67,10 +67,10 @@ class SensorModel
             VALUES (:nome, :tipo, :localizacao, :status, NOW())
         ");
         $stmt->execute([
-            ':nome'        => $dados['nome'],
-            ':tipo'        => $dados['tipo'],
+            ':nome' => $dados['nome'],
+            ':tipo' => $dados['tipo'],
             ':localizacao' => $dados['localizacao'] ?? null,
-            ':status'      => $dados['status'],
+            ':status' => $dados['status'],
         ]);
         return (int) $this->pdo->lastInsertId();
     }

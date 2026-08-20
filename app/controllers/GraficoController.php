@@ -57,8 +57,8 @@ if (empty($leituras)) {
 }
 
 echo json_encode([
-    'sensor'  => $sensor_sel,
-    'horas'   => $horas,
-    'labels'  => array_column($leituras, 'lido_em'),
+    'sensor' => $sensor_sel,
+    'horas' => $horas,
+    'labels' => array_column($leituras, 'lido_em'),
     'valores' => array_map('floatval', array_column($leituras, 'valor')),
 ]);

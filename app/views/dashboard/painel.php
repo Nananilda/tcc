@@ -10,18 +10,20 @@ require_once '../../config/conexao.php';
 require_once '../../controllers/DashbordController.php';
 
 $dashboard = new DashbordController($pdo);
-$resumo    = $dashboard->obterResumo();
+$resumo = $dashboard->obterResumo();
 
 ?>
 
 <!DOCTYPE html>
 <html lang="pt-BR">
+
 <head>
     <meta charset="UTF-8">
     <title>Painel</title>
     <link rel="stylesheet" href="../../../public/assets/css/style.css">
     <link rel="stylesheet" href="../../../public/assets/css/painel.css">
 </head>
+
 <body>
 
     <div class="topbar">
@@ -41,7 +43,8 @@ $resumo    = $dashboard->obterResumo();
 
         <div class="painel-stats">
             <div class="stat-card">
-                <div class="stat-valor"><?php echo (int) $resumo['sensores_ativos']; ?> / <?php echo (int) $resumo['sensores_total']; ?></div>
+                <div class="stat-valor"><?php echo (int) $resumo['sensores_ativos']; ?> /
+                    <?php echo (int) $resumo['sensores_total']; ?></div>
                 <div class="stat-label">Sensores ativos</div>
             </div>
             <div class="stat-card">
@@ -82,4 +85,5 @@ $resumo    = $dashboard->obterResumo();
     </div>
 
 </body>
+
 </html>

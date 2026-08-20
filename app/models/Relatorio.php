@@ -14,12 +14,12 @@ class Relatorio
     ];
 
     private array $labels_pt = [
-        'temperatura'  => 'Temperatura (°C)',
-        'ruido'        => 'Ruído (dB)',
+        'temperatura' => 'Temperatura (°C)',
+        'ruido' => 'Ruído (dB)',
         'qualidade_ar' => 'Qualidade do Ar (AQI)',
-        'umidade'      => 'Umidade (%)',
-        'pressao'      => 'Pressão (hPa)',
-        'uv'           => 'UV (índice)',
+        'umidade' => 'Umidade (%)',
+        'pressao' => 'Pressão (hPa)',
+        'uv' => 'UV (índice)',
     ];
 
     public function __construct(PDO $pdo)
@@ -53,9 +53,9 @@ class Relatorio
     public function montarFiltros(
         string $data_ini,
         string $data_fim,
-        string $sensor   = '',
-        string $val_min  = '',
-        string $val_max  = ''
+        string $sensor = '',
+        string $val_min = '',
+        string $val_max = ''
     ): array {
         $params = [
             ':ini' => $data_ini . ' 00:00:00',

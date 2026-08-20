@@ -6,23 +6,23 @@ exigirLogin();
 require_once '../../config/conexao.php';
 require_once '../../controllers/AlertaController.php';
 
-$eh_admin   = ehAdmin();
+$eh_admin = ehAdmin();
 $controller = new AlertaController($pdo, $eh_admin);
 
 ['mensagem' => $mensagem, 'erros' => $erros] = $controller->processarRequisicao();
 
-$alertas   = $controller->listarAlertas();
-$contagem  = $controller->contarPorSeveridade();
+$alertas = $controller->listarAlertas();
+$contagem = $controller->contarPorSeveridade();
 $csrf_token = gerarCSRF();
 
 $labels_severidade = ['critico' => 'Crítico', 'atencao' => 'Atenção', 'info' => 'Informativo'];
 $labels_sensor = [
-    'temperatura'  => 'Temperatura',
-    'ruido'        => 'Ruído',
+    'temperatura' => 'Temperatura',
+    'ruido' => 'Ruído',
     'qualidade_ar' => 'Qualidade do Ar',
-    'umidade'      => 'Umidade',
-    'pressao'      => 'Pressão',
-    'uv'           => 'UV',
+    'umidade' => 'Umidade',
+    'pressao' => 'Pressão',
+    'uv' => 'UV',
 ];
 ?>
 <!DOCTYPE html>

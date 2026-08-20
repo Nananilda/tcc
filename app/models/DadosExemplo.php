@@ -19,12 +19,12 @@ if (!function_exists('gerarLeiturasExemplo')) {
     function gerarLeiturasExemplo(string $sensor, int $horas): array
     {
         $faixas = [
-            'temperatura'  => [18, 32],
-            'ruido'        => [40, 95],
+            'temperatura' => [18, 32],
+            'ruido' => [40, 95],
             'qualidade_ar' => [20, 180],
-            'umidade'      => [30, 80],
-            'pressao'      => [995, 1025],
-            'uv'           => [0, 11],
+            'umidade' => [30, 80],
+            'pressao' => [995, 1025],
+            'uv' => [0, 11],
         ];
         [$min, $max] = $faixas[$sensor] ?? [0, 100];
 
@@ -42,7 +42,7 @@ if (!function_exists('gerarLeiturasExemplo')) {
             $valorAtual = max($min, min($max, $valorAtual));
 
             $leituras[] = [
-                'valor'   => round($valorAtual, 2),
+                'valor' => round($valorAtual, 2),
                 'lido_em' => date('Y-m-d H:i:s', $agora - ($i * $intervaloSeg)),
             ];
         }

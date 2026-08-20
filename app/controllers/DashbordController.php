@@ -29,9 +29,9 @@ class DashbordController
     public function obterResumo(): array
     {
         return [
-            'sensores_ativos'    => $this->contarSensoresAtivos(),
-            'sensores_total'     => $this->contarSensoresTotal(),
-            'alertas_pendentes'  => $this->contarAlertasPendentes(),
+            'sensores_ativos' => $this->contarSensoresAtivos(),
+            'sensores_total' => $this->contarSensoresTotal(),
+            'alertas_pendentes' => $this->contarAlertasPendentes(),
             'ultima_atualizacao' => date('d/m/Y H:i'),
         ];
     }

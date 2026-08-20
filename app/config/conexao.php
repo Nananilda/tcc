@@ -14,7 +14,7 @@
  * muda a cada aula — confirme com o professor/rede antes de rodar).
  */
 
-$host   = "10.140.169.14"; // verificar toda aula
+$host   = "10.140.169.12"; // verificar toda aula
 $banco  = "banco_tcc";
 $usuario = "root";
 $senha  = "123456";

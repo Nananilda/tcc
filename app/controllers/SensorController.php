@@ -10,23 +10,23 @@ require_once __DIR__ . '/../models/Sensor.php';
 class SensorController
 {
     private SensorModel $model;
-    private PDO         $pdo;
-    private bool        $ehAdmin;
+    private PDO $pdo;
+    private bool $ehAdmin;
 
     /** Tipos aceitos e seus rótulos de exibição. */
     public const TIPOS_VALIDOS = [
-        'temperatura'  => 'Temperatura',
-        'ruido'        => 'Ruído',
+        'temperatura' => 'Temperatura',
+        'ruido' => 'Ruído',
         'qualidade_ar' => 'Qualidade do Ar',
-        'umidade'      => 'Umidade',
-        'pressao'      => 'Pressão',
-        'uv'           => 'UV',
+        'umidade' => 'Umidade',
+        'pressao' => 'Pressão',
+        'uv' => 'UV',
     ];
 
     public function __construct(PDO $pdo, bool $ehAdmin)
     {
-        $this->pdo     = $pdo;
-        $this->model   = new SensorModel($pdo);
+        $this->pdo = $pdo;
+        $this->model = new SensorModel($pdo);
         $this->ehAdmin = $ehAdmin;
     }
 
@@ -39,7 +39,7 @@ class SensorController
     public function processarRequisicao(): array
     {
         $mensagem = '';
-        $erros    = [];
+        $erros = [];
 
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
             return compact('mensagem', 'erros');
@@ -78,17 +78,17 @@ class SensorController
     private function cadastrar(): array
     {
         $mensagem = '';
-        $erros    = [];
+        $erros = [];
 
         if (!$this->ehAdmin) {
             $erros[] = 'Acesso negado.';
             return [$mensagem, $erros];
         }
 
-        $nome       = trim($_POST['nome']       ?? '');
-        $tipo       = trim($_POST['tipo']       ?? '');
+        $nome = trim($_POST['nome'] ?? '');
+        $tipo = trim($_POST['tipo'] ?? '');
         $localizacao = trim($_POST['localizacao'] ?? '');
-        $status     = $_POST['status']           ?? 'ativo';
+        $status = $_POST['status'] ?? 'ativo';
 
         // Validações
         if (strlen($nome) < 3) {
@@ -107,10 +107,10 @@ class SensorController
 
         try {
             $id = $this->model->cadastrar([
-                'nome'        => $nome,
-                'tipo'        => $tipo,
+                'nome' => $nome,
+                'tipo' => $tipo,
                 'localizacao' => $localizacao ?: null,
-                'status'      => $status,
+                'status' => $status,
             ]);
 
             $this->registrarLog('SENSOR_CADASTRO', "Sensor ID $id: $nome ($tipo)");
@@ -130,15 +130,15 @@ class SensorController
     private function toggleStatus(): array
     {
         $mensagem = '';
-        $erros    = [];
+        $erros = [];
 
         if (!$this->ehAdmin) {
             $erros[] = 'Acesso negado.';
             return [$mensagem, $erros];
         }
 
-        $sensorId  = (int) ($_POST['sensor_id']   ?? 0);
-        $novoStatus = $_POST['novo_status']        ?? '';
+        $sensorId = (int) ($_POST['sensor_id'] ?? 0);
+        $novoStatus = $_POST['novo_status'] ?? '';
 
         if ($sensorId <= 0) {
             $erros[] = 'ID de sensor inválido.';

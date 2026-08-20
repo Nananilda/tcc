@@ -10,13 +10,13 @@ require_once __DIR__ . '/../models/Alerta.php';
 class AlertaController
 {
     private AlertaModel $model;
-    private PDO         $pdo;
-    private bool        $ehAdmin;
+    private PDO $pdo;
+    private bool $ehAdmin;
 
     public function __construct(PDO $pdo, bool $ehAdmin)
     {
-        $this->pdo     = $pdo;
-        $this->model   = new AlertaModel($pdo);
+        $this->pdo = $pdo;
+        $this->model = new AlertaModel($pdo);
         $this->ehAdmin = $ehAdmin;
     }
 
@@ -29,7 +29,7 @@ class AlertaController
     public function processarRequisicao(): array
     {
         $mensagem = '';
-        $erros    = [];
+        $erros = [];
 
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
             return compact('mensagem', 'erros');
@@ -52,7 +52,7 @@ class AlertaController
     private function resolver(): array
     {
         $mensagem = '';
-        $erros    = [];
+        $erros = [];
 
         if (!$this->ehAdmin) {
             $erros[] = 'Acesso negado.';

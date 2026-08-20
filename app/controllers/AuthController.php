@@ -30,8 +30,8 @@ class AuthController
     {
         if (verificarBloqueioIP($this->pdo, $ip)) {
             return [
-                'sucesso'  => false,
-                'usuario'  => null,
+                'sucesso' => false,
+                'usuario' => null,
                 'mensagem' => 'Acesso temporariamente bloqueado. Tente novamente em 15 minutos.',
             ];
         }
@@ -46,8 +46,8 @@ class AuthController
         }
 
         return [
-            'sucesso'  => $resultado['sucesso'],
-            'usuario'  => $resultado['usuario'] ?? null,
+            'sucesso' => $resultado['sucesso'],
+            'usuario' => $resultado['usuario'] ?? null,
             'mensagem' => $resultado['mensagem'] ?? '',
         ];
     }
@@ -59,12 +59,12 @@ class AuthController
     {
         session_regenerate_id(true);
 
-        $_SESSION['usuario_id']   = $usuario['id'];
+        $_SESSION['usuario_id'] = $usuario['id'];
         $_SESSION['usuario_nome'] = $usuario['nome'];
         $_SESSION['usuario_tipo'] = $usuario['tipo'];
-        $_SESSION['login_hora']   = date('Y-m-d H:i:s');
-        $_SESSION['ip_login']     = $ip;
-        $_SESSION['csrf_token']   = bin2hex(random_bytes(32));
+        $_SESSION['login_hora'] = date('Y-m-d H:i:s');
+        $_SESSION['ip_login'] = $ip;
+        $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
     }
 
     /**

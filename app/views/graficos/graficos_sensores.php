@@ -82,77 +82,78 @@ $info = $sensores[$sensor_sel];
 
     <div class="container">
 
-    <h1>Gráficos de Sensores</h1>
+        <h1>Gráficos de Sensores</h1>
 
-    <!-- Seletor de sensor -->
-    <form method="GET" class="graficos-filtros">
-        <div class="campo">
-            <label for="sensor">Sensor:</label>
-            <select id="sensor" name="sensor" onchange="this.form.submit()">
-                <?php foreach ($sensores as $chave => $meta): ?>
-                    <option value="<?php echo $chave; ?>" <?php echo $sensor_sel === $chave ? 'selected' : ''; ?>>
-                        <?php echo htmlspecialchars($meta['label']); ?> (<?php echo $meta['unidade']; ?>)
-                    </option>
-                <?php endforeach; ?>
-            </select>
+        <!-- Seletor de sensor -->
+        <form method="GET" class="graficos-filtros">
+            <div class="campo">
+                <label for="sensor">Sensor:</label>
+                <select id="sensor" name="sensor" onchange="this.form.submit()">
+                    <?php foreach ($sensores as $chave => $meta): ?>
+                        <option value="<?php echo $chave; ?>" <?php echo $sensor_sel === $chave ? 'selected' : ''; ?>>
+                            <?php echo htmlspecialchars($meta['label']); ?> (<?php echo $meta['unidade']; ?>)
+                        </option>
+                    <?php endforeach; ?>
+                </select>
+            </div>
+
+            <div class="campo">
+                <label for="horas">Período:</label>
+                <select id="horas" name="horas" onchange="this.form.submit()">
+                    <?php foreach ([6 => '6 h', 12 => '12 h', 24 => '24 h', 48 => '48 h', 168 => '7 dias'] as $v => $l): ?>
+                        <option value="<?php echo $v; ?>" <?php echo $horas === $v ? 'selected' : ''; ?>>
+                            <?php echo $l; ?>
+                        </option>
+                    <?php endforeach; ?>
+                </select>
+            </div>
+        </form>
+
+        <hr>
+
+        <h2>
+            <?php echo htmlspecialchars($info['label']); ?> — últimas <?php echo $horas; ?> h
+            <span class="grafico-status-tempo-real">
+                <span class="ponto"></span> tempo real
+            </span>
+        </h2>
+
+        <?php if ($usando_dados_exemplo): ?>
+            <div class="msg-alerta">
+                Exibindo dados de exemplo (base) — a tabela <code>leitura_sensor</code> ainda não tem leituras reais no
+                banco.
+            </div>
+        <?php endif; ?>
+
+        <?php if (empty($leituras)): ?>
+            <p><em>Nenhuma leitura encontrada para este sensor no período selecionado.</em></p>
+        <?php else: ?>
+            <div class="card grafico-wrapper">
+                <canvas id="graficoSensor" height="350"></canvas>
+            </div>
+            <script>
+                const graficoSensorAtual = criarGraficoLinha(
+                    'graficoSensor',
+                    <?php echo json_encode($labels); ?>,
+                    <?php echo json_encode(array_map('floatval', $valores)); ?>,
+                    '<?php echo addslashes($info['label']); ?> (<?php echo $info['unidade']; ?>)',
+                    '<?php echo addslashes($info['label']); ?> — últimas <?php echo $horas; ?> horas'
+                );
+
+                // Atualização em tempo real (AJAX) via GraficoController.php
+                iniciarAtualizacaoTempoReal(
+                    graficoSensorAtual,
+                    '<?php echo $sensor_sel; ?>',
+                    <?php echo $horas; ?>
+                );
+            </script>
+            <p class="grafico-total-leituras">Total de leituras: <?php echo count($leituras); ?></p>
+        <?php endif; ?>
+
+        <div class="nav-rodape">
+            <a href="alerta.php">Ver alertas →</a>
+            <a href="../dashboard/painel.php">← Voltar ao painel</a>
         </div>
-
-        <div class="campo">
-            <label for="horas">Período:</label>
-            <select id="horas" name="horas" onchange="this.form.submit()">
-                <?php foreach ([6 => '6 h', 12 => '12 h', 24 => '24 h', 48 => '48 h', 168 => '7 dias'] as $v => $l): ?>
-                    <option value="<?php echo $v; ?>" <?php echo $horas === $v ? 'selected' : ''; ?>>
-                        <?php echo $l; ?>
-                    </option>
-                <?php endforeach; ?>
-            </select>
-        </div>
-    </form>
-
-    <hr>
-
-    <h2>
-        <?php echo htmlspecialchars($info['label']); ?> — últimas <?php echo $horas; ?> h
-        <span class="grafico-status-tempo-real">
-            <span class="ponto"></span> tempo real
-        </span>
-    </h2>
-
-    <?php if ($usando_dados_exemplo): ?>
-        <div class="msg-alerta">
-            Exibindo dados de exemplo (base) — a tabela <code>leitura_sensor</code> ainda não tem leituras reais no banco.
-        </div>
-    <?php endif; ?>
-
-    <?php if (empty($leituras)): ?>
-        <p><em>Nenhuma leitura encontrada para este sensor no período selecionado.</em></p>
-    <?php else: ?>
-        <div class="card grafico-wrapper">
-            <canvas id="graficoSensor" height="350"></canvas>
-        </div>
-        <script>
-            const graficoSensorAtual = criarGraficoLinha(
-                'graficoSensor',
-                <?php echo json_encode($labels); ?>,
-                <?php echo json_encode(array_map('floatval', $valores)); ?>,
-                '<?php echo addslashes($info['label']); ?> (<?php echo $info['unidade']; ?>)',
-                '<?php echo addslashes($info['label']); ?> — últimas <?php echo $horas; ?> horas'
-            );
-
-            // Atualização em tempo real (AJAX) via GraficoController.php
-            iniciarAtualizacaoTempoReal(
-                graficoSensorAtual,
-                '<?php echo $sensor_sel; ?>',
-                <?php echo $horas; ?>
-            );
-        </script>
-        <p class="grafico-total-leituras">Total de leituras: <?php echo count($leituras); ?></p>
-    <?php endif; ?>
-
-    <div class="nav-rodape">
-        <a href="alerta.php">Ver alertas →</a>
-        <a href="../dashboard/painel.php">← Voltar ao painel</a>
-    </div>
 
     </div>
 
