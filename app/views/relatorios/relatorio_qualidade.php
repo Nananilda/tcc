@@ -19,8 +19,8 @@ $filtro_max = $filtro_max ?? '';
 <head>
     <meta charset="UTF-8">
     <title>Relatório de Qualidade</title>
-    <link rel="stylesheet" href="../../../public/assets/css/style.css">
-    <link rel="stylesheet" href="../../../public/assets/css/relatorios.css">
+    <link rel="stylesheet" href="<?php echo BASE_URL; ?>/public/assets/css/style.css">
+    <link rel="stylesheet" href="<?php echo BASE_URL; ?>/public/assets/css/relatorios.css">
 </head>
 
 <body>
@@ -138,7 +138,7 @@ $filtro_max = $filtro_max ?? '';
         <?php endif; ?>
 
         <div class="nav-rodape">
-            <a href="../dashboard/painel.php">← Voltar ao painel</a>
+            <a href="<?php echo BASE_URL; ?>/app/views/dashboard/painel.php">← Voltar ao painel</a>
         </div>
 
     </div>

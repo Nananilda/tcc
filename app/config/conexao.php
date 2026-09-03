@@ -14,7 +14,7 @@
  * muda a cada aula — confirme com o professor/rede antes de rodar).
  */
 
-$host   = "10.140.169.12"; // verificar toda aula
+$host   = "localhost"; // verificar toda aula
 $banco  = "banco_tcc";
 $usuario = "root";
 $senha  = "123456";
@@ -33,4 +33,8 @@ try {
     );
 } catch (PDOException $e) {
     die("Erro de conexão: " . $e->getMessage());
+}
+
+if (!defined('BASE_URL')) {
+    define('BASE_URL', '/tcc'); 
 }
