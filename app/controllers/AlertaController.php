@@ -79,31 +79,27 @@ class AlertaController
     // ── Consulta pública (usada pela view) ───────────────────────────────────
 
     /**
-     * Retorna os alertas para exibição. Se a tabela ainda não existir/estiver
-     * vazia no banco, cai para os dados de exemplo do model (base para o
-     * gráfico funcionar enquanto o banco real não está populado).
+     * Retorna os alertas cadastrados no banco para exibição.
+     * Em caso de erro (tabela inexistente etc.) devolve array vazio.
      */
     public function listarAlertas(): array
     {
         try {
-            $alertas = $this->model->listarRecentes();
-            return !empty($alertas) ? $alertas : $this->model->gerarDadosExemplo();
+            return $this->model->listarRecentes();
         } catch (PDOException $e) {
-            return $this->model->gerarDadosExemplo();
+            return [];
         }
     }
 
     /**
-     * Retorna a contagem por severidade (real ou de exemplo, mesma regra acima).
+     * Retorna a contagem de alertas por severidade a partir do banco.
      */
     public function contarPorSeveridade(): array
     {
         try {
-            $contagem = $this->model->contarPorSeveridade();
-            $temDados = array_sum($contagem) > 0;
-            return $temDados ? $contagem : $this->model->contarPorSeveridadeExemplo();
+            return $this->model->contarPorSeveridade();
         } catch (PDOException $e) {
-            return $this->model->contarPorSeveridadeExemplo();
+            return ['critico' => 0, 'atencao' => 0, 'info' => 0];
         }
     }
 
