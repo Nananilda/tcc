@@ -3,11 +3,7 @@
  * DashbordController.php
  * Reúne os números de resumo exibidos no painel principal
  * (app/views/dashboard/painel.php): sensores ativos, alertas pendentes
- * e total de leituras recentes.
- *
- * Segue o mesmo padrão dos outros controllers: tenta consultar o banco
- * real e, se as tabelas ainda não existirem/estiverem vazias, cai para
- * uma base de dados de exemplo (mesma lógica usada nos gráficos).
+ * e total de leituras recentes — sempre a partir dos dados reais do banco.
  */
 
 require_once __DIR__ . '/../models/Sensor.php';
@@ -42,8 +38,7 @@ class DashbordController
             $model = new SensorModel($this->pdo);
             return count($model->listarTodos());
         } catch (PDOException $e) {
-            // Base de exemplo enquanto a tabela `sensores` não está populada
-            return 6;
+            return 0;
         }
     }
 
@@ -55,8 +50,7 @@ class DashbordController
             $ativos = array_filter($sensores, fn($s) => $s['status'] === 'ativo');
             return count($ativos);
         } catch (PDOException $e) {
-            // Base de exemplo
-            return 5;
+            return 0;
         }
     }
 
@@ -65,11 +59,9 @@ class DashbordController
         try {
             $model = new AlertaModel($this->pdo);
             $contagem = $model->contarPorSeveridade();
-            $total = array_sum($contagem);
-            return $total > 0 ? $total : array_sum($model->contarPorSeveridadeExemplo());
+            return array_sum($contagem);
         } catch (PDOException $e) {
-            $model = new AlertaModel($this->pdo);
-            return array_sum($model->contarPorSeveridadeExemplo());
+            return 0;
         }
     }
 }
