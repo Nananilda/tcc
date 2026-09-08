@@ -138,17 +138,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['confirmar_exclusao'])
 ?>
 <!DOCTYPE html>
 <html lang="pt-BR">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Excluir Usuário — IndustrialOS</title>
+    <title>Excluir Usuário — Ákron</title>
+    <link rel="icon" type="image/svg+xml" href="../../../public/assets/img/logo.svg">
     <link rel="stylesheet" href="../../../public/assets/css/style.css">
     <link rel="stylesheet" href="../../../public/assets/css/usuarios.css">
 </head>
+
 <body>
 
     <div class="topbar">
-        <div class="marca">IndustrialOS — Usuários</div>
+        <div class="marca">
+            <img src="../../../public/assets/img/logo.svg" alt="Ákron" class="marca-logo">
+            <div class="marca-texto">
+                <span class="marca-nome">ÁKRON</span>
+                <span class="marca-secao">Usuários</span>
+            </div>
+        </div>
         <div class="usuario-info">
             Usuário: <strong><?php echo htmlspecialchars($_SESSION['usuario_nome'], ENT_QUOTES, 'UTF-8'); ?></strong>
         </div>
@@ -176,17 +185,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['confirmar_exclusao'])
 
         <div class="card">
             <form method="POST" autocomplete="off">
-                <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($csrf_token, ENT_QUOTES, 'UTF-8'); ?>">
+                <input type="hidden" name="csrf_token"
+                    value="<?php echo htmlspecialchars($csrf_token, ENT_QUOTES, 'UTF-8'); ?>">
                 <div class="usuarios-grid">
                     <div>
                         <label>Login do usuário a buscar</label>
-                        <input
-                            type="text"
-                            name="login_busca"
-                            placeholder="Digite o login do usuário"
+                        <input type="text" name="login_busca" placeholder="Digite o login do usuário"
                             value="<?php echo isset($_POST['login_busca']) ? htmlspecialchars($_POST['login_busca'], ENT_QUOTES, 'UTF-8') : ''; ?>"
-                            required
-                        >
+                            required>
                     </div>
                     <div>
                         <label>&nbsp;</label>
@@ -201,10 +207,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['confirmar_exclusao'])
                 <h2>Usuário encontrado</h2>
                 <table>
                     <tbody>
-                        <tr><td><strong>ID</strong></td><td><?php echo htmlspecialchars((string) $dados['id'], ENT_QUOTES, 'UTF-8'); ?></td></tr>
-                        <tr><td><strong>Nome</strong></td><td><?php echo htmlspecialchars($dados['nome'], ENT_QUOTES, 'UTF-8'); ?></td></tr>
-                        <tr><td><strong>Login</strong></td><td><?php echo htmlspecialchars($dados['login'], ENT_QUOTES, 'UTF-8'); ?></td></tr>
-                        <tr><td><strong>Tipo</strong></td><td><?php echo $dados['tipo'] === 'admin' ? 'Administrador' : 'Funcionário'; ?></td></tr>
+                        <tr>
+                            <td><strong>ID</strong></td>
+                            <td><?php echo htmlspecialchars((string) $dados['id'], ENT_QUOTES, 'UTF-8'); ?></td>
+                        </tr>
+                        <tr>
+                            <td><strong>Nome</strong></td>
+                            <td><?php echo htmlspecialchars($dados['nome'], ENT_QUOTES, 'UTF-8'); ?></td>
+                        </tr>
+                        <tr>
+                            <td><strong>Login</strong></td>
+                            <td><?php echo htmlspecialchars($dados['login'], ENT_QUOTES, 'UTF-8'); ?></td>
+                        </tr>
+                        <tr>
+                            <td><strong>Tipo</strong></td>
+                            <td><?php echo $dados['tipo'] === 'admin' ? 'Administrador' : 'Funcionário'; ?></td>
+                        </tr>
                         <tr>
                             <td><strong>Status</strong></td>
                             <td>
@@ -217,8 +235,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['confirmar_exclusao'])
                 </table>
                 <br>
                 <form method="POST">
-                    <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($csrf_token, ENT_QUOTES, 'UTF-8'); ?>">
-                    <input type="hidden" name="id" value="<?php echo htmlspecialchars((string) $dados['id'], ENT_QUOTES, 'UTF-8'); ?>">
+                    <input type="hidden" name="csrf_token"
+                        value="<?php echo htmlspecialchars($csrf_token, ENT_QUOTES, 'UTF-8'); ?>">
+                    <input type="hidden" name="id"
+                        value="<?php echo htmlspecialchars((string) $dados['id'], ENT_QUOTES, 'UTF-8'); ?>">
                     <input type="hidden" name="confirmar_exclusao" value="1">
                     <button type="submit" class="btn-perigo">Continuar para exclusão</button>
                     <a href="excluir.php" class="btn btn-secundario">Cancelar</a>
@@ -230,15 +250,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['confirmar_exclusao'])
                 <p>Você está prestes a excluir permanentemente o seguinte usuário:</p>
                 <table>
                     <tbody>
-                        <tr><td><strong>ID</strong></td><td><?php echo htmlspecialchars((string) $dados['id'], ENT_QUOTES, 'UTF-8'); ?></td></tr>
-                        <tr><td><strong>Nome</strong></td><td><?php echo htmlspecialchars($dados['nome'], ENT_QUOTES, 'UTF-8'); ?></td></tr>
-                        <tr><td><strong>Login</strong></td><td><?php echo htmlspecialchars($dados['login'], ENT_QUOTES, 'UTF-8'); ?></td></tr>
+                        <tr>
+                            <td><strong>ID</strong></td>
+                            <td><?php echo htmlspecialchars((string) $dados['id'], ENT_QUOTES, 'UTF-8'); ?></td>
+                        </tr>
+                        <tr>
+                            <td><strong>Nome</strong></td>
+                            <td><?php echo htmlspecialchars($dados['nome'], ENT_QUOTES, 'UTF-8'); ?></td>
+                        </tr>
+                        <tr>
+                            <td><strong>Login</strong></td>
+                            <td><?php echo htmlspecialchars($dados['login'], ENT_QUOTES, 'UTF-8'); ?></td>
+                        </tr>
                     </tbody>
                 </table>
                 <p><strong>Esta ação é irreversível!</strong></p>
                 <form method="POST">
-                    <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($csrf_token, ENT_QUOTES, 'UTF-8'); ?>">
-                    <input type="hidden" name="id" value="<?php echo htmlspecialchars((string) $dados['id'], ENT_QUOTES, 'UTF-8'); ?>">
+                    <input type="hidden" name="csrf_token"
+                        value="<?php echo htmlspecialchars($csrf_token, ENT_QUOTES, 'UTF-8'); ?>">
+                    <input type="hidden" name="id"
+                        value="<?php echo htmlspecialchars((string) $dados['id'], ENT_QUOTES, 'UTF-8'); ?>">
                     <input type="hidden" name="excluir_usuario" value="1">
                     <button type="submit" class="btn-perigo">Sim, excluir usuário</button>
                     <a href="excluir.php" class="btn btn-secundario">Não, cancelar</a>
@@ -256,4 +287,5 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['confirmar_exclusao'])
     </div>
 
 </body>
+
 </html>

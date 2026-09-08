@@ -179,17 +179,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['atualizar_usuario']))
 ?>
 <!DOCTYPE html>
 <html lang="pt-BR">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Editar Usuário — IndustrialOS</title>
+    <title>Editar Usuário — Ákron</title>
+    <link rel="icon" type="image/svg+xml" href="../../../public/assets/img/logo.svg">
     <link rel="stylesheet" href="../../../public/assets/css/style.css">
     <link rel="stylesheet" href="../../../public/assets/css/usuarios.css">
 </head>
+
 <body>
 
     <div class="topbar">
-        <div class="marca">IndustrialOS — Usuários</div>
+        <div class="marca">
+            <img src="../../../public/assets/img/logo.svg" alt="Ákron" class="marca-logo">
+            <div class="marca-texto">
+                <span class="marca-nome">ÁKRON</span>
+                <span class="marca-secao">Usuários</span>
+            </div>
+        </div>
         <div class="usuario-info">
             Usuário: <strong><?php echo htmlspecialchars($_SESSION['usuario_nome'], ENT_QUOTES, 'UTF-8'); ?></strong>
         </div>
@@ -217,17 +226,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['atualizar_usuario']))
 
         <div class="card">
             <form method="POST" autocomplete="off">
-                <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($csrf_token, ENT_QUOTES, 'UTF-8'); ?>">
+                <input type="hidden" name="csrf_token"
+                    value="<?php echo htmlspecialchars($csrf_token, ENT_QUOTES, 'UTF-8'); ?>">
                 <div class="usuarios-grid">
                     <div>
                         <label>Login do usuário a buscar</label>
-                        <input
-                            type="text"
-                            name="login_busca"
-                            placeholder="Digite o login do usuário"
+                        <input type="text" name="login_busca" placeholder="Digite o login do usuário"
                             value="<?php echo isset($_POST['login_busca']) ? htmlspecialchars($_POST['login_busca'], ENT_QUOTES, 'UTF-8') : ''; ?>"
-                            required
-                        >
+                            required>
                     </div>
                     <div>
                         <label>&nbsp;</label>
@@ -241,8 +247,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['atualizar_usuario']))
             <div class="card">
                 <h2>Editar dados</h2>
                 <form method="POST" autocomplete="off">
-                    <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($csrf_token, ENT_QUOTES, 'UTF-8'); ?>">
-                    <input type="hidden" name="id" value="<?php echo htmlspecialchars((string) $dados['id'], ENT_QUOTES, 'UTF-8'); ?>">
+                    <input type="hidden" name="csrf_token"
+                        value="<?php echo htmlspecialchars($csrf_token, ENT_QUOTES, 'UTF-8'); ?>">
+                    <input type="hidden" name="id"
+                        value="<?php echo htmlspecialchars((string) $dados['id'], ENT_QUOTES, 'UTF-8'); ?>">
                     <input type="hidden" name="atualizar_usuario" value="1">
 
                     <div class="usuarios-secao">
@@ -250,28 +258,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['atualizar_usuario']))
                         <div class="usuarios-grid">
                             <div>
                                 <label>ID</label>
-                                <input type="text" value="<?php echo htmlspecialchars((string) $dados['id'], ENT_QUOTES, 'UTF-8'); ?>" readonly>
+                                <input type="text"
+                                    value="<?php echo htmlspecialchars((string) $dados['id'], ENT_QUOTES, 'UTF-8'); ?>"
+                                    readonly>
                             </div>
                             <div>
                                 <label>Nome Completo *</label>
-                                <input
-                                    type="text"
-                                    name="nome"
-                                    maxlength="100"
-                                    value="<?php echo htmlspecialchars($dados['nome'], ENT_QUOTES, 'UTF-8'); ?>"
-                                    required
-                                >
+                                <input type="text" name="nome" maxlength="100"
+                                    value="<?php echo htmlspecialchars($dados['nome'], ENT_QUOTES, 'UTF-8'); ?>" required>
                             </div>
                             <div>
                                 <label>Login *</label>
-                                <input
-                                    type="text"
-                                    name="login"
-                                    maxlength="50"
+                                <input type="text" name="login" maxlength="50"
                                     value="<?php echo htmlspecialchars($dados['login'], ENT_QUOTES, 'UTF-8'); ?>"
-                                    pattern="[a-zA-Z0-9._\-]{3,50}"
-                                    required
-                                >
+                                    pattern="[a-zA-Z0-9._\-]{3,50}" required>
                             </div>
                         </div>
                     </div>
@@ -281,12 +281,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['atualizar_usuario']))
                         <div class="usuarios-grid">
                             <div>
                                 <label>Nova Senha</label>
-                                <input type="password" name="senha" maxlength="128" placeholder="Deixe em branco para manter a atual">
+                                <input type="password" name="senha" maxlength="128"
+                                    placeholder="Deixe em branco para manter a atual">
                                 <div class="usuarios-dica">Mín. 8 caracteres, maiúscula, minúscula, número e especial.</div>
                             </div>
                             <div>
                                 <label>Confirmar Nova Senha</label>
-                                <input type="password" name="confirmar_senha" maxlength="128" placeholder="Repita a nova senha">
+                                <input type="password" name="confirmar_senha" maxlength="128"
+                                    placeholder="Repita a nova senha">
                             </div>
                         </div>
                     </div>
@@ -297,15 +299,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['atualizar_usuario']))
                             <div>
                                 <label>Tipo de Usuário *</label>
                                 <select name="tipo" required>
-                                    <option value="usuario" <?php echo $dados['tipo'] === 'usuario' ? 'selected' : ''; ?>>Funcionário</option>
-                                    <option value="admin" <?php echo $dados['tipo'] === 'admin' ? 'selected' : ''; ?>>Administrador</option>
+                                    <option value="usuario" <?php echo $dados['tipo'] === 'usuario' ? 'selected' : ''; ?>>
+                                        Funcionário</option>
+                                    <option value="admin" <?php echo $dados['tipo'] === 'admin' ? 'selected' : ''; ?>>
+                                        Administrador</option>
                                 </select>
                             </div>
                             <div>
                                 <label>Status da Conta *</label>
                                 <select name="status" required>
-                                    <option value="ativo" <?php echo $dados['status'] === 'ativo' ? 'selected' : ''; ?>>Ativo</option>
-                                    <option value="inativo" <?php echo $dados['status'] === 'inativo' ? 'selected' : ''; ?>>Inativo</option>
+                                    <option value="ativo" <?php echo $dados['status'] === 'ativo' ? 'selected' : ''; ?>>Ativo
+                                    </option>
+                                    <option value="inativo" <?php echo $dados['status'] === 'inativo' ? 'selected' : ''; ?>>
+                                        Inativo</option>
                                 </select>
                                 <div class="usuarios-dica">Usuários inativos não podem acessar o sistema.</div>
                             </div>
@@ -327,4 +333,5 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['atualizar_usuario']))
     </div>
 
 </body>
+
 </html>

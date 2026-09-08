@@ -31,7 +31,8 @@ $labels_sensor = [
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Alertas — IndustrialOS</title>
+    <title>Alertas — Ákron</title>
+    <link rel="icon" type="image/svg+xml" href="../../../public/assets/img/logo.svg">
     <link rel="stylesheet" href="../../../public/assets/css/style.css">
     <link rel="stylesheet" href="../../../public/assets/css/graficos.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -41,7 +42,13 @@ $labels_sensor = [
 <body>
 
     <div class="topbar">
-        <div class="marca">IndustrialOS — Alertas</div>
+        <div class="marca">
+            <img src="../../../public/assets/img/logo.svg" alt="Ákron" class="marca-logo">
+            <div class="marca-texto">
+                <span class="marca-nome">ÁKRON</span>
+                <span class="marca-secao">Alertas</span>
+            </div>
+        </div>
         <div class="usuario-info">
             Usuário: <strong><?php echo htmlspecialchars($_SESSION['usuario_nome']); ?></strong>
             | Tipo: <?php echo $eh_admin ? 'Administrador' : 'Funcionário'; ?>
@@ -91,7 +98,7 @@ $labels_sensor = [
                 [<?php echo (int) $contagem['critico']; ?>, <?php echo (int) $contagem['atencao']; ?>, <?php echo (int) $contagem['info']; ?>],
                 'Alertas ativos',
                 'Alertas ativos por severidade',
-                ['rgba(255, 93, 108, 0.7)', 'rgba(255, 176, 32, 0.7)', 'rgba(46, 168, 255, 0.7)']
+                ['rgba(229, 99, 111, 0.7)', 'rgba(224, 168, 63, 0.7)', 'rgba(106, 137, 167, 0.7)']
             );
         </script>
 

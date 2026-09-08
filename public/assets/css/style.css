@@ -1,27 +1,39 @@
 /* ============================================================
-   style.css — Base do sistema (IndustrialOS)
+   style.css — Base do sistema Ákron
    Variáveis, reset e componentes reaproveitados em TODAS as
    páginas. Cada view também carrega um CSS próprio (ex:
    painel.css, graficos.css) só com o que é específico dela.
+
+   Identidade: Ákron (Ἄκρον) — "o ponto mais alto". Paleta em
+   tons de azul acinzentado/chumbo, sóbria e corporativa.
    ============================================================ */
 
 :root {
-    --cor-fundo: #0f1620;
-    --cor-fundo-card: #16202c;
-    --cor-fundo-card-alt: #1c2836;
-    --cor-borda: #26343f;
-    --cor-texto: #e6edf3;
-    --cor-texto-suave: #9fb1c1;
-    --cor-primaria: #2ea8ff;
-    --cor-primaria-escura: #1c7fd1;
-    --cor-sucesso: #2fd48b;
-    --cor-sucesso-fundo: rgba(47, 212, 139, 0.12);
-    --cor-erro: #ff5d6c;
-    --cor-erro-fundo: rgba(255, 93, 108, 0.12);
-    --cor-alerta: #ffb020;
-    --cor-alerta-fundo: rgba(255, 176, 32, 0.12);
+    --cor-fundo: #0d1218;
+    --cor-fundo-card: #161f29;
+    --cor-fundo-card-alt: #1d2733;
+    --cor-borda: #2a3846;
+    --cor-texto: #e9eef3;
+    --cor-texto-suave: #9fb0c0;
+    --cor-texto-fraco: #6f8296;
+
+    /* Azul Acinzentado Clássico / Azul Chumbo (identidade Ákron) */
+    --cor-primaria: #6A89A7;
+    --cor-primaria-clara: #8CA6BE;
+    --cor-primaria-escura: #4F6B85;
+    --cor-secundaria: #7393B3;
+
+    --cor-sucesso: #3fc98a;
+    --cor-sucesso-fundo: rgba(63, 201, 138, 0.12);
+    --cor-erro: #e5636f;
+    --cor-erro-fundo: rgba(229, 99, 111, 0.12);
+    --cor-alerta: #e0a83f;
+    --cor-alerta-fundo: rgba(224, 168, 63, 0.12);
+
     --raio: 10px;
+    --raio-peq: 6px;
     --sombra: 0 8px 24px rgba(0, 0, 0, 0.35);
+    --sombra-suave: 0 2px 10px rgba(0, 0, 0, 0.25);
     --fonte: 'Segoe UI', Roboto, Arial, sans-serif;
 }
 
@@ -38,17 +50,21 @@ body {
 }
 
 a {
-    color: var(--cor-primaria);
+    color: var(--cor-primaria-clara);
     text-decoration: none;
 }
 
 a:hover {
+    color: var(--cor-primaria);
     text-decoration: underline;
 }
 
-h1, h2, h3 {
+h1,
+h2,
+h3 {
     font-weight: 600;
     margin-top: 0;
+    letter-spacing: 0.2px;
 }
 
 hr {
@@ -57,25 +73,70 @@ hr {
     margin: 20px 0;
 }
 
+code {
+    background: var(--cor-fundo-card-alt);
+    border: 1px solid var(--cor-borda);
+    border-radius: 4px;
+    padding: 1px 6px;
+    font-size: 0.85em;
+}
+
 /* ── Barra superior padrão de todas as telas internas ───────── */
 .topbar {
     display: flex;
     justify-content: space-between;
     align-items: center;
+    gap: 16px;
     background: var(--cor-fundo-card);
     border-bottom: 1px solid var(--cor-borda);
-    padding: 14px 28px;
+    padding: 12px 28px;
+    box-shadow: var(--sombra-suave);
+    position: sticky;
+    top: 0;
+    z-index: 10;
 }
 
 .topbar .marca {
+    display: flex;
+    align-items: center;
+    gap: 10px;
     font-weight: 700;
-    letter-spacing: 0.5px;
+    letter-spacing: 0.3px;
+    color: var(--cor-texto);
+    white-space: nowrap;
+}
+
+.topbar .marca-logo {
+    height: 34px;
+    width: auto;
+    display: block;
+    flex-shrink: 0;
+}
+
+.topbar .marca-texto {
+    display: flex;
+    flex-direction: column;
+    line-height: 1.15;
+}
+
+.topbar .marca-texto .marca-nome {
+    font-size: 1rem;
+    font-weight: 700;
     color: var(--cor-texto);
 }
 
+.topbar .marca-texto .marca-secao {
+    font-size: 0.72rem;
+    font-weight: 500;
+    letter-spacing: 0.4px;
+    color: var(--cor-primaria-clara);
+    text-transform: uppercase;
+}
+
 .topbar .usuario-info {
-    font-size: 0.9rem;
+    font-size: 0.88rem;
     color: var(--cor-texto-suave);
+    text-align: right;
 }
 
 .topbar .usuario-info strong {
@@ -98,35 +159,55 @@ hr {
     margin-bottom: 20px;
 }
 
+.card h2 {
+    font-size: 1.1rem;
+    margin-bottom: 16px;
+}
+
 /* ── Botões ──────────────────────────────────────────────────── */
-button, .btn {
+button,
+.btn {
     font-family: var(--fonte);
     background: var(--cor-primaria);
-    color: #06111c;
+    color: #0a121a;
     border: none;
     border-radius: 8px;
     padding: 10px 18px;
     font-weight: 600;
+    font-size: 0.95rem;
     cursor: pointer;
-    transition: background 0.15s ease, transform 0.05s ease;
+    transition: background 0.15s ease, transform 0.05s ease, box-shadow 0.15s ease;
 }
 
-button:hover, .btn:hover {
+button:hover,
+.btn:hover {
     background: var(--cor-primaria-escura);
+    color: var(--cor-texto);
     text-decoration: none;
 }
 
-button:active, .btn:active {
+button:active,
+.btn:active {
     transform: translateY(1px);
+}
+
+button:focus-visible,
+.btn:focus-visible,
+a:focus-visible,
+input:focus-visible,
+select:focus-visible {
+    outline: 2px solid var(--cor-primaria-clara);
+    outline-offset: 2px;
 }
 
 button.btn-perigo {
     background: var(--cor-erro);
-    color: #240007;
+    color: #29070a;
 }
 
 button.btn-perigo:hover {
-    background: #d8404d;
+    background: #c94e59;
+    color: #fff;
 }
 
 button.btn-secundario {
@@ -137,6 +218,7 @@ button.btn-secundario {
 
 button.btn-secundario:hover {
     background: var(--cor-fundo-card-alt);
+    color: var(--cor-texto);
 }
 
 /* ── Formulários ─────────────────────────────────────────────── */
@@ -147,7 +229,9 @@ label {
     margin-bottom: 6px;
 }
 
-input, select, textarea {
+input,
+select,
+textarea {
     font-family: var(--fonte);
     width: 100%;
     background: var(--cor-fundo);
@@ -156,11 +240,24 @@ input, select, textarea {
     border-radius: 8px;
     padding: 10px 12px;
     font-size: 0.95rem;
+    transition: border-color 0.15s ease;
 }
 
-input:focus, select:focus, textarea:focus {
+input:focus,
+select:focus,
+textarea:focus {
     outline: none;
     border-color: var(--cor-primaria);
+}
+
+input:disabled,
+select:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+}
+
+input::placeholder {
+    color: var(--cor-texto-fraco);
 }
 
 fieldset {
@@ -185,7 +282,8 @@ table {
     overflow: hidden;
 }
 
-th, td {
+th,
+td {
     padding: 10px 12px;
     text-align: left;
     border-bottom: 1px solid var(--cor-borda);
@@ -200,12 +298,22 @@ th {
     letter-spacing: 0.4px;
 }
 
+tbody tr {
+    transition: background 0.12s ease;
+}
+
+tbody tr:hover {
+    background: rgba(106, 137, 167, 0.06);
+}
+
 tr:last-child td {
     border-bottom: none;
 }
 
 /* ── Mensagens de feedback ───────────────────────────────────── */
-.msg-sucesso, .msg-erro, .msg-alerta {
+.msg-sucesso,
+.msg-erro,
+.msg-alerta {
     border-radius: var(--raio);
     padding: 12px 16px;
     margin-bottom: 18px;
@@ -215,19 +323,25 @@ tr:last-child td {
 .msg-sucesso {
     background: var(--cor-sucesso-fundo);
     color: var(--cor-sucesso);
-    border: 1px solid rgba(47, 212, 139, 0.35);
+    border: 1px solid rgba(63, 201, 138, 0.35);
 }
 
 .msg-erro {
     background: var(--cor-erro-fundo);
     color: var(--cor-erro);
-    border: 1px solid rgba(255, 93, 108, 0.35);
+    border: 1px solid rgba(229, 99, 111, 0.35);
 }
 
 .msg-alerta {
     background: var(--cor-alerta-fundo);
     color: var(--cor-alerta);
-    border: 1px solid rgba(255, 176, 32, 0.35);
+    border: 1px solid rgba(224, 168, 63, 0.35);
+}
+
+.msg-vazio {
+    color: var(--cor-texto-suave);
+    font-style: italic;
+    padding: 6px 0;
 }
 
 /* ── Badges de status ────────────────────────────────────────── */
@@ -252,9 +366,21 @@ tr:last-child td {
 /* ── Navegação de voltar / rodapé de página ──────────────────── */
 .nav-rodape {
     margin-top: 24px;
+    padding-top: 20px;
+    border-top: 1px solid var(--cor-borda);
     font-size: 0.9rem;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
 }
 
-.nav-rodape a {
-    margin-right: 16px;
+/* ── Rodapé de marca (fim das páginas internas) ──────────────── */
+.rodape-marca {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 10px 20px 30px;
+    text-align: center;
+    font-size: 0.75rem;
+    color: var(--cor-texto-fraco);
+    letter-spacing: 0.3px;
 }

@@ -17,7 +17,6 @@ require_once __DIR__ . '/../../includes/auth.php';
 exigirLogin();
 
 require_once __DIR__ . '/../config/conexao.php';
-require_once __DIR__ . '/../models/DadosExemplo.php';
 
 header('Content-Type: application/json; charset=utf-8');
 
@@ -48,12 +47,6 @@ try {
     $leituras = $stmt->fetchAll(PDO::FETCH_ASSOC);
 } catch (PDOException $e) {
     $leituras = [];
-}
-
-// Base de dados de exemplo enquanto o banco real não está populado,
-// para o gráfico continuar funcional durante a atualização em tempo real.
-if (empty($leituras)) {
-    $leituras = gerarLeiturasExemplo($sensor_sel, $horas);
 }
 
 echo json_encode([

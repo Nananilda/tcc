@@ -81,14 +81,20 @@ $csrf_token = $_SESSION['csrf_token'];
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>IndustrialOS — Sistema de Monitoramento</title>
+    <title>Ákron — Sistema de Monitoramento</title>
+    <link rel="icon" type="image/svg+xml" href="public/assets/img/logo.svg">
     <link rel="stylesheet" href="public/assets/css/style.css">
     <link rel="stylesheet" href="public/assets/css/login.css">
 </head>
 <body class="tela-login">
 
         <div class="login-titulo-sistema">Sistema de Monitoramento Industrial v2.0</div>
-    
+
+    <div class="login-marca">
+        <img src="public/assets/img/logo.svg" alt="Ákron">
+        <div class="login-marca-nome">ÁKRON</div>
+        <div class="login-marca-tagline">Visão de ponta a ponta para sua operação</div>
+    </div>
 
     <div class="login-box">
         <h2>autenticação</h2>

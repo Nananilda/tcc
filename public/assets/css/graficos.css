@@ -60,9 +60,17 @@
     border: 1px solid var(--cor-borda);
 }
 
-.card-severidade.critico   { background: var(--cor-erro-fundo); }
-.card-severidade.atencao   { background: var(--cor-alerta-fundo); }
-.card-severidade.info      { background: rgba(46, 168, 255, 0.12); }
+.card-severidade.critico {
+    background: var(--cor-erro-fundo);
+}
+
+.card-severidade.atencao {
+    background: var(--cor-alerta-fundo);
+}
+
+.card-severidade.info {
+    background: rgba(106, 137, 167, 0.16);
+}
 
 .card-severidade .valor {
     font-size: 1.6rem;

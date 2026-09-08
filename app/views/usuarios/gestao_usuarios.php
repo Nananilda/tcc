@@ -10,17 +10,26 @@ exigirAdmin();
 ?>
 <!DOCTYPE html>
 <html lang="pt-BR">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gestão de Usuários — IndustrialOS</title>
+    <title>Gestão de Usuários — Ákron</title>
+    <link rel="icon" type="image/svg+xml" href="../../../public/assets/img/logo.svg">
     <link rel="stylesheet" href="../../../public/assets/css/style.css">
     <link rel="stylesheet" href="../../../public/assets/css/usuarios.css">
 </head>
+
 <body>
 
     <div class="topbar">
-        <div class="marca">IndustrialOS — Usuários</div>
+        <div class="marca">
+            <img src="../../../public/assets/img/logo.svg" alt="Ákron" class="marca-logo">
+            <div class="marca-texto">
+                <span class="marca-nome">ÁKRON</span>
+                <span class="marca-secao">Usuários</span>
+            </div>
+        </div>
         <div class="usuario-info">
             Usuário: <strong><?php echo htmlspecialchars($_SESSION['usuario_nome'], ENT_QUOTES, 'UTF-8'); ?></strong>
             | Tipo: <strong>Administrador</strong>
@@ -54,4 +63,5 @@ exigirAdmin();
     </div>
 
 </body>
+
 </html>

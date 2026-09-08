@@ -75,38 +75,4 @@ class AlertaModel
         $stmt->execute([':id' => $id]);
         return $stmt->rowCount() > 0;
     }
-
-    // ── Dados de exemplo (base para o gráfico funcionar sem o banco pronto) ──
-
-    /**
-     * Enquanto a tabela `alertas` não existe/está vazia no banco real,
-     * este método devolve um conjunto de dados de exemplo para que a
-     * tela e os gráficos tenham algo para exibir.
-     */
-    public function gerarDadosExemplo(): array
-    {
-        $agora = time();
-        return [
-            ['id' => 1, 'sensor_tipo' => 'temperatura', 'severidade' => 'critico', 'mensagem' => 'Temperatura acima do limite de segurança', 'valor' => 78.4, 'resolvido' => 0, 'criado_em' => date('Y-m-d H:i:s', $agora - 600)],
-            ['id' => 2, 'sensor_tipo' => 'qualidade_ar', 'severidade' => 'atencao', 'mensagem' => 'Qualidade do ar em nível moderado', 'valor' => 132, 'resolvido' => 0, 'criado_em' => date('Y-m-d H:i:s', $agora - 1800)],
-            ['id' => 3, 'sensor_tipo' => 'ruido', 'severidade' => 'atencao', 'mensagem' => 'Ruído acima do recomendado para o turno', 'valor' => 87.2, 'resolvido' => 0, 'criado_em' => date('Y-m-d H:i:s', $agora - 3600)],
-            ['id' => 4, 'sensor_tipo' => 'umidade', 'severidade' => 'info', 'mensagem' => 'Umidade retornou ao patamar normal', 'valor' => 54.1, 'resolvido' => 1, 'criado_em' => date('Y-m-d H:i:s', $agora - 7200)],
-            ['id' => 5, 'sensor_tipo' => 'pressao', 'severidade' => 'info', 'mensagem' => 'Leitura de pressão registrada normalmente', 'valor' => 1013, 'resolvido' => 1, 'criado_em' => date('Y-m-d H:i:s', $agora - 10800)],
-            ['id' => 6, 'sensor_tipo' => 'uv', 'severidade' => 'critico', 'mensagem' => 'Índice UV muito alto na área externa', 'valor' => 11.3, 'resolvido' => 0, 'criado_em' => date('Y-m-d H:i:s', $agora - 14400)],
-        ];
-    }
-
-    /**
-     * Mesma lógica de contarPorSeveridade(), mas a partir dos dados de exemplo.
-     */
-    public function contarPorSeveridadeExemplo(): array
-    {
-        $contagem = ['critico' => 0, 'atencao' => 0, 'info' => 0];
-        foreach ($this->gerarDadosExemplo() as $a) {
-            if ((int) $a['resolvido'] === 0) {
-                $contagem[$a['severidade']]++;
-            }
-        }
-        return $contagem;
-    }
 }

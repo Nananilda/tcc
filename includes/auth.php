@@ -180,10 +180,15 @@ function validarLogin(string $login): bool
 function validarSenha(string $senha): array
 {
     $erros = [];
-    if (strlen($senha) < 8)             $erros[] = 'Mínimo 8 caracteres.';
-    if (!preg_match('/[A-Z]/', $senha)) $erros[] = 'Pelo menos uma letra maiúscula.';
-    if (!preg_match('/[a-z]/', $senha)) $erros[] = 'Pelo menos uma letra minúscula.';
-    if (!preg_match('/[0-9]/', $senha)) $erros[] = 'Pelo menos um número.';
-    if (!preg_match('/[\W_]/', $senha)) $erros[] = 'Pelo menos um caractere especial.';
+    if (strlen($senha) < 8)
+        $erros[] = 'Mínimo 8 caracteres.';
+    if (!preg_match('/[A-Z]/', $senha))
+        $erros[] = 'Pelo menos uma letra maiúscula.';
+    if (!preg_match('/[a-z]/', $senha))
+        $erros[] = 'Pelo menos uma letra minúscula.';
+    if (!preg_match('/[0-9]/', $senha))
+        $erros[] = 'Pelo menos um número.';
+    if (!preg_match('/[\W_]/', $senha))
+        $erros[] = 'Pelo menos um caractere especial.';
     return $erros;
 }

@@ -18,7 +18,9 @@ $filtro_max = $filtro_max ?? '';
 
 <head>
     <meta charset="UTF-8">
-    <title>Relatório de Qualidade</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Relatório de Qualidade — Ákron</title>
+    <link rel="icon" type="image/svg+xml" href="<?php echo BASE_URL; ?>/public/assets/img/logo.svg">
     <link rel="stylesheet" href="<?php echo BASE_URL; ?>/public/assets/css/style.css">
     <link rel="stylesheet" href="<?php echo BASE_URL; ?>/public/assets/css/relatorios.css">
 </head>
@@ -26,7 +28,13 @@ $filtro_max = $filtro_max ?? '';
 <body>
 
     <div class="topbar">
-        <div class="marca">IndustrialOS — Relatórios</div>
+        <div class="marca">
+            <img src="<?php echo BASE_URL; ?>/public/assets/img/logo.svg" alt="Ákron" class="marca-logo">
+            <div class="marca-texto">
+                <span class="marca-nome">ÁKRON</span>
+                <span class="marca-secao">Relatórios</span>
+            </div>
+        </div>
         <div class="usuario-info">
             Usuário: <strong><?php echo htmlspecialchars($_SESSION['usuario_nome'] ?? ''); ?></strong>
             | Tipo: <?php echo htmlspecialchars($_SESSION['usuario_tipo'] ?? ''); ?>

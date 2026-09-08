@@ -21,6 +21,11 @@
     border: 1px solid var(--cor-borda);
     border-radius: var(--raio);
     padding: 16px 18px;
+    transition: border-color 0.15s ease;
+}
+
+.stat-card:hover {
+    border-color: var(--cor-primaria);
 }
 
 .stat-card .stat-valor {
@@ -65,7 +70,20 @@
 }
 
 .painel-logout {
-    display: inline-block;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
     margin-top: 30px;
+    padding: 9px 16px;
+    border: 1px solid var(--cor-borda);
+    border-radius: 8px;
+    color: var(--cor-texto-suave);
+    font-size: 0.9rem;
+    transition: border-color 0.15s ease, color 0.15s ease;
+}
+
+.painel-logout:hover {
+    border-color: var(--cor-erro);
     color: var(--cor-erro);
+    text-decoration: none;
 }

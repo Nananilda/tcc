@@ -47,7 +47,7 @@
 }
 
 .usuarios-perigo-box {
-    border: 1px solid rgba(255, 93, 108, 0.35);
+    border: 1px solid rgba(229, 99, 111, 0.35);
     background: var(--cor-erro-fundo);
     border-radius: var(--raio);
     padding: 16px 18px;

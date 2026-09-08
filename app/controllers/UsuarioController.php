@@ -1,6 +1,3 @@
-<!-- falta estilizar -->
-
-
 <?php
 /**
  * UsuarioController.php

@@ -2,19 +2,49 @@
 
 body.tela-login {
     display: flex;
+    flex-direction: column;
     align-items: center;
     justify-content: center;
     min-height: 100vh;
-    background: radial-gradient(circle at top, #16202c 0%, #0f1620 70%);
+    background: radial-gradient(circle at top, #182330 0%, #0d1218 70%);
+    padding: 20px;
 }
 
 .login-titulo-sistema {
     position: fixed;
     top: 20px;
     left: 28px;
-    color: var(--cor-texto-suave);
-    font-size: 0.85rem;
+    color: var(--cor-texto-fraco);
+    font-size: 0.8rem;
     letter-spacing: 0.5px;
+}
+
+.login-marca {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-bottom: 28px;
+}
+
+.login-marca img {
+    height: 84px;
+    width: auto;
+    margin-bottom: 10px;
+    filter: drop-shadow(0 6px 18px rgba(106, 137, 167, 0.25));
+}
+
+.login-marca .login-marca-nome {
+    font-size: 1.6rem;
+    font-weight: 700;
+    letter-spacing: 4px;
+    color: var(--cor-texto);
+}
+
+.login-marca .login-marca-tagline {
+    font-size: 0.8rem;
+    color: var(--cor-texto-suave);
+    letter-spacing: 0.5px;
+    margin-top: 2px;
 }
 
 .login-box {
@@ -31,8 +61,8 @@ body.tela-login {
     text-align: center;
     text-transform: uppercase;
     letter-spacing: 1px;
-    font-size: 1.1rem;
-    color: var(--cor-primaria);
+    font-size: 1.05rem;
+    color: var(--cor-primaria-clara);
     margin-bottom: 22px;
 }
 
@@ -50,5 +80,5 @@ body.tela-login {
     margin-top: 18px;
     text-align: center;
     font-size: 0.78rem;
-    color: var(--cor-texto-suave);
+    color: var(--cor-texto-fraco);
 }

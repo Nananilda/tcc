@@ -1,6 +1,3 @@
-<!-- falta estilizar e arrumar a volta para a pagina -->
-
-
 <?php
 require_once __DIR__ . '/../../includes/auth.php';
 exigirLogin(); // já chama session_start() internamente

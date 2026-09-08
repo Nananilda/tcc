@@ -4,7 +4,6 @@ require_once '../../../includes/auth.php';
 exigirLogin();
 
 require_once '../../config/conexao.php';
-require_once '../../models/DadosExemplo.php';
 
 // Sensores disponíveis com unidades
 $sensores = [
@@ -29,7 +28,7 @@ if (!in_array($horas, [6, 12, 24, 48, 168])) {
 }
 
 // Busca leituras do sensor selecionado
-// Tabela esperada: leitura_sensor (sensor_tipo, valor, lido_em)
+// Tabela: leitura_sensor (sensor_tipo, valor, lido_em)
 $leituras = [];
 try {
     $stmt = $pdo->prepare("
@@ -43,15 +42,8 @@ try {
     $stmt->execute([':tipo' => $sensor_sel, ':horas' => $horas]);
     $leituras = $stmt->fetchAll(PDO::FETCH_ASSOC);
 } catch (PDOException $e) {
-    // Tabela ainda não existe: sem dados
+    // Tabela ainda não existe ou erro de consulta: sem dados
     $leituras = [];
-}
-
-// Base de dados de exemplo: enquanto a tabela leitura_sensor não existe/está
-// vazia no banco real, usamos dados de exemplo para o gráfico ficar funcional.
-$usando_dados_exemplo = empty($leituras);
-if ($usando_dados_exemplo) {
-    $leituras = gerarLeiturasExemplo($sensor_sel, $horas);
 }
 
 $labels = array_column($leituras, 'lido_em');
@@ -63,7 +55,9 @@ $info = $sensores[$sensor_sel];
 
 <head>
     <meta charset="UTF-8">
-    <title>Gráfico — <?php echo htmlspecialchars($info['label']); ?></title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gráfico — <?php echo htmlspecialchars($info['label']); ?> — Ákron</title>
+    <link rel="icon" type="image/svg+xml" href="../../../public/assets/img/logo.svg">
     <link rel="stylesheet" href="../../../public/assets/css/style.css">
     <link rel="stylesheet" href="../../../public/assets/css/graficos.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -73,7 +67,13 @@ $info = $sensores[$sensor_sel];
 <body>
 
     <div class="topbar">
-        <div class="marca">IndustrialOS — Gráficos</div>
+        <div class="marca">
+            <img src="../../../public/assets/img/logo.svg" alt="Ákron" class="marca-logo">
+            <div class="marca-texto">
+                <span class="marca-nome">ÁKRON</span>
+                <span class="marca-secao">Gráficos</span>
+            </div>
+        </div>
         <div class="usuario-info">
             Usuário: <strong><?php echo htmlspecialchars($_SESSION['usuario_nome']); ?></strong>
             | Tipo: <?php echo htmlspecialchars($_SESSION['usuario_tipo']); ?>
@@ -113,20 +113,18 @@ $info = $sensores[$sensor_sel];
 
         <h2>
             <?php echo htmlspecialchars($info['label']); ?> — últimas <?php echo $horas; ?> h
-            <span class="grafico-status-tempo-real">
-                <span class="ponto"></span> tempo real
-            </span>
+            <?php if (!empty($leituras)): ?>
+                <span class="grafico-status-tempo-real">
+                    <span class="ponto"></span> tempo real
+                </span>
+            <?php endif; ?>
         </h2>
 
-        <?php if ($usando_dados_exemplo): ?>
-            <div class="msg-alerta">
-                Exibindo dados de exemplo (base) — a tabela <code>leitura_sensor</code> ainda não tem leituras reais no
-                banco.
-            </div>
-        <?php endif; ?>
-
         <?php if (empty($leituras)): ?>
-            <p><em>Nenhuma leitura encontrada para este sensor no período selecionado.</em></p>
+            <div class="card">
+                <p class="msg-vazio">Nenhuma leitura registrada no banco de dados para este sensor no período selecionado.
+                </p>
+            </div>
         <?php else: ?>
             <div class="card grafico-wrapper">
                 <canvas id="graficoSensor" height="350"></canvas>

@@ -14,11 +14,11 @@
  * muda a cada aula — confirme com o professor/rede antes de rodar).
  */
 
-$host   = "localhost"; // verificar toda aula
-$banco  = "banco_tcc";
+$host = "localhost"; // verificar toda aula
+$banco = "banco_tcc";
 $usuario = "root";
-$senha  = "123456";
-$port   = "3306";
+$senha = "123456";
+$port = "3306";
 
 try {
     $pdo = new PDO(
@@ -26,9 +26,9 @@ try {
         $usuario,
         $senha,
         [
-            PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION,
+            PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
             PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
-            PDO::ATTR_EMULATE_PREPARES   => false,
+            PDO::ATTR_EMULATE_PREPARES => false,
         ]
     );
 } catch (PDOException $e) {
@@ -36,5 +36,5 @@ try {
 }
 
 if (!defined('BASE_URL')) {
-    define('BASE_URL', '/tcc'); 
+    define('BASE_URL', '/tcc');
 }

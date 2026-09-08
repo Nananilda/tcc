@@ -13,11 +13,11 @@ exigirLogin();
 require_once '../../config/conexao.php';
 require_once '../../controllers/SensorController.php';
 
-$eh_admin   = ehAdmin();
+$eh_admin = ehAdmin();
 $controller = new SensorController($pdo, $eh_admin);
 
-$erros       = [];
-$sensores    = $controller->listarSensores($erros);
+$erros = [];
+$sensores = $controller->listarSensores($erros);
 $labels_tipo = SensorController::TIPOS_VALIDOS;
 ?>
 <!DOCTYPE html>
@@ -25,7 +25,9 @@ $labels_tipo = SensorController::TIPOS_VALIDOS;
 
 <head>
     <meta charset="UTF-8">
-    <title>Sensores — Consulta</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Consulta de Sensores — Ákron</title>
+    <link rel="icon" type="image/svg+xml" href="../../../public/assets/img/logo.svg">
     <link rel="stylesheet" href="../../../public/assets/css/style.css">
     <link rel="stylesheet" href="../../../public/assets/css/sensores.css">
 </head>
@@ -33,7 +35,13 @@ $labels_tipo = SensorController::TIPOS_VALIDOS;
 <body>
 
     <div class="topbar">
-        <div class="marca">IndustrialOS — Sensores</div>
+        <div class="marca">
+            <img src="../../../public/assets/img/logo.svg" alt="Ákron" class="marca-logo">
+            <div class="marca-texto">
+                <span class="marca-nome">ÁKRON</span>
+                <span class="marca-secao">Sensores</span>
+            </div>
+        </div>
         <div class="usuario-info">
             Usuário: <strong><?php echo htmlspecialchars($_SESSION['usuario_nome']); ?></strong>
             | Tipo: <?php echo $eh_admin ? 'Administrador' : 'Funcionário'; ?>
@@ -44,7 +52,8 @@ $labels_tipo = SensorController::TIPOS_VALIDOS;
 
         <h1>Consulta de Sensores</h1>
         <p>Lista somente leitura. Para cadastrar ou alterar sensores, acesse a
-            <a href="gestao_sensores.php">Gestão de Sensores</a>.</p>
+            <a href="gestao_sensores.php">Gestão de Sensores</a>.
+        </p>
 
         <?php if (!empty($erros)): ?>
             <div class="msg-erro">

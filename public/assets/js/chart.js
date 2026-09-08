@@ -1,5 +1,5 @@
 /* ============================================================
-   chart.js — utilitários de gráficos (IndustrialOS)
+   chart.js — utilitários de gráficos (Ákron)
    Usado pelas views em app/views/graficos/*.php
    Depende da lib Chart.js (carregada via CDN nas views).
    ============================================================ */
@@ -23,8 +23,8 @@ function criarGraficoLinha(canvasId, labels, valores, rotulo, titulo) {
             datasets: [{
                 label: rotulo,
                 data: valores,
-                borderColor: 'rgb(46, 168, 255)',
-                backgroundColor: 'rgba(46, 168, 255, 0.15)',
+                borderColor: 'rgb(140, 166, 190)',
+                backgroundColor: 'rgba(106, 137, 167, 0.18)',
                 tension: 0.3,
                 fill: true,
                 pointRadius: valores.length > 100 ? 0 : 3
@@ -33,12 +33,12 @@ function criarGraficoLinha(canvasId, labels, valores, rotulo, titulo) {
         options: {
             responsive: true,
             plugins: {
-                legend: { position: 'top', labels: { color: '#e6edf3' } },
-                title: { display: true, text: titulo, color: '#e6edf3' }
+                legend: { position: 'top', labels: { color: '#e9eef3' } },
+                title: { display: true, text: titulo, color: '#e9eef3' }
             },
             scales: {
-                x: { ticks: { maxTicksLimit: 12, maxRotation: 45, color: '#9fb1c1' }, grid: { color: '#26343f' } },
-                y: { ticks: { color: '#9fb1c1' }, grid: { color: '#26343f' } }
+                x: { ticks: { maxTicksLimit: 12, maxRotation: 45, color: '#9fb0c0' }, grid: { color: '#2a3846' } },
+                y: { ticks: { color: '#9fb0c0' }, grid: { color: '#2a3846' } }
             }
         }
     });
@@ -58,7 +58,7 @@ function criarGraficoBarras(canvasId, labels, valores, rotulo, titulo, cores) {
             datasets: [{
                 label: rotulo,
                 data: valores,
-                backgroundColor: cores || 'rgba(255, 176, 32, 0.6)',
+                backgroundColor: cores || 'rgba(106, 137, 167, 0.6)',
                 borderRadius: 6
             }]
         },
@@ -66,11 +66,11 @@ function criarGraficoBarras(canvasId, labels, valores, rotulo, titulo, cores) {
             responsive: true,
             plugins: {
                 legend: { display: false },
-                title: { display: true, text: titulo, color: '#e6edf3' }
+                title: { display: true, text: titulo, color: '#e9eef3' }
             },
             scales: {
-                x: { ticks: { color: '#9fb1c1' }, grid: { display: false } },
-                y: { beginAtZero: true, ticks: { color: '#9fb1c1' }, grid: { color: '#26343f' } }
+                x: { ticks: { color: '#9fb0c0' }, grid: { display: false } },
+                y: { beginAtZero: true, ticks: { color: '#9fb0c0' }, grid: { color: '#2a3846' } }
             }
         }
     });
