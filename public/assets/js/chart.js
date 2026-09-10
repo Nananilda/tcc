@@ -1,8 +1,6 @@
-/* ============================================================
-   chart.js — utilitários de gráficos (Ákron)
-   Usado pelas views em app/views/graficos/*.php
-   Depende da lib Chart.js (carregada via CDN nas views).
-   ============================================================ */
+/* chart.js — utilitários de gráficos (Ákron)
+Usado pelas views em app/views/graficos/*.php
+Depende da lib Chart.js (carregada via CDN nas views).
 
 /**
  * Cria um gráfico de linha para leituras de um sensor ao longo do tempo.
@@ -12,6 +10,7 @@
  * @param {string} rotulo  Ex: "Temperatura (°C)"
  * @param {string} titulo
  */
+
 function criarGraficoLinha(canvasId, labels, valores, rotulo, titulo) {
     const canvas = document.getElementById(canvasId);
     if (!canvas) return null;
@@ -44,8 +43,7 @@ function criarGraficoLinha(canvasId, labels, valores, rotulo, titulo) {
     });
 }
 
-/**
- * Cria um gráfico de barras (usado na tela de alertas: contagem por severidade/tipo).
+/* Cria um gráfico de barras (usado na tela de alertas: contagem por severidade/tipo).
  */
 function criarGraficoBarras(canvasId, labels, valores, rotulo, titulo, cores) {
     const canvas = document.getElementById(canvasId);

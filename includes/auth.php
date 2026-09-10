@@ -45,7 +45,7 @@ function autenticarUsuario(?PDO $pdo, string $login, string $senha): array
     return ['sucesso' => true, 'usuario' => $usuario];
 }
 
-// ─── CSRF ───────────────────────────────────────────────────────────────────
+// CSRF 
 
 function validarCSRF(string $token): bool
 {
@@ -63,7 +63,7 @@ function gerarCSRF(): string
     return $_SESSION['csrf_token'];
 }
 
-// ─── BLOQUEIO POR IP ────────────────────────────────────────────────────────
+// BLOQUEIO POR IP 
 
 /**
  * Verifica bloqueio por tentativas excessivas de login.
@@ -76,7 +76,7 @@ function verificarBloqueioIP(?PDO $pdo, string $ip): bool
     return false;
 }
 
-// ─── LOGS ───────────────────────────────────────────────────────────────────
+// LOGS
 
 /**
  * Registra log de acesso ou ação no sistema no log de erros do PHP.
@@ -91,11 +91,9 @@ function registrarLog(?PDO $pdo, ?int $usuario_id, string $acao, string $descric
     error_log("Log - Usuário: " . ($usuario_id ?? 'anônimo') . " | Ação: $acao | Descrição: $descricao");
 }
 
-// ─── SESSÃO E PERMISSÕES ────────────────────────────────────────────────────
+// SESSÃO E PERMISSÕES
 
-/**
- * Garante que o usuário está autenticado; redireciona caso contrário.
- */
+/* Garante que o usuário está autenticado; redireciona caso contrário.*/
 function exigirLogin(): void
 {
     if (session_status() === PHP_SESSION_NONE) {
@@ -123,9 +121,7 @@ function exigirLogin(): void
     }
 }
 
-/**
- * Exige que o usuário seja administrador.
- */
+/* Exige que o usuário seja administrador.*/
 function exigirAdmin(): void
 {
     exigirLogin();
@@ -140,17 +136,13 @@ function exigirAdmin(): void
     }
 }
 
-/**
- * Verifica se o usuário logado é admin.
- */
+/* Verifica se o usuário logado é admin.*/
 function ehAdmin(): bool
 {
     return isset($_SESSION['usuario_tipo']) && $_SESSION['usuario_tipo'] === 'admin';
 }
 
-/**
- * Encerra sessão com segurança.
- */
+/* Encerra sessão com segurança. */
 function encerrarSessao(): void
 {
     $_SESSION = [];
@@ -169,7 +161,7 @@ function encerrarSessao(): void
     session_destroy();
 }
 
-// ─── VALIDAÇÃO DE DADOS ─────────────────────────────────────────────────────
+// VALIDAÇÃO DE DADOS 
 
 function validarLogin(string $login): bool
 {

@@ -1,12 +1,10 @@
-/* ============================================================
-   style.css — Base do sistema Ákron
+/* style.css — Base do sistema Ákron
    Variáveis, reset e componentes reaproveitados em TODAS as
    páginas. Cada view também carrega um CSS próprio (ex:
    painel.css, graficos.css) só com o que é específico dela.
 
    Identidade: Ákron (Ἄκρον) — "o ponto mais alto". Paleta em
-   tons de azul acinzentado/chumbo, sóbria e corporativa.
-   ============================================================ */
+   tons de azul acinzentado/chumbo, sóbria e corporativa. */
 
 :root {
     --cor-fundo: #0d1218;
@@ -81,7 +79,7 @@ code {
     font-size: 0.85em;
 }
 
-/* ── Barra superior padrão de todas as telas internas ───────── */
+/* Barra superior padrão de todas as telas internas */
 .topbar {
     display: flex;
     justify-content: space-between;
@@ -143,7 +141,7 @@ code {
     color: var(--cor-texto);
 }
 
-/* ── Container geral de conteúdo ─────────────────────────────── */
+/* Container geral de conteúdo */
 .container {
     max-width: 1100px;
     margin: 0 auto;
@@ -164,7 +162,7 @@ code {
     margin-bottom: 16px;
 }
 
-/* ── Botões ──────────────────────────────────────────────────── */
+/* Botões */
 button,
 .btn {
     font-family: var(--fonte);
@@ -221,7 +219,7 @@ button.btn-secundario:hover {
     color: var(--cor-texto);
 }
 
-/* ── Formulários ─────────────────────────────────────────────── */
+/* Formulários */
 label {
     display: block;
     font-size: 0.85rem;
@@ -273,7 +271,7 @@ legend {
     font-weight: 600;
 }
 
-/* ── Tabelas ─────────────────────────────────────────────────── */
+/* Tabelas */
 table {
     width: 100%;
     border-collapse: collapse;
@@ -310,7 +308,7 @@ tr:last-child td {
     border-bottom: none;
 }
 
-/* ── Mensagens de feedback ───────────────────────────────────── */
+/* Mensagens de feedback */
 .msg-sucesso,
 .msg-erro,
 .msg-alerta {
@@ -344,7 +342,7 @@ tr:last-child td {
     padding: 6px 0;
 }
 
-/* ── Badges de status ────────────────────────────────────────── */
+/* Badges de status */
 .badge {
     display: inline-block;
     padding: 3px 10px;
@@ -363,7 +361,7 @@ tr:last-child td {
     color: var(--cor-erro);
 }
 
-/* ── Navegação de voltar / rodapé de página ──────────────────── */
+/* Navegação de voltar / rodapé de página */
 .nav-rodape {
     margin-top: 24px;
     padding-top: 20px;
@@ -374,7 +372,7 @@ tr:last-child td {
     gap: 16px;
 }
 
-/* ── Rodapé de marca (fim das páginas internas) ──────────────── */
+/* Rodapé de marca (fim das páginas internas) */
 .rodape-marca {
     max-width: 1100px;
     margin: 0 auto;

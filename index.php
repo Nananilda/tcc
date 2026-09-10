@@ -15,7 +15,7 @@ $tentativas_bloqueadas = false;
 
 // Verifica bloqueio por tentativas excessivas (5 tentativas em 15 min)
 $ip = $_SERVER['REMOTE_ADDR'];
-// Adicionado: Só executa a função se a variável $pdo for um objeto de conexão válido
+// Só executa a função se a variável $pdo for um objeto de conexão válido
 if ($pdo !== null && function_exists('verificarBloqueioIP') && verificarBloqueioIP($pdo, $ip)) {
     $tentativas_bloqueadas = true;
     $erro = 'Acesso temporariamente bloqueado. Tente novamente em 15 minutos.';
