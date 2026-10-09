@@ -1,168 +1,153 @@
 <?php
-session_start();
-require_once '../../../includes/auth.php';
+/**
+ * app/views/sensores/gestao_sensores.php — Gestão de Sensores.
+ *
+ * Administradores cadastram novos sensores e ativam/desativam os existentes;
+ * os demais usuários veem apenas a lista (o formulário e a coluna "Ação" só
+ * aparecem para admin — e o SensorController também recusa a ação no servidor).
+ * Todos os formulários POST levam um token CSRF.
+ */
+
+require_once __DIR__ . '/../../../includes/auth.php';
 exigirLogin();
-require_once '../../config/conexao.php';
-require_once '../../controllers/SensorController.php';
 
-$eh_admin = ehAdmin();
-$controller = new SensorController($pdo, $eh_admin);
+require_once __DIR__ . '/../../config/conexao.php';
+require_once __DIR__ . '/../../controllers/SensorController.php';
 
+$ehAdmin = ehAdmin();
+$controller = new SensorController($pdo, $ehAdmin);
+
+// Se for um POST (cadastrar ou ativar/desativar), executa antes de listar
 ['mensagem' => $mensagem, 'erros' => $erros] = $controller->processarRequisicao();
 
 $sensores = $controller->listarSensores($erros);
 $csrf_token = gerarCSRF();
-$labels_tipo = SensorController::TIPOS_VALIDOS;
+
+$tituloPagina = 'Gestão de Sensores';
+$secaoTopbar = 'Sensores';
+$cssPagina = ['sensores.css'];
+require __DIR__ . '/../partials/cabecalho.php';
 ?>
-<!DOCTYPE html>
-<html lang="pt-BR">
 
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gestão de Sensores — Ákron</title>
-    <link rel="icon" type="image/svg+xml" href="../../../public/assets/img/logo.svg">
-    <link rel="stylesheet" href="../../../public/assets/css/style.css">
-    <link rel="stylesheet" href="../../../public/assets/css/sensores.css">
-</head>
+<h1>Gestão de Sensores</h1>
 
-<body>
+<?php if ($mensagem): ?>
+    <div class="msg-sucesso" role="status"><?php echo escapar($mensagem); ?></div>
+<?php endif; ?>
 
-    <div class="topbar">
-        <div class="marca">
-            <img src="../../../public/assets/img/logo.svg" alt="Ákron" class="marca-logo">
-            <div class="marca-texto">
-                <span class="marca-nome">ÁKRON</span>
-                <span class="marca-secao">Sensores</span>
-            </div>
-        </div>
-        <div class="usuario-info">
-            Usuário: <strong><?php echo htmlspecialchars($_SESSION['usuario_nome']); ?></strong>
-            | Tipo: <?php echo $eh_admin ? 'Administrador' : 'Funcionário'; ?>
-        </div>
+<?php if (!empty($erros)): ?>
+    <div class="msg-erro" role="alert">
+        <ul>
+            <?php foreach ($erros as $erro): ?>
+                <li><?php echo escapar($erro); ?></li>
+            <?php endforeach; ?>
+        </ul>
     </div>
+<?php endif; ?>
 
-    <div class="container">
+<!-- ── Cadastro de novo sensor (somente admin) ───────────────────────────── -->
+<?php if ($ehAdmin): ?>
+    <div class="card">
+        <h2>Adicionar Novo Sensor</h2>
+        <form method="POST" class="sensores-form-novo">
+            <input type="hidden" name="csrf_token" value="<?php echo escapar($csrf_token); ?>">
+            <input type="hidden" name="acao" value="cadastrar">
 
-        <h1>Gestão de Sensores</h1>
-
-        <?php if ($mensagem): ?>
-            <div class="msg-sucesso"><?php echo $mensagem; ?></div>
-        <?php endif; ?>
-
-        <?php if (!empty($erros)): ?>
-            <div class="msg-erro">
-                <ul><?php foreach ($erros as $e): ?>
-                        <li><?php echo htmlspecialchars($e); ?></li><?php endforeach; ?>
-                </ul>
+            <div>
+                <label for="nome">Nome do sensor</label>
+                <input type="text" id="nome" name="nome" maxlength="100" required placeholder="Ex: Sensor Galpão A">
             </div>
-        <?php endif; ?>
 
-        <!-- ── Cadastro de novo sensor (somente admin) ──────────────────────── -->
-        <?php if ($eh_admin): ?>
-            <div class="card">
-                <h2>Adicionar Novo Sensor</h2>
-                <form method="POST" class="sensores-form-novo">
-                    <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($csrf_token); ?>">
-                    <input type="hidden" name="acao" value="cadastrar">
-
-                    <div>
-                        <label>Nome do sensor</label>
-                        <input type="text" name="nome" maxlength="100" required placeholder="Ex: Sensor Galpão A">
-                    </div>
-
-                    <div>
-                        <label>Tipo</label>
-                        <select name="tipo" required>
-                            <option value="">— selecione —</option>
-                            <?php foreach ($labels_tipo as $v => $l): ?>
-                                <option value="<?php echo $v; ?>"><?php echo $l; ?></option>
-                            <?php endforeach; ?>
-                        </select>
-                    </div>
-
-                    <div>
-                        <label>Localização</label>
-                        <input type="text" name="localizacao" maxlength="150" placeholder="Ex: Setor B, linha 3">
-                    </div>
-
-                    <div>
-                        <label>Status</label>
-                        <select name="status">
-                            <option value="ativo">Ativo</option>
-                            <option value="inativo">Inativo</option>
-                        </select>
-                    </div>
-
-                    <div class="campo-full">
-                        <button type="submit">Cadastrar Sensor</button>
-                    </div>
-                </form>
+            <div>
+                <label for="tipo">Tipo</label>
+                <select id="tipo" name="tipo" required>
+                    <option value="">— selecione —</option>
+                    <?php foreach (SensorModel::TIPOS as $chave => $meta): ?>
+                        <option value="<?php echo escapar($chave); ?>"><?php echo escapar($meta['label']); ?></option>
+                    <?php endforeach; ?>
+                </select>
             </div>
-        <?php endif; ?>
 
-        <!-- ── Lista de sensores ────────────────────────────────────────────── -->
-        <div class="card">
-            <h2>Sensores Cadastrados</h2>
+            <div>
+                <label for="localizacao">Localização</label>
+                <input type="text" id="localizacao" name="localizacao" maxlength="150" placeholder="Ex: Setor B, linha 3">
+            </div>
 
-            <?php if (empty($sensores)): ?>
-                <p><em>Nenhum sensor cadastrado.</em></p>
-            <?php else: ?>
-                <table>
-                    <thead>
+            <div>
+                <label for="status">Status</label>
+                <select id="status" name="status">
+                    <option value="ativo">Ativo</option>
+                    <option value="inativo">Inativo</option>
+                </select>
+            </div>
+
+            <div class="campo-full">
+                <button type="submit">Cadastrar Sensor</button>
+            </div>
+        </form>
+    </div>
+<?php endif; ?>
+
+<!-- ── Lista de sensores ─────────────────────────────────────────────────── -->
+<div class="card">
+    <h2>Sensores Cadastrados</h2>
+
+    <?php if (empty($sensores)): ?>
+        <p class="msg-vazio">Nenhum sensor cadastrado.</p>
+    <?php else: ?>
+        <div class="tabela-rolagem">
+            <table>
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Nome</th>
+                        <th>Tipo</th>
+                        <th>Localização</th>
+                        <th>Status</th>
+                        <th>Cadastrado em</th>
+                        <?php if ($ehAdmin): ?>
+                            <th>Ação</th>
+                        <?php endif; ?>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php foreach ($sensores as $sensor): ?>
+                        <?php $ativo = $sensor['status'] === 'ativo'; ?>
                         <tr>
-                            <th>ID</th>
-                            <th>Nome</th>
-                            <th>Tipo</th>
-                            <th>Localização</th>
-                            <th>Status</th>
-                            <th>Cadastrado em</th>
-                            <?php if ($eh_admin): ?>
-                                <th>Ação</th><?php endif; ?>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <?php foreach ($sensores as $s): ?>
-                            <tr>
-                                <td><?php echo (int) $s['id']; ?></td>
-                                <td><?php echo htmlspecialchars($s['nome']); ?></td>
-                                <td><?php echo htmlspecialchars($labels_tipo[$s['tipo']] ?? $s['tipo']); ?></td>
-                                <td><?php echo htmlspecialchars($s['localizacao'] ?? '—'); ?></td>
+                            <td><?php echo (int) $sensor['id']; ?></td>
+                            <td><?php echo escapar($sensor['nome']); ?></td>
+                            <td><?php echo escapar(SensorModel::rotulo($sensor['tipo'])); ?></td>
+                            <td><?php echo escapar($sensor['localizacao'] ?? '—'); ?></td>
+                            <td>
+                                <span class="badge badge-<?php echo $ativo ? 'ativo' : 'inativo'; ?>">
+                                    <?php echo $ativo ? 'Ativo' : 'Inativo'; ?>
+                                </span>
+                            </td>
+                            <td><?php echo escapar(date('d/m/Y H:i', strtotime($sensor['criado_em']))); ?></td>
+                            <?php if ($ehAdmin): ?>
                                 <td>
-                                    <span class="badge badge-<?php echo $s['status'] === 'ativo' ? 'ativo' : 'inativo'; ?>">
-                                        <?php echo $s['status'] === 'ativo' ? 'Ativo' : 'Inativo'; ?>
-                                    </span>
+                                    <form method="POST" class="form-inline">
+                                        <input type="hidden" name="csrf_token" value="<?php echo escapar($csrf_token); ?>">
+                                        <input type="hidden" name="acao" value="toggle_status">
+                                        <input type="hidden" name="sensor_id" value="<?php echo (int) $sensor['id']; ?>">
+                                        <input type="hidden" name="novo_status" value="<?php echo $ativo ? 'inativo' : 'ativo'; ?>">
+                                        <button type="submit" class="btn-secundario">
+                                            <?php echo $ativo ? 'Desativar' : 'Ativar'; ?>
+                                        </button>
+                                    </form>
                                 </td>
-                                <td><?php echo htmlspecialchars($s['criado_em']); ?></td>
-                                <?php if ($eh_admin): ?>
-                                    <td>
-                                        <?php $novo = $s['status'] === 'ativo' ? 'inativo' : 'ativo'; ?>
-                                        <form method="POST" style="display:inline;">
-                                            <input type="hidden" name="csrf_token"
-                                                value="<?php echo htmlspecialchars($csrf_token); ?>">
-                                            <input type="hidden" name="acao" value="toggle_status">
-                                            <input type="hidden" name="sensor_id" value="<?php echo (int) $s['id']; ?>">
-                                            <input type="hidden" name="novo_status" value="<?php echo $novo; ?>">
-                                            <button type="submit" class="btn-secundario">
-                                                <?php echo $s['status'] === 'ativo' ? 'Desativar' : 'Ativar'; ?>
-                                            </button>
-                                        </form>
-                                    </td>
-                                <?php endif; ?>
-                            </tr>
-                        <?php endforeach; ?>
-                    </tbody>
-                </table>
-            <?php endif; ?>
+                            <?php endif; ?>
+                        </tr>
+                    <?php endforeach; ?>
+                </tbody>
+            </table>
         </div>
+    <?php endif; ?>
+</div>
 
-        <div class="nav-rodape">
-            <a href="listar_sensores.php">Consulta somente leitura →</a>
-            <a href="../dashboard/painel.php">← Voltar ao painel</a>
-        </div>
+<div class="nav-rodape">
+    <a href="listar_sensores.php">Consulta somente leitura →</a>
+    <a href="../dashboard/painel.php">← Voltar ao painel</a>
+</div>
 
-    </div>
-
-</body>
-
-</html>
+<?php require __DIR__ . '/../partials/rodape.php'; ?>

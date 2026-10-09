@@ -1,156 +1,160 @@
 <?php
-// Segurança: bloqueia acesso direto à view
-if (!isset($leituras, $resumo, $sensor_tipos, $labels_pt)) {
-    // Caminho relativo à URL de RelatorioController.php (app/controllers/)
-    header('Location: ../views/dashboard/painel.php');
-    exit;
+/**
+ * app/views/relatorios/relatorio_qualidade.php — Relatório de Qualidade Ambiental.
+ *
+ * Filtra as leituras dos sensores por tipo, período e faixa de valores e exibe
+ * o resumo estatístico (média/mínimo/máximo por sensor) e as leituras
+ * detalhadas. Os filtros chegam por GET e são validados no RelatorioModel.
+ */
+
+require_once __DIR__ . '/../../../includes/auth.php';
+exigirLogin();
+
+require_once __DIR__ . '/../../config/conexao.php';
+require_once __DIR__ . '/../../controllers/RelatorioController.php';
+
+$controller = new RelatorioController($pdo);
+$relatorio = $controller->consultar($_GET);
+
+$filtros = $relatorio['filtros'];     // valores sanitizados (repreenchem o formulário)
+$leituras = $relatorio['leituras'];   // até RelatorioModel::LIMITE_LEITURAS linhas
+$resumo = $relatorio['resumo'];       // média/mín./máx. por tipo de sensor
+$rotulosSensores = $controller->rotulosSensores();
+
+/** Formata números no padrão brasileiro (1.234,56). */
+function formatarNumero($valor): string
+{
+    return number_format((float) $valor, 2, ',', '.');
 }
 
-// Fallback para variáveis de filtro
-$filtro_sensor = $filtro_sensor ?? '';
-$filtro_data_ini = $filtro_data_ini ?? date('Y-m-d', strtotime('-7 days'));
-$filtro_data_fim = $filtro_data_fim ?? date('Y-m-d');
-$filtro_min = $filtro_min ?? '';
-$filtro_max = $filtro_max ?? '';
+$tituloPagina = 'Relatório de Qualidade';
+$secaoTopbar = 'Relatórios';
+$cssPagina = ['relatorios.css'];
+require __DIR__ . '/../partials/cabecalho.php';
 ?>
-<!DOCTYPE html>
-<html lang="pt-BR">
 
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Relatório de Qualidade — Ákron</title>
-    <link rel="icon" type="image/svg+xml" href="<?php echo BASE_URL; ?>/public/assets/img/logo.svg">
-    <link rel="stylesheet" href="<?php echo BASE_URL; ?>/public/assets/css/style.css">
-    <link rel="stylesheet" href="<?php echo BASE_URL; ?>/public/assets/css/relatorios.css">
-</head>
+<h1>Relatório de Qualidade Ambiental</h1>
 
-<body>
+<?php if ($relatorio['erro'] !== ''): ?>
+    <div class="msg-erro" role="alert"><?php echo escapar($relatorio['erro']); ?></div>
+<?php endif; ?>
 
-    <div class="topbar">
-        <div class="marca">
-            <img src="<?php echo BASE_URL; ?>/public/assets/img/logo.svg" alt="Ákron" class="marca-logo">
-            <div class="marca-texto">
-                <span class="marca-nome">ÁKRON</span>
-                <span class="marca-secao">Relatórios</span>
-            </div>
-        </div>
-        <div class="usuario-info">
-            Usuário: <strong><?php echo htmlspecialchars($_SESSION['usuario_nome'] ?? ''); ?></strong>
-            | Tipo: <?php echo htmlspecialchars($_SESSION['usuario_tipo'] ?? ''); ?>
-        </div>
-    </div>
+<!-- ── Filtros ───────────────────────────────────────────────────────────── -->
+<form method="GET">
+    <fieldset>
+        <legend>Filtros</legend>
 
-    <div class="container">
-
-        <h1>Relatório de Qualidade Ambiental</h1>
-
-        <!-- ── Filtros ────────────────────────────────────────────────────────── -->
-        <form method="GET">
-            <fieldset>
-                <legend>Filtros</legend>
-
-                <label for="sensor">Sensor:</label>
+        <div class="relatorio-filtros">
+            <div>
+                <label for="sensor">Sensor</label>
                 <select id="sensor" name="sensor">
                     <option value="">— Todos —</option>
-                    <?php foreach ($sensor_tipos as $s): ?>
-                        <option value="<?php echo $s; ?>" <?php echo $filtro_sensor === $s ? 'selected' : ''; ?>>
-                            <?php echo htmlspecialchars($labels_pt[$s] ?? $s); ?>
+                    <?php foreach ($rotulosSensores as $tipo => $rotulo): ?>
+                        <option value="<?php echo escapar($tipo); ?>" <?php echo $filtros['sensor'] === $tipo ? 'selected' : ''; ?>>
+                            <?php echo escapar($rotulo); ?>
                         </option>
                     <?php endforeach; ?>
                 </select>
-
-                &nbsp;
-                <label for="data_ini">De:</label>
-                <input type="date" id="data_ini" name="data_ini"
-                    value="<?php echo htmlspecialchars($filtro_data_ini); ?>">
-
-                <label for="data_fim">Até:</label>
-                <input type="date" id="data_fim" name="data_fim"
-                    value="<?php echo htmlspecialchars($filtro_data_fim); ?>">
-
-                &nbsp;
-                <label for="val_min">Valor mín.:</label>
-                <input type="number" id="val_min" name="val_min" step="any" style="width:80px"
-                    value="<?php echo htmlspecialchars($filtro_min); ?>">
-
-                <label for="val_max">Valor máx.:</label>
-                <input type="number" id="val_max" name="val_max" step="any" style="width:80px"
-                    value="<?php echo htmlspecialchars($filtro_max); ?>">
-
-                &nbsp;
-                <button type="submit">Filtrar</button>
-                <a href="RelatorioController.php">Limpar filtros</a>
-            </fieldset>
-        </form>
-
-        <hr>
-
-        <!-- ── Resumo estatístico ─────────────────────────────────────────────── -->
-        <?php if (!empty($resumo)): ?>
-            <h2>Resumo do período</h2>
-            <table class="relatorio-resumo-tabela">
-                <thead>
-                    <tr>
-                        <th>Sensor</th>
-                        <th>Leituras</th>
-                        <th>Média</th>
-                        <th>Mínimo</th>
-                        <th>Máximo</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <?php foreach ($resumo as $r): ?>
-                        <tr>
-                            <td><?php echo htmlspecialchars($labels_pt[$r['sensor_tipo']] ?? $r['sensor_tipo']); ?></td>
-                            <td><?php echo (int) $r['total']; ?></td>
-                            <td><?php echo $r['media']; ?></td>
-                            <td><?php echo $r['minimo']; ?></td>
-                            <td><?php echo $r['maximo']; ?></td>
-                        </tr>
-                    <?php endforeach; ?>
-                </tbody>
-            </table>
-        <?php endif; ?>
-
-        <!-- ── Leituras detalhadas ────────────────────────────────────────────── -->
-        <h2>Leituras detalhadas
-            <span class="relatorio-contagem"><?php echo count($leituras) >= 200
-                ? '(últimas 200)'
-                : '(' . count($leituras) . ' registros)'; ?></span>
-        </h2>
-
-        <?php if (empty($leituras)): ?>
-            <p><em>Nenhuma leitura encontrada com os filtros aplicados.</em></p>
-        <?php else: ?>
-            <div class="relatorio-tabela-detalhe">
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Sensor</th>
-                            <th>Valor</th>
-                            <th>Data/Hora</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <?php foreach ($leituras as $l): ?>
-                            <tr>
-                                <td><?php echo htmlspecialchars($labels_pt[$l['sensor_tipo']] ?? $l['sensor_tipo']); ?></td>
-                                <td><?php echo htmlspecialchars($l['valor']); ?></td>
-                                <td><?php echo htmlspecialchars($l['lido_em']); ?></td>
-                            </tr>
-                        <?php endforeach; ?>
-                    </tbody>
-                </table>
             </div>
-        <?php endif; ?>
 
-        <div class="nav-rodape">
-            <a href="<?php echo BASE_URL; ?>/app/views/dashboard/painel.php">← Voltar ao painel</a>
+            <div>
+                <label for="data_ini">De</label>
+                <input type="date" id="data_ini" name="data_ini" value="<?php echo escapar($filtros['data_ini']); ?>">
+            </div>
+
+            <div>
+                <label for="data_fim">Até</label>
+                <input type="date" id="data_fim" name="data_fim" value="<?php echo escapar($filtros['data_fim']); ?>">
+            </div>
+
+            <div>
+                <label for="val_min">Valor mín.</label>
+                <input type="number" id="val_min" name="val_min" step="any" value="<?php echo escapar($filtros['val_min']); ?>">
+            </div>
+
+            <div>
+                <label for="val_max">Valor máx.</label>
+                <input type="number" id="val_max" name="val_max" step="any" value="<?php echo escapar($filtros['val_max']); ?>">
+            </div>
         </div>
 
+        <div class="relatorio-acoes">
+            <button type="submit">Filtrar</button>
+            <a href="relatorio_qualidade.php">Limpar filtros</a>
+        </div>
+    </fieldset>
+</form>
+
+<hr>
+
+<!-- ── Resumo estatístico ────────────────────────────────────────────────── -->
+<?php if (!empty($resumo)): ?>
+    <h2>Resumo do período</h2>
+    <div class="tabela-rolagem">
+        <table class="relatorio-resumo-tabela">
+            <thead>
+                <tr>
+                    <th>Sensor</th>
+                    <th>Leituras</th>
+                    <th>Média</th>
+                    <th>Mínimo</th>
+                    <th>Máximo</th>
+                </tr>
+            </thead>
+            <tbody>
+                <?php foreach ($resumo as $linha): ?>
+                    <tr>
+                        <td><?php echo escapar($rotulosSensores[$linha['sensor_tipo']] ?? $linha['sensor_tipo']); ?></td>
+                        <td><?php echo (int) $linha['total']; ?></td>
+                        <td><?php echo formatarNumero($linha['media']); ?></td>
+                        <td><?php echo formatarNumero($linha['minimo']); ?></td>
+                        <td><?php echo formatarNumero($linha['maximo']); ?></td>
+                    </tr>
+                <?php endforeach; ?>
+            </tbody>
+        </table>
     </div>
+<?php endif; ?>
 
-</body>
+<!-- ── Leituras detalhadas ───────────────────────────────────────────────── -->
+<h2>Leituras detalhadas
+    <span class="relatorio-contagem">
+        <?php echo count($leituras) >= RelatorioModel::LIMITE_LEITURAS
+            ? '(últimas ' . RelatorioModel::LIMITE_LEITURAS . ')'
+            : '(' . count($leituras) . ' registros)'; ?>
+    </span>
+</h2>
 
-</html>
+<?php if (empty($leituras)): ?>
+    <p class="msg-vazio">Nenhuma leitura encontrada com os filtros aplicados.</p>
+<?php else: ?>
+    <div class="relatorio-tabela-detalhe">
+        <table>
+            <thead>
+                <tr>
+                    <th>Sensor</th>
+                    <th>Valor</th>
+                    <th>Data/Hora</th>
+                </tr>
+            </thead>
+            <tbody>
+                <?php foreach ($leituras as $leitura): ?>
+                    <tr>
+                        <td>
+                            <?php echo escapar($rotulosSensores[$leitura['sensor_tipo']] ?? $leitura['sensor_tipo']); ?>
+                            <div class="usuarios-dica"><?php echo escapar($leitura['sensor_nome']); ?></div>
+                        </td>
+                        <td><?php echo formatarNumero($leitura['valor']); ?></td>
+                        <td><?php echo escapar(date('d/m/Y H:i', strtotime($leitura['lido_em']))); ?></td>
+                    </tr>
+                <?php endforeach; ?>
+            </tbody>
+        </table>
+    </div>
+<?php endif; ?>
+
+<div class="nav-rodape">
+    <a href="../dashboard/painel.php">← Voltar ao painel</a>
+</div>
+
+<?php require __DIR__ . '/../partials/rodape.php'; ?>

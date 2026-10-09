@@ -1,0 +1,16 @@
+# ── Configuração local (senha do banco etc.): NUNCA vai para o Git ───────────
+# Copie app/config/conexao.local.exemplo.php para conexao.local.php e edite.
+app/config/conexao.local.php
+
+# ── Arquivos do sistema operacional e dos editores ───────────────────────────
+.DS_Store
+Thumbs.db
+desktop.ini
+.idea/
+.vscode/
+*.swp
+*.log
+
+# ── Python (tests/api_test.py) ───────────────────────────────────────────────
+__pycache__/
+*.pyc

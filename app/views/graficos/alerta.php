@@ -1,151 +1,126 @@
 <?php
-session_start();
-require_once '../../../includes/auth.php';
+/**
+ * app/views/graficos/alerta.php — Alertas dos sensores.
+ *
+ * Mostra, por severidade, quantos alertas estão pendentes (cartões + gráfico
+ * de barras) e o histórico recente. Administradores podem marcar alertas como
+ * resolvidos (formulário POST protegido por token CSRF).
+ */
+
+require_once __DIR__ . '/../../../includes/auth.php';
 exigirLogin();
 
-require_once '../../config/conexao.php';
-require_once '../../controllers/AlertaController.php';
+require_once __DIR__ . '/../../config/conexao.php';
+require_once __DIR__ . '/../../controllers/AlertaController.php';
+require_once __DIR__ . '/../../models/SensorModel.php';
 
-$eh_admin = ehAdmin();
-$controller = new AlertaController($pdo, $eh_admin);
+$ehAdmin = ehAdmin();
+$controller = new AlertaController($pdo, $ehAdmin);
 
+// Se for um POST ("Marcar resolvido"), executa a ação antes de consultar os dados
 ['mensagem' => $mensagem, 'erros' => $erros] = $controller->processarRequisicao();
 
 $alertas = $controller->listarAlertas();
 $contagem = $controller->contarPorSeveridade();
 $csrf_token = gerarCSRF();
 
-$labels_severidade = ['critico' => 'Crítico', 'atencao' => 'Atenção', 'info' => 'Informativo'];
-$labels_sensor = [
-    'temperatura' => 'Temperatura',
-    'ruido' => 'Ruído',
-    'qualidade_ar' => 'Qualidade do Ar',
-    'umidade' => 'Umidade',
-    'pressao' => 'Pressão',
-    'uv' => 'UV',
-];
+$tituloPagina = 'Alertas';
+$secaoTopbar = 'Alertas';
+$cssPagina = ['graficos.css'];
+$scriptsHead = ['vendor/chart.umd.js', 'graficos.js'];
+require __DIR__ . '/../partials/cabecalho.php';
 ?>
-<!DOCTYPE html>
-<html lang="pt-BR">
 
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Alertas — Ákron</title>
-    <link rel="icon" type="image/svg+xml" href="../../../public/assets/img/logo.svg">
-    <link rel="stylesheet" href="../../../public/assets/css/style.css">
-    <link rel="stylesheet" href="../../../public/assets/css/graficos.css">
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="../../../public/assets/js/chart.js"></script>
-</head>
+<h1>Alertas dos Sensores</h1>
 
-<body>
+<?php if ($mensagem): ?>
+    <div class="msg-sucesso" role="status"><?php echo escapar($mensagem); ?></div>
+<?php endif; ?>
 
-    <div class="topbar">
-        <div class="marca">
-            <img src="../../../public/assets/img/logo.svg" alt="Ákron" class="marca-logo">
-            <div class="marca-texto">
-                <span class="marca-nome">ÁKRON</span>
-                <span class="marca-secao">Alertas</span>
-            </div>
-        </div>
-        <div class="usuario-info">
-            Usuário: <strong><?php echo htmlspecialchars($_SESSION['usuario_nome']); ?></strong>
-            | Tipo: <?php echo $eh_admin ? 'Administrador' : 'Funcionário'; ?>
-        </div>
+<?php if (!empty($erros)): ?>
+    <div class="msg-erro" role="alert">
+        <ul>
+            <?php foreach ($erros as $erro): ?>
+                <li><?php echo escapar($erro); ?></li>
+            <?php endforeach; ?>
+        </ul>
     </div>
+<?php endif; ?>
 
-    <div class="container">
-
-        <h1>Alertas dos Sensores</h1>
-
-        <?php if ($mensagem): ?>
-            <div class="msg-sucesso"><?php echo $mensagem; ?></div>
-        <?php endif; ?>
-
-        <?php if (!empty($erros)): ?>
-            <div class="msg-erro">
-                <ul><?php foreach ($erros as $e): ?>
-                        <li><?php echo htmlspecialchars($e); ?></li><?php endforeach; ?>
-                </ul>
-            </div>
-        <?php endif; ?>
-
-        <!-- ── Cards de resumo por severidade ─────────────────────────────── -->
-        <div class="alertas-cards">
-            <div class="card-severidade critico">
-                <div class="valor"><?php echo (int) $contagem['critico']; ?></div>
-                <div>Críticos</div>
-            </div>
-            <div class="card-severidade atencao">
-                <div class="valor"><?php echo (int) $contagem['atencao']; ?></div>
-                <div>Atenção</div>
-            </div>
-            <div class="card-severidade info">
-                <div class="valor"><?php echo (int) $contagem['info']; ?></div>
-                <div>Informativos</div>
-            </div>
-        </div>
-
-        <!-- ── Gráfico de barras (contagem por severidade) ────────────────── -->
-        <div class="card grafico-wrapper">
-            <canvas id="graficoAlertas" height="120"></canvas>
-        </div>
-        <script>
-            criarGraficoBarras(
-                'graficoAlertas',
-                ['Crítico', 'Atenção', 'Informativo'],
-                [<?php echo (int) $contagem['critico']; ?>, <?php echo (int) $contagem['atencao']; ?>, <?php echo (int) $contagem['info']; ?>],
-                'Alertas ativos',
-                'Alertas ativos por severidade',
-                ['rgba(229, 99, 111, 0.7)', 'rgba(224, 168, 63, 0.7)', 'rgba(106, 137, 167, 0.7)']
-            );
-        </script>
-
-        <!-- ── Lista detalhada de alertas ──────────────────────────────────── -->
-        <div class="card">
-            <h2>Histórico recente</h2>
-
-            <?php if (empty($alertas)): ?>
-                <p><em>Nenhum alerta registrado.</em></p>
-            <?php else: ?>
-                <ul class="lista-alertas">
-                    <?php foreach ($alertas as $a): ?>
-                        <li>
-                            <div>
-                                <span class="badge badge-<?php echo $a['resolvido'] ? 'ativo' : 'inativo'; ?>">
-                                    <?php echo $labels_severidade[$a['severidade']] ?? $a['severidade']; ?>
-                                </span>
-                                &nbsp;
-                                <strong><?php echo htmlspecialchars($labels_sensor[$a['sensor_tipo']] ?? $a['sensor_tipo']); ?></strong>
-                                — <?php echo htmlspecialchars($a['mensagem']); ?>
-                                <div class="grafico-total-leituras">
-                                    Valor: <?php echo htmlspecialchars((string) $a['valor']); ?>
-                                    | <?php echo htmlspecialchars($a['criado_em']); ?>
-                                    | <?php echo $a['resolvido'] ? 'Resolvido' : 'Pendente'; ?>
-                                </div>
-                            </div>
-                            <?php if ($eh_admin && !$a['resolvido']): ?>
-                                <form method="POST" style="display:inline;">
-                                    <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($csrf_token); ?>">
-                                    <input type="hidden" name="acao" value="resolver">
-                                    <input type="hidden" name="alerta_id" value="<?php echo (int) $a['id']; ?>">
-                                    <button type="submit" class="btn-secundario">Marcar resolvido</button>
-                                </form>
-                            <?php endif; ?>
-                        </li>
-                    <?php endforeach; ?>
-                </ul>
-            <?php endif; ?>
-        </div>
-
-        <div class="nav-rodape">
-            <a href="graficos_sensores.php">← Gráficos de sensores</a>
-            <a href="../dashboard/painel.php">← Voltar ao painel</a>
-        </div>
-
+<!-- ── Cartões de resumo por severidade (somente alertas pendentes) ─────── -->
+<div class="alertas-cards">
+    <div class="card-severidade critico">
+        <div class="valor"><?php echo (int) $contagem['critico']; ?></div>
+        <div>Críticos</div>
     </div>
+    <div class="card-severidade atencao">
+        <div class="valor"><?php echo (int) $contagem['atencao']; ?></div>
+        <div>Atenção</div>
+    </div>
+    <div class="card-severidade info">
+        <div class="valor"><?php echo (int) $contagem['info']; ?></div>
+        <div>Informativos</div>
+    </div>
+</div>
 
-</body>
+<!-- ── Gráfico de barras (contagem de pendentes por severidade) ─────────── -->
+<div class="card grafico-wrapper">
+    <div class="grafico-area grafico-area-baixa"><canvas id="graficoAlertas"></canvas></div>
+</div>
+<script>
+    criarGraficoBarras(
+        'graficoAlertas',
+        ['Crítico', 'Atenção', 'Informativo'],
+        <?php echo jsonParaScript([(int) $contagem['critico'], (int) $contagem['atencao'], (int) $contagem['info']]); ?>,
+        'Alertas pendentes',
+        'Alertas pendentes por severidade',
+        ['critico', 'atencao', 'info'] // chaves da paleta do tema (ver graficos.js)
+    );
+</script>
 
-</html>
+<!-- ── Histórico recente ─────────────────────────────────────────────────── -->
+<div class="card">
+    <h2>Histórico recente</h2>
+
+    <?php if (empty($alertas)): ?>
+        <p class="msg-vazio">Nenhum alerta registrado.</p>
+    <?php else: ?>
+        <ul class="lista-alertas">
+            <?php foreach ($alertas as $alerta): ?>
+                <?php $resolvido = (int) $alerta['resolvido'] === 1; ?>
+                <li class="<?php echo $resolvido ? 'alerta-resolvido' : ''; ?>">
+                    <div>
+                        <div class="alerta-titulo">
+                            <span class="badge badge-<?php echo escapar($alerta['severidade']); ?>">
+                                <?php echo escapar(AlertaModel::rotuloSeveridade($alerta['severidade'])); ?>
+                            </span>
+                            <strong><?php echo escapar(SensorModel::rotulo($alerta['sensor_tipo'])); ?></strong>
+                            <span>— <?php echo escapar($alerta['mensagem']); ?></span>
+                        </div>
+                        <div class="grafico-total-leituras">
+                            <?php echo escapar($alerta['sensor_nome']); ?>
+                            | Valor: <?php echo $alerta['valor'] === null ? '—' : escapar(number_format((float) $alerta['valor'], 2, ',', '.')); ?>
+                            | <?php echo escapar(date('d/m/Y H:i', strtotime($alerta['criado_em']))); ?>
+                            | <?php echo $resolvido ? 'Resolvido' : 'Pendente'; ?>
+                        </div>
+                    </div>
+                    <?php if ($ehAdmin && !$resolvido): ?>
+                        <form method="POST" class="form-inline">
+                            <input type="hidden" name="csrf_token" value="<?php echo escapar($csrf_token); ?>">
+                            <input type="hidden" name="acao" value="resolver">
+                            <input type="hidden" name="alerta_id" value="<?php echo (int) $alerta['id']; ?>">
+                            <button type="submit" class="btn-secundario">Marcar resolvido</button>
+                        </form>
+                    <?php endif; ?>
+                </li>
+            <?php endforeach; ?>
+        </ul>
+    <?php endif; ?>
+</div>
+
+<div class="nav-rodape">
+    <a href="graficos_sensores.php">← Gráficos de sensores</a>
+    <a href="../dashboard/painel.php">← Voltar ao painel</a>
+</div>
+
+<?php require __DIR__ . '/../partials/rodape.php'; ?>

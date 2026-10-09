@@ -1,160 +1,113 @@
 <?php
-session_start();
-require_once '../../../includes/auth.php';
+/**
+ * app/views/graficos/graficos_sensores.php — Gráficos de Sensores.
+ *
+ * Mostra a série de leituras de um tipo de sensor (temperatura, ruído...) em
+ * um gráfico de linha, na janela de tempo escolhida (6 h a 7 dias). Depois de
+ * carregada, a página se atualiza sozinha a cada 15 s (ver graficos.js e
+ * routes/grafico_dados.php).
+ *
+ * Parâmetros GET: ?sensor=temperatura&horas=24 (valores inválidos viram o padrão).
+ */
+
+require_once __DIR__ . '/../../../includes/auth.php';
 exigirLogin();
 
-require_once '../../config/conexao.php';
+require_once __DIR__ . '/../../config/conexao.php';
+require_once __DIR__ . '/../../controllers/GraficoController.php';
 
-// Sensores disponíveis com unidades
-$sensores = [
-    'temperatura' => ['label' => 'Temperatura', 'unidade' => '°C'],
-    'ruido' => ['label' => 'Ruído', 'unidade' => 'dB'],
-    'qualidade_ar' => ['label' => 'Qualidade do Ar', 'unidade' => 'AQI'],
-    'umidade' => ['label' => 'Umidade', 'unidade' => '%'],
-    'pressao' => ['label' => 'Pressão', 'unidade' => 'hPa'],
-    'uv' => ['label' => 'UV', 'unidade' => 'índice'],
-];
+// Consulta já validada pelo controller (sensor e janela de horas corrigidos)
+$resultado = (new GraficoController($pdo))->serie($_GET);
+$sensorSel = $resultado['sensor'];
+$horas = $resultado['horas'];
+$pontos = $resultado['pontos'];
 
-// Sensor selecionado (padrão: temperatura)
-$sensor_sel = $_GET['sensor'] ?? 'temperatura';
-if (!array_key_exists($sensor_sel, $sensores)) {
-    $sensor_sel = 'temperatura';
-}
+$labels = array_column($pontos, 'lido_em');
+$valores = array_column($pontos, 'valor');
+$rotuloSensor = SensorModel::rotulo($sensorSel);
+$rotuloComUnidade = SensorModel::rotuloComUnidade($sensorSel);
+$rotuloJanela = LeituraModel::rotuloJanela($horas); // ex.: 'últimas 24 h' ou 'últimos 7 dias'
 
-// Período: últimas 24 h por padrão
-$horas = (int) ($_GET['horas'] ?? 24);
-if (!in_array($horas, [6, 12, 24, 48, 168])) {
-    $horas = 24;
-}
-
-// Busca leituras do sensor selecionado
-// Tabela: leitura_sensor (sensor_tipo, valor, lido_em)
-$leituras = [];
-try {
-    $stmt = $pdo->prepare("
-        SELECT valor, lido_em
-        FROM leitura_sensor
-        WHERE sensor_tipo = :tipo
-          AND lido_em >= DATE_SUB(NOW(), INTERVAL :horas HOUR)
-        ORDER BY lido_em ASC
-        LIMIT 500
-    ");
-    $stmt->execute([':tipo' => $sensor_sel, ':horas' => $horas]);
-    $leituras = $stmt->fetchAll(PDO::FETCH_ASSOC);
-} catch (PDOException $e) {
-    // Tabela ainda não existe ou erro de consulta: sem dados
-    $leituras = [];
-}
-
-$labels = array_column($leituras, 'lido_em');
-$valores = array_column($leituras, 'valor');
-$info = $sensores[$sensor_sel];
+$tituloPagina = 'Gráfico — ' . $rotuloSensor;
+$secaoTopbar = 'Gráficos';
+$cssPagina = ['graficos.css'];
+$scriptsHead = ['vendor/chart.umd.js', 'graficos.js']; // Chart.js + nossos utilitários
+require __DIR__ . '/../partials/cabecalho.php';
 ?>
-<!DOCTYPE html>
-<html lang="pt-BR">
 
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gráfico — <?php echo htmlspecialchars($info['label']); ?> — Ákron</title>
-    <link rel="icon" type="image/svg+xml" href="../../../public/assets/img/logo.svg">
-    <link rel="stylesheet" href="../../../public/assets/css/style.css">
-    <link rel="stylesheet" href="../../../public/assets/css/graficos.css">
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="../../../public/assets/js/chart.js"></script>
-</head>
+<h1>Gráficos de Sensores</h1>
 
-<body>
-
-    <div class="topbar">
-        <div class="marca">
-            <img src="../../../public/assets/img/logo.svg" alt="Ákron" class="marca-logo">
-            <div class="marca-texto">
-                <span class="marca-nome">ÁKRON</span>
-                <span class="marca-secao">Gráficos</span>
-            </div>
-        </div>
-        <div class="usuario-info">
-            Usuário: <strong><?php echo htmlspecialchars($_SESSION['usuario_nome']); ?></strong>
-            | Tipo: <?php echo htmlspecialchars($_SESSION['usuario_tipo']); ?>
-        </div>
+<!-- Seletores: ao mudar qualquer um, a página recarrega com os novos filtros -->
+<form method="GET" class="graficos-filtros">
+    <div class="campo">
+        <label for="sensor">Sensor:</label>
+        <select id="sensor" name="sensor" onchange="this.form.submit()">
+            <?php foreach (array_keys(SensorModel::TIPOS) as $tipo): ?>
+                <option value="<?php echo escapar($tipo); ?>" <?php echo $sensorSel === $tipo ? 'selected' : ''; ?>>
+                    <?php echo escapar(SensorModel::rotuloComUnidade($tipo)); ?>
+                </option>
+            <?php endforeach; ?>
+        </select>
     </div>
 
-    <div class="container">
-
-        <h1>Gráficos de Sensores</h1>
-
-        <!-- Seletor de sensor -->
-        <form method="GET" class="graficos-filtros">
-            <div class="campo">
-                <label for="sensor">Sensor:</label>
-                <select id="sensor" name="sensor" onchange="this.form.submit()">
-                    <?php foreach ($sensores as $chave => $meta): ?>
-                        <option value="<?php echo $chave; ?>" <?php echo $sensor_sel === $chave ? 'selected' : ''; ?>>
-                            <?php echo htmlspecialchars($meta['label']); ?> (<?php echo $meta['unidade']; ?>)
-                        </option>
-                    <?php endforeach; ?>
-                </select>
-            </div>
-
-            <div class="campo">
-                <label for="horas">Período:</label>
-                <select id="horas" name="horas" onchange="this.form.submit()">
-                    <?php foreach ([6 => '6 h', 12 => '12 h', 24 => '24 h', 48 => '48 h', 168 => '7 dias'] as $v => $l): ?>
-                        <option value="<?php echo $v; ?>" <?php echo $horas === $v ? 'selected' : ''; ?>>
-                            <?php echo $l; ?>
-                        </option>
-                    <?php endforeach; ?>
-                </select>
-            </div>
-        </form>
-
-        <hr>
-
-        <h2>
-            <?php echo htmlspecialchars($info['label']); ?> — últimas <?php echo $horas; ?> h
-            <?php if (!empty($leituras)): ?>
-                <span class="grafico-status-tempo-real">
-                    <span class="ponto"></span> tempo real
-                </span>
-            <?php endif; ?>
-        </h2>
-
-        <?php if (empty($leituras)): ?>
-            <div class="card">
-                <p class="msg-vazio">Nenhuma leitura registrada no banco de dados para este sensor no período selecionado.
-                </p>
-            </div>
-        <?php else: ?>
-            <div class="card grafico-wrapper">
-                <canvas id="graficoSensor" height="350"></canvas>
-            </div>
-            <script>
-                const graficoSensorAtual = criarGraficoLinha(
-                    'graficoSensor',
-                    <?php echo json_encode($labels); ?>,
-                    <?php echo json_encode(array_map('floatval', $valores)); ?>,
-                    '<?php echo addslashes($info['label']); ?> (<?php echo $info['unidade']; ?>)',
-                    '<?php echo addslashes($info['label']); ?> — últimas <?php echo $horas; ?> horas'
-                );
-
-                // Atualização em tempo real (AJAX) via GraficoController.php
-                iniciarAtualizacaoTempoReal(
-                    graficoSensorAtual,
-                    '<?php echo $sensor_sel; ?>',
-                    <?php echo $horas; ?>
-                );
-            </script>
-            <p class="grafico-total-leituras">Total de leituras: <?php echo count($leituras); ?></p>
-        <?php endif; ?>
-
-        <div class="nav-rodape">
-            <a href="alerta.php">Ver alertas →</a>
-            <a href="../dashboard/painel.php">← Voltar ao painel</a>
-        </div>
-
+    <div class="campo">
+        <label for="horas">Período:</label>
+        <select id="horas" name="horas" onchange="this.form.submit()">
+            <?php foreach (LeituraModel::ROTULOS_PERIODO as $valor => $rotulo): ?>
+                <option value="<?php echo $valor; ?>" <?php echo $horas === $valor ? 'selected' : ''; ?>>
+                    <?php echo escapar($rotulo); ?>
+                </option>
+            <?php endforeach; ?>
+        </select>
     </div>
+</form>
 
-</body>
+<hr>
 
-</html>
+<h2>
+    <?php echo escapar($rotuloSensor . ' — ' . $rotuloJanela); ?>
+    <?php if (!empty($pontos)): ?>
+        <span class="grafico-status-tempo-real">
+            <span class="ponto"></span> tempo real
+        </span>
+    <?php endif; ?>
+</h2>
+
+<?php if ($resultado['erro'] !== ''): ?>
+    <div class="msg-erro" role="alert"><?php echo escapar($resultado['erro']); ?></div>
+<?php elseif (empty($pontos)): ?>
+    <div class="card">
+        <p class="msg-vazio">Nenhuma leitura registrada no banco de dados para este sensor no período selecionado.</p>
+    </div>
+<?php else: ?>
+    <div class="card grafico-wrapper">
+        <div class="grafico-area"><canvas id="graficoSensor"></canvas></div>
+    </div>
+    <script>
+        const graficoSensorAtual = criarGraficoLinha(
+            'graficoSensor',
+            <?php echo jsonParaScript($labels); ?>,
+            <?php echo jsonParaScript($valores); ?>,
+            <?php echo jsonParaScript($rotuloComUnidade); ?>,
+            <?php echo jsonParaScript($rotuloSensor . ' — ' . $rotuloJanela); ?>
+        );
+
+        // Atualização em tempo real (AJAX) via routes/grafico_dados.php
+        iniciarAtualizacaoTempoReal(
+            graficoSensorAtual,
+            <?php echo jsonParaScript(urlApp('routes/grafico_dados.php')); ?>,
+            <?php echo jsonParaScript($sensorSel); ?>,
+            <?php echo (int) $horas; ?>
+        );
+    </script>
+    <p class="grafico-total-leituras">
+        Total de leituras: <span id="graficoTotalLeituras"><?php echo (int) $resultado['total']; ?></span>
+    </p>
+<?php endif; ?>
+
+<div class="nav-rodape">
+    <a href="alerta.php">Ver alertas →</a>
+    <a href="../dashboard/painel.php">← Voltar ao painel</a>
+</div>
+
+<?php require __DIR__ . '/../partials/rodape.php'; ?>

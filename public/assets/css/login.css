@@ -1,4 +1,6 @@
-/* login.css — referente a index.php (tela de autenticação) */
+/* login.css — referente a index.php (tela de autenticação)
+   Reaproveita os tokens de cor/tema de style.css; aqui ficam só o layout
+   da tela cheia, a marca em destaque e o cartão de login. */
 
 body.tela-login {
     display: flex;
@@ -6,47 +8,51 @@ body.tela-login {
     align-items: center;
     justify-content: center;
     min-height: 100vh;
-    background: radial-gradient(circle at top, #182330 0%, #0d1218 70%);
+    /* O gradiente muda com o tema (--cor-login-topo / --cor-login-base) */
+    background: radial-gradient(circle at top, var(--cor-login-topo) 0%, var(--cor-login-base) 70%);
+    background-attachment: fixed;
     padding: 20px;
 }
 
+/* Botão de tema no canto superior direito */
+.login-tema {
+    position: fixed;
+    top: 18px;
+    right: 22px;
+}
+
+/* Nome descritivo do sistema no canto superior esquerdo */
 .login-titulo-sistema {
     position: fixed;
-    top: 20px;
+    top: 24px;
     left: 28px;
     color: var(--cor-texto-fraco);
     font-size: 0.8rem;
     letter-spacing: 0.5px;
 }
 
+/* Marca em destaque acima do cartão */
 .login-marca {
     display: flex;
     flex-direction: column;
     align-items: center;
-    margin-bottom: 28px;
+    margin-bottom: 26px;
+    text-align: center;
 }
 
-.login-marca img {
-    height: 84px;
-    width: auto;
-    margin-bottom: 10px;
-    filter: drop-shadow(0 6px 18px rgba(106, 137, 167, 0.25));
-}
-
-.login-marca .login-marca-nome {
-    font-size: 1.6rem;
-    font-weight: 700;
-    letter-spacing: 4px;
-    color: var(--cor-texto);
+.login-marca .logo-completa {
+    height: 176px;
+    margin-bottom: 14px;
+    filter: drop-shadow(0 6px 18px var(--cor-info-fundo));
 }
 
 .login-marca .login-marca-tagline {
-    font-size: 0.8rem;
+    font-size: 0.85rem;
     color: var(--cor-texto-suave);
     letter-spacing: 0.5px;
-    margin-top: 2px;
 }
 
+/* Cartão do formulário */
 .login-box {
     width: 100%;
     max-width: 380px;
@@ -54,7 +60,7 @@ body.tela-login {
     border: 1px solid var(--cor-borda);
     border-radius: var(--raio);
     box-shadow: var(--sombra);
-    padding: 32px 30px;
+    padding: 30px 30px 26px;
 }
 
 .login-box h2 {
@@ -62,7 +68,7 @@ body.tela-login {
     text-transform: uppercase;
     letter-spacing: 1px;
     font-size: 1.05rem;
-    color: var(--cor-primaria-clara);
+    color: var(--cor-link);
     margin-bottom: 22px;
 }
 
@@ -70,15 +76,26 @@ body.tela-login {
     margin-bottom: 18px;
 }
 
-.login-box button {
+.login-box button[type="submit"] {
     width: 100%;
     margin-top: 8px;
     letter-spacing: 0.5px;
 }
 
-.login-credenciais-teste {
+/* Linha de apoio abaixo do botão (versão do sistema) */
+.login-versao {
     margin-top: 18px;
     text-align: center;
     font-size: 0.78rem;
     color: var(--cor-texto-fraco);
+}
+
+@media (max-width: 720px) {
+    .login-titulo-sistema {
+        display: none;
+    }
+
+    .login-marca .logo-completa {
+        height: 140px;
+    }
 }

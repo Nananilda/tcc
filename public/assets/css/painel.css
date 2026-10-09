@@ -1,4 +1,5 @@
-/* painel.css — referente a app/views/dashboard/painel.php */
+/* painel.css — referente a app/views/dashboard/painel.php
+   Cartões de números (stat-card), menu de atalhos e botão de sair. */
 
 .painel-boas-vindas {
     margin-bottom: 8px;
@@ -9,6 +10,7 @@
     margin-top: -6px;
 }
 
+/* Linha de cartões com os números principais */
 .painel-stats {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
@@ -17,9 +19,10 @@
 }
 
 .stat-card {
-    background: var(--cor-fundo-card-alt);
+    background: var(--cor-fundo-card);
     border: 1px solid var(--cor-borda);
     border-radius: var(--raio);
+    box-shadow: var(--sombra-suave);
     padding: 16px 18px;
     transition: border-color 0.15s ease;
 }
@@ -29,9 +32,10 @@
 }
 
 .stat-card .stat-valor {
+    font-family: var(--fonte-titulo);
     font-size: 1.8rem;
     font-weight: 700;
-    color: var(--cor-primaria);
+    color: var(--cor-link);
 }
 
 .stat-card .stat-label {
@@ -41,19 +45,24 @@
     letter-spacing: 0.4px;
 }
 
+/* Menu de atalhos para as seções do sistema */
 .painel-menu {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
     gap: 16px;
 }
 
 .painel-menu a.menu-item {
-    display: block;
+    display: flex;
+    align-items: center;
+    gap: 14px;
     background: var(--cor-fundo-card);
     border: 1px solid var(--cor-borda);
     border-radius: var(--raio);
-    padding: 18px;
+    box-shadow: var(--sombra-suave);
+    padding: 16px 18px;
     color: var(--cor-texto);
+    font-weight: 500;
     text-decoration: none;
     transition: border-color 0.15s ease, transform 0.05s ease;
 }
@@ -63,27 +72,25 @@
     text-decoration: none;
 }
 
-.painel-menu a.menu-item .icone {
-    font-size: 1.4rem;
-    margin-bottom: 8px;
-    display: block;
-}
-
-.painel-logout {
-    display: inline-flex;
+/* Ícone do atalho dentro de um "chip" tingido pela cor da marca */
+.menu-item .icone {
+    display: flex;
     align-items: center;
-    gap: 6px;
-    margin-top: 30px;
-    padding: 9px 16px;
-    border: 1px solid var(--cor-borda);
-    border-radius: 8px;
-    color: var(--cor-texto-suave);
-    font-size: 0.9rem;
-    transition: border-color 0.15s ease, color 0.15s ease;
+    justify-content: center;
+    flex-shrink: 0;
+    width: 42px;
+    height: 42px;
+    border-radius: 10px;
+    background: var(--cor-info-fundo);
+    color: var(--cor-link);
 }
 
-.painel-logout:hover {
-    border-color: var(--cor-erro);
-    color: var(--cor-erro);
-    text-decoration: none;
+.menu-item .icone svg {
+    width: 22px;
+    height: 22px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.8;
+    stroke-linecap: round;
+    stroke-linejoin: round;
 }

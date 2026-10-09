@@ -1,160 +1,126 @@
 <?php
-session_start();
+/**
+ * index.php — Tela de login do sistema ÁKRON.
+ *
+ * Fluxo: exibe o formulário; no POST valida o token CSRF e delega a
+ * autenticação ao AuthController (a mesma usada pela API), que cria a sessão
+ * e registra o log. Usuário já logado vai direto para o painel.
+ *
+ * Parâmetros opcionais na URL (usados pelos redirecionamentos do sistema):
+ *   ?erro=sessao|timeout|seguranca   motivo pelo qual o usuário voltou ao login
+ *   ?saiu=1                          mostra "Você saiu do sistema"
+ */
 
-// Redireciona se já estiver logado
+require_once __DIR__ . '/includes/auth.php';
+require_once __DIR__ . '/app/views/partials/icones.php';
+
+iniciarSessao();
+
+// Já autenticado: não faz sentido ver o login
 if (isset($_SESSION['usuario_id'])) {
-    header('Location: app/views/dashboard/painel.php');
+    header('Location: ' . urlApp('app/views/dashboard/painel.php'));
     exit;
 }
 
-require_once 'app/config/conexao.php';
-require_once 'includes/auth.php';
+require_once __DIR__ . '/app/config/conexao.php';
+require_once __DIR__ . '/app/controllers/AuthController.php';
 
 $erro = '';
-$tentativas_bloqueadas = false;
+$aviso = '';
 
-// Verifica bloqueio por tentativas excessivas (5 tentativas em 15 min)
-$ip = $_SERVER['REMOTE_ADDR'];
-// Só executa a função se a variável $pdo for um objeto de conexão válido
-if ($pdo !== null && function_exists('verificarBloqueioIP') && verificarBloqueioIP($pdo, $ip)) {
-    $tentativas_bloqueadas = true;
+// ── Avisos vindos de redirecionamentos ───────────────────────────────────────
+$motivosRedirecionamento = [
+    'sessao' => 'Faça login para continuar.',
+    'timeout' => 'Sua sessão expirou. Entre novamente.',
+    'seguranca' => 'Sua sessão foi encerrada por segurança. Entre novamente.',
+];
+if (isset($_GET['erro'], $motivosRedirecionamento[$_GET['erro']])) {
+    $aviso = $motivosRedirecionamento[$_GET['erro']];
+} elseif (isset($_GET['saiu'])) {
+    $aviso = 'Você saiu do sistema.';
+}
+
+// ── Bloqueio por tentativas excessivas (5 tentativas em 15 min) ──────────────
+$ip = $_SERVER['REMOTE_ADDR'] ?? '0.0.0.0';
+$tentativasBloqueadas = verificarBloqueioIP($pdo, $ip);
+if ($tentativasBloqueadas) {
     $erro = 'Acesso temporariamente bloqueado. Tente novamente em 15 minutos.';
 }
 
+// ── Envio do formulário ──────────────────────────────────────────────────────
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && !$tentativasBloqueadas) {
+    $login = trim($_POST['login'] ?? '');
+    $senha = $_POST['senha'] ?? '';
+    $tokenCsrf = $_POST['csrf_token'] ?? '';
 
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && !$tentativas_bloqueadas) {
-    $login    = trim($_POST['login'] ?? '');
-    $senha    = $_POST['senha'] ?? '';
-    $token_csrf = $_POST['csrf_token'] ?? '';
-
-    // Valida token CSRF
-    if (!function_exists('validarCSRF') || !validarCSRF($token_csrf)) {
-        $erro = 'Requisição inválida.  tente novamente.';
-    } elseif (empty($login) || empty($senha)) {
+    if (!validarCSRF($tokenCsrf)) {
+        // Token inválido: normalmente a página ficou aberta por muito tempo
+        $erro = 'Requisição inválida. Tente novamente.';
+    } elseif ($login === '' || $senha === '') {
         $erro = 'Preencha todos os campos.';
-        if (function_exists('registrarLog')) {
-            registrarLog($pdo, null, 'LOGIN_FALHA', "Campos vazios - IP: $ip");
-        }
+        registrarLog($pdo, null, 'LOGIN_FALHA', "Campos vazios - IP: $ip");
     } else {
-        if (!function_exists('autenticarUsuario')) {
-            $erro = 'Erro interno: função de autenticação não encontrada.';
-        } else {
-            $resultado = autenticarUsuario($pdo, $login, $senha);
+        $resultado = (new AuthController($pdo))->login($login, $senha, $ip);
 
-            if ($resultado['sucesso']) {
-                $usuario = $resultado['usuario'];
-
-                // Regenera sessão para evitar session fixation
-                session_regenerate_id(true);
-
-                $_SESSION['usuario_id']   = $usuario['id'];
-                $_SESSION['usuario_nome'] = $usuario['nome'];
-                $_SESSION['usuario_tipo'] = $usuario['tipo'];
-                $_SESSION['login_hora']   = date('Y-m-d H:i:s');
-                $_SESSION['ip_login']     = $ip;
-                $_SESSION['csrf_token']   = bin2hex(random_bytes(32));
-
-                if (function_exists('registrarLog')) {
-                    registrarLog($pdo, $usuario['id'], 'LOGIN_SUCESSO', "Login: {$usuario['login']} - IP: $ip");
-                }
-
-                header('Location: app/views/dashboard/painel.php');
-                exit;
-            } else {
-                $erro = $resultado['mensagem'];
-                if (function_exists('registrarLog')) {
-                    registrarLog($pdo, null, 'LOGIN_FALHA', "Login tentado: $login - IP: $ip - Motivo: {$resultado['mensagem']}");
-                }
-            }
+        if ($resultado['sucesso']) {
+            header('Location: ' . urlApp('app/views/dashboard/painel.php'));
+            exit;
         }
+        $erro = $resultado['mensagem'];
     }
 }
 
-// Gera token CSRF
-if (empty($_SESSION['csrf_token'])) {
-    $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
-}
-$csrf_token = $_SESSION['csrf_token'];
+// Token CSRF do formulário (criado na sessão se ainda não existir)
+$csrf_token = gerarCSRF();
+
+// ── Cabeçalho do documento ───────────────────────────────────────────────────
+$cssPagina = ['login.css'];
+require __DIR__ . '/app/views/partials/head.php';
 ?>
-<!DOCTYPE html>
-<html lang="pt-BR">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ákron — Sistema de Monitoramento</title>
-    <link rel="icon" type="image/svg+xml" href="public/assets/img/logo.svg">
-    <link rel="stylesheet" href="public/assets/css/style.css">
-    <link rel="stylesheet" href="public/assets/css/login.css">
-</head>
+
 <body class="tela-login">
 
-        <div class="login-titulo-sistema">Sistema de Monitoramento Industrial v2.0</div>
+    <div class="login-titulo-sistema"><?php echo escapar(APP_DESCRICAO . ' v' . APP_VERSAO); ?></div>
+    <div class="login-tema"><?php echo botaoTema(); ?></div>
 
-    <div class="login-marca">
-        <img src="public/assets/img/logo.svg" alt="Ákron">
-        <div class="login-marca-nome">ÁKRON</div>
-        <div class="login-marca-tagline">Visão de ponta a ponta para sua operação</div>
-    </div>
+    <header class="login-marca">
+        <span class="logo logo-completa" role="img" aria-label="<?php echo escapar(APP_NOME); ?>"></span>
+        <div class="login-marca-tagline"><?php echo escapar(APP_LEMA); ?></div>
+    </header>
 
-    <div class="login-box">
-        <h2>autenticação</h2>
+    <main class="login-box">
+        <h2>Autenticação</h2>
 
         <?php if ($erro): ?>
-            <div class="msg-erro">
-                <?php echo htmlspecialchars($erro, ENT_QUOTES, 'UTF-8'); ?>
-            </div>
+            <div class="msg-erro" role="alert"><?php echo escapar($erro); ?></div>
+        <?php elseif ($aviso): ?>
+            <div class="msg-alerta" role="status"><?php echo escapar($aviso); ?></div>
         <?php endif; ?>
 
         <form method="POST" id="loginForm" autocomplete="off">
-            <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($csrf_token, ENT_QUOTES, 'UTF-8'); ?>">
+            <input type="hidden" name="csrf_token" value="<?php echo escapar($csrf_token); ?>">
 
             <div class="login-campo">
                 <label for="login">Identificação do Usuário</label>
-                <div>
-                    <input
-                        type="text"
-                        id="login"
-                        name="login"
-                        placeholder="usuario.nome"
-                        maxlength="50"
-                        <?php echo $tentativas_bloqueadas ? 'disabled' : ''; ?>
-                        value="<?php echo isset($_POST['login']) ? htmlspecialchars($_POST['login'], ENT_QUOTES, 'UTF-8') : ''; ?>"
-                        autocomplete="username"
-                        required
-                    >
-                </div>
+                <input type="text" id="login" name="login" placeholder="usuario.nome" maxlength="50"
+                    value="<?php echo isset($_POST['login']) ? escapar($_POST['login']) : ''; ?>"
+                    autocomplete="username" autofocus required <?php echo $tentativasBloqueadas ? 'disabled' : ''; ?>>
             </div>
 
             <div class="login-campo">
                 <label for="senha">Credencial de Acesso</label>
-                <div>
-                    <input
-                        type="password"
-                        id="senha"
-                        name="senha"
-                        placeholder="••••••••"
-                        maxlength="128"
-                        <?php echo $tentativas_bloqueadas ? 'disabled' : ''; ?>
-                        autocomplete="current-password"
-                        required
-                    >
-                </div>
+                <input type="password" id="senha" name="senha" placeholder="••••••••" maxlength="128"
+                    autocomplete="current-password" required <?php echo $tentativasBloqueadas ? 'disabled' : ''; ?>>
             </div>
 
-            <button
-                type="submit"
-                id="btnLogin"
-                <?php echo $tentativas_bloqueadas ? 'disabled' : ''; ?>
-            >
+            <button type="submit" id="btnLogin" <?php echo $tentativasBloqueadas ? 'disabled' : ''; ?>>
                 AUTENTICAR ACESSO
             </button>
         </form>
 
-        <div class="login-credenciais-teste">
-            Ambiente de testes — login <strong>admin</strong> entra como administrador,<br>qualquer outro login entra como usuário comum.
-        </div>
-
-</div>
+        <p class="login-versao">Acesso restrito a usuários autorizados.</p>
+    </main>
 
 </body>
+
 </html>

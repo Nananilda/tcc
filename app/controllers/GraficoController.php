@@ -1,57 +1,68 @@
 <?php
 /**
- * GraficoController.php
- * Endpoint JSON usado pelo JavaScript (public/assets/js/chart.js) para
- * a atualização em tempo real (AJAX) do gráfico em graficos_sensores.php.
- *
- * Uso: GET GraficoController.php?sensor=temperatura&horas=24
- * Retorna: { "labels": [...], "valores": [...] }
- *
- * Segue a mesma lógica de consulta já usada em
- * app/views/graficos/graficos_sensores.php (mesma tabela, mesmos filtros),
- * apenas devolvendo os dados em JSON em vez de montar o Chart.js diretamente.
+ * app/controllers/GraficoController.php
+ * Controller: GraficoController
+ * Entrega a série de leituras usada pelos gráficos de linha: tanto no
+ * carregamento da página (app/views/graficos/graficos_sensores.php) quanto na
+ * atualização em tempo real (AJAX, rota routes/grafico_dados.php) e na API
+ * (api/leituras.php).
  */
 
-session_start();
-require_once __DIR__ . '/../../includes/auth.php';
-exigirLogin();
+require_once __DIR__ . '/../models/LeituraModel.php';
 
-require_once __DIR__ . '/../config/conexao.php';
+class GraficoController
+{
+    private LeituraModel $model;
 
-header('Content-Type: application/json; charset=utf-8');
+    public function __construct(PDO $pdo)
+    {
+        $this->model = new LeituraModel($pdo);
+    }
 
-// Sensores válidos (mesma lista de graficos_sensores.php)
-$sensores_validos = ['temperatura', 'ruido', 'qualidade_ar', 'umidade', 'pressao', 'uv'];
+    /**
+     * Consulta a série de um sensor, validando os parâmetros recebidos.
+     *
+     * @param array $entrada normalmente $_GET: 'sensor' (tipo) e 'horas'
+     * @return array{sensor:string, horas:int, pontos:array, total:int, erro:string}
+     *         `pontos` → lista de ['lido_em', 'valor', 'amostras'];
+     *         `total`  → soma das leituras brutas que compõem os pontos.
+     */
+    public function serie(array $entrada): array
+    {
+        $sensor = LeituraModel::normalizarSensor($entrada['sensor'] ?? null);
+        $horas = LeituraModel::normalizarHoras($entrada['horas'] ?? 24);
+        $pontos = [];
+        $erro = '';
 
-$sensor_sel = $_GET['sensor'] ?? 'temperatura';
-if (!in_array($sensor_sel, $sensores_validos, true)) {
-    $sensor_sel = 'temperatura';
+        try {
+            $pontos = $this->model->serie($sensor, $horas);
+        } catch (PDOException $e) {
+            error_log('[' . APP_NOME . '] Erro ao consultar leituras: ' . $e->getMessage());
+            $erro = 'Não foi possível consultar as leituras no banco de dados.';
+        }
+
+        return [
+            'sensor' => $sensor,
+            'horas' => $horas,
+            'pontos' => $pontos,
+            'total' => (int) array_sum(array_column($pontos, 'amostras')),
+            'erro' => $erro,
+        ];
+    }
+
+    /**
+     * Mesma consulta, no formato JSON usado pelo JavaScript e pela API:
+     * { sensor, horas, labels: [...datas], valores: [...números], total }
+     */
+    public function serieJson(array $entrada): array
+    {
+        $r = $this->serie($entrada);
+        return [
+            'sensor' => $r['sensor'],
+            'horas' => $r['horas'],
+            'labels' => array_column($r['pontos'], 'lido_em'),
+            'valores' => array_column($r['pontos'], 'valor'),
+            'total' => $r['total'],
+        ];
+    }
 }
-
-$horas = (int) ($_GET['horas'] ?? 24);
-if (!in_array($horas, [6, 12, 24, 48, 168], true)) {
-    $horas = 24;
-}
-
-$leituras = [];
-try {
-    $stmt = $pdo->prepare("
-        SELECT valor, lido_em
-        FROM leitura_sensor
-        WHERE sensor_tipo = :tipo
-          AND lido_em >= DATE_SUB(NOW(), INTERVAL :horas HOUR)
-        ORDER BY lido_em ASC
-        LIMIT 500
-    ");
-    $stmt->execute([':tipo' => $sensor_sel, ':horas' => $horas]);
-    $leituras = $stmt->fetchAll(PDO::FETCH_ASSOC);
-} catch (PDOException $e) {
-    $leituras = [];
-}
-
-echo json_encode([
-    'sensor' => $sensor_sel,
-    'horas' => $horas,
-    'labels' => array_column($leituras, 'lido_em'),
-    'valores' => array_map('floatval', array_column($leituras, 'valor')),
-]);

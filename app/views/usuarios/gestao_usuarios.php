@@ -1,67 +1,45 @@
 <?php
 /**
- * gestao_usuarios.php
- * Menu de acesso às ações de gestão de usuários (somente administradores).
+ * app/views/usuarios/gestao_usuarios.php — Gestão de Usuários.
+ * Menu de acesso às ações de gestão de usuários (somente administradores):
+ * cadastrar, editar e excluir.
  */
 
-session_start();
 require_once __DIR__ . '/../../../includes/auth.php';
 exigirAdmin();
+
+require_once __DIR__ . '/../partials/icones.php';
+
+// Ações do menu: [ícone, título, descrição, página]
+$acoes = [
+    ['cadastrar', 'Realizar Cadastro', 'Criar um novo usuário no sistema.', 'cadastro.php'],
+    ['editar', 'Editar Usuário', 'Buscar e atualizar dados de um usuário existente.', 'editar.php'],
+    ['excluir', 'Excluir Cadastro', 'Remover permanentemente um usuário.', 'excluir.php'],
+];
+
+$tituloPagina = 'Gestão de Usuários';
+$secaoTopbar = 'Usuários';
+$cssPagina = ['usuarios.css'];
+require __DIR__ . '/../partials/cabecalho.php';
 ?>
-<!DOCTYPE html>
-<html lang="pt-BR">
 
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gestão de Usuários — Ákron</title>
-    <link rel="icon" type="image/svg+xml" href="../../../public/assets/img/logo.svg">
-    <link rel="stylesheet" href="../../../public/assets/css/style.css">
-    <link rel="stylesheet" href="../../../public/assets/css/usuarios.css">
-</head>
+<h1>Gestão de Usuários</h1>
+<p class="usuarios-dica">Escolha uma das ações abaixo.</p>
 
-<body>
+<nav class="usuarios-menu-lista" aria-label="Ações de gestão de usuários">
+    <?php foreach ($acoes as [$icone, $titulo, $descricao, $pagina]): ?>
+        <a class="menu-item" href="<?php echo escapar($pagina); ?>">
+            <span class="icone"><?php echo iconeSvg($icone); ?></span>
+            <span>
+                <strong><?php echo escapar($titulo); ?></strong><br>
+                <span class="usuarios-dica"><?php echo escapar($descricao); ?></span>
+            </span>
+        </a>
+    <?php endforeach; ?>
+</nav>
 
-    <div class="topbar">
-        <div class="marca">
-            <img src="../../../public/assets/img/logo.svg" alt="Ákron" class="marca-logo">
-            <div class="marca-texto">
-                <span class="marca-nome">ÁKRON</span>
-                <span class="marca-secao">Usuários</span>
-            </div>
-        </div>
-        <div class="usuario-info">
-            Usuário: <strong><?php echo htmlspecialchars($_SESSION['usuario_nome'], ENT_QUOTES, 'UTF-8'); ?></strong>
-            | Tipo: <strong>Administrador</strong>
-        </div>
-    </div>
+<div class="nav-rodape">
+    <a href="../dashboard/painel.php">← Voltar ao painel</a>
+</div>
 
-    <div class="container">
-
-        <h1>Gestão de Usuários</h1>
-        <p class="usuarios-dica">Escolha uma das ações abaixo.</p>
-
-        <div class="usuarios-menu-lista">
-            <a class="menu-item" href="cadastro.php">
-                <strong>Realizar Cadastro</strong><br>
-                <span class="usuarios-dica">Criar um novo usuário no sistema.</span>
-            </a>
-            <a class="menu-item" href="editar.php">
-                <strong>Editar Usuário</strong><br>
-                <span class="usuarios-dica">Buscar e atualizar dados de um usuário existente.</span>
-            </a>
-            <a class="menu-item" href="excluir.php">
-                <strong>Excluir Cadastro</strong><br>
-                <span class="usuarios-dica">Remover permanentemente um usuário.</span>
-            </a>
-        </div>
-
-        <div class="nav-rodape">
-            <a href="../dashboard/painel.php">← Voltar ao painel</a>
-        </div>
-
-    </div>
-
-</body>
-
-</html>
+<?php require __DIR__ . '/../partials/rodape.php'; ?>

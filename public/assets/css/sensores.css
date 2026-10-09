@@ -1,6 +1,7 @@
 /* sensores.css — referente a app/views/sensores/*.php
    (gestao_sensores.php e listar_sensores.php) */
 
+/* Formulário "Adicionar Novo Sensor" em grade responsiva */
 .sensores-form-novo {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
@@ -10,12 +11,4 @@
 
 .sensores-form-novo .campo-full {
     grid-column: 1 / -1;
-}
-
-.sensor-status-ativo {
-    color: var(--cor-sucesso);
-}
-
-.sensor-status-inativo {
-    color: var(--cor-erro);
 }

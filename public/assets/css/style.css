@@ -1,40 +1,199 @@
-/* style.css — Base do sistema Ákron
-   Variáveis, reset e componentes reaproveitados em TODAS as
-   páginas. Cada view também carrega um CSS próprio (ex:
+/* style.css — Base do sistema ÁKRON
+   Variáveis (tema claro e escuro), reset e componentes reaproveitados em
+   TODAS as páginas. Cada view também carrega um CSS próprio (ex.:
    painel.css, graficos.css) só com o que é específico dela.
 
-   Identidade: Ákron (Ἄκρον) — "o ponto mais alto". Paleta em
-   tons de azul acinzentado/chumbo, sóbria e corporativa. */
+   Identidade: ÁKRON (Ἄκρον) — "o ponto mais alto". A paleta nasce do azul-
+   ardósia da logo (#607487): sóbria e corporativa, nos dois temas.
 
+   Sumário
+     1. Fontes
+     2. Tokens de cor (tema claro = padrão, tema escuro)
+     3. Reset e base
+     4. Logo (símbolo / nome / completa)
+     5. Barra superior (topbar) e botão de tema
+     6. Container, cartões e títulos
+     7. Botões
+     8. Formulários
+     9. Tabelas
+    10. Mensagens, badges e estados vazios
+    11. Navegação de rodapé e rodapé da marca
+    12. Acessibilidade e responsividade                                   */
+
+
+/* ═══ 1. FONTES ═══════════════════════════════════════════════════════════════
+   Inter (texto) e Montserrat (títulos e marca — o lettering da logo é uma
+   geométrica próxima da Montserrat). Arquivos locais em public/assets/fonts,
+   subconjunto "latin" (cobre todo o português). Licença: SIL OFL 1.1. */
+@font-face {
+    font-family: 'Inter';
+    font-style: normal;
+    font-weight: 400;
+    font-display: swap;
+    src: url('../fonts/inter-latin-400-normal.woff2') format('woff2');
+}
+
+@font-face {
+    font-family: 'Inter';
+    font-style: normal;
+    font-weight: 500;
+    font-display: swap;
+    src: url('../fonts/inter-latin-500-normal.woff2') format('woff2');
+}
+
+@font-face {
+    font-family: 'Inter';
+    font-style: normal;
+    font-weight: 600;
+    font-display: swap;
+    src: url('../fonts/inter-latin-600-normal.woff2') format('woff2');
+}
+
+@font-face {
+    font-family: 'Inter';
+    font-style: normal;
+    font-weight: 700;
+    font-display: swap;
+    src: url('../fonts/inter-latin-700-normal.woff2') format('woff2');
+}
+
+@font-face {
+    font-family: 'Montserrat';
+    font-style: normal;
+    font-weight: 600;
+    font-display: swap;
+    src: url('../fonts/montserrat-latin-600-normal.woff2') format('woff2');
+}
+
+@font-face {
+    font-family: 'Montserrat';
+    font-style: normal;
+    font-weight: 700;
+    font-display: swap;
+    src: url('../fonts/montserrat-latin-700-normal.woff2') format('woff2');
+}
+
+
+/* ═══ 2. TOKENS DE COR ════════════════════════════════════════════════════════
+   O tema é escolhido pelo atributo data-tema="claro|escuro" na tag <html>
+   (definido por public/assets/js/tema.js a partir da preferência salva ou do
+   sistema operacional). Sem JavaScript vale o tema claro.
+   Contrastes de texto conferidos para WCAG AA (≥ 4,5:1) nos dois temas. */
 :root {
+    color-scheme: light;
+
+    /* Superfícies */
+    --cor-fundo: #f1f4f8;
+    --cor-fundo-card: #ffffff;
+    --cor-fundo-card-alt: #e9eef4;
+    --cor-fundo-entrada: #ffffff;
+    --cor-borda: #d2dbe5;
+    --cor-borda-forte: #aebdcb;
+
+    /* Texto */
+    --cor-texto: #141f2b;
+    --cor-texto-suave: #4a5b6c;
+    --cor-texto-fraco: #566a7f;
+
+    /* Marca (derivada da logo, #607487) */
+    --cor-marca: #607487;              /* cor da logo (símbolo e nome) */
+    --cor-primaria: #4f6b85;           /* botões e destaques sólidos */
+    --cor-primaria-hover: #3e5973;
+    --cor-texto-sobre-primaria: #ffffff;
+    --cor-link: #3e5973;
+    --cor-link-hover: #2b4258;
+    --cor-foco: #4f6b85;
+
+    /* Semânticas */
+    --cor-sucesso: #0c6b45;
+    --cor-sucesso-fundo: rgba(12, 107, 69, 0.10);
+    --cor-sucesso-borda: rgba(12, 107, 69, 0.30);
+    --cor-erro: #b32a38;
+    --cor-erro-fundo: rgba(179, 42, 56, 0.09);
+    --cor-erro-borda: rgba(179, 42, 56, 0.30);
+    --cor-erro-hover: #8f2230;
+    --cor-texto-sobre-erro: #ffffff;   /* texto de botões de perigo */
+    --cor-alerta: #7d5200;
+    --cor-alerta-fundo: rgba(224, 168, 63, 0.20);
+    --cor-alerta-borda: rgba(125, 82, 0, 0.30);
+    --cor-info-fundo: rgba(79, 107, 133, 0.12);
+
+    /* Gráficos (lidos por public/assets/js/graficos.js) */
+    --cor-grafico-linha: #4f6b85;
+    --cor-grafico-area: rgba(79, 107, 133, 0.16);
+    --cor-grafico-grade: #d9e1ea;
+    --cor-grafico-texto: #4a5b6c;
+    --cor-grafico-critico: rgba(194, 49, 63, 0.78);
+    --cor-grafico-atencao: rgba(214, 154, 31, 0.85);
+    --cor-grafico-info: rgba(79, 107, 133, 0.78);
+
+    /* Login */
+    --cor-login-topo: #ffffff;
+    --cor-login-base: #e3e9f0;
+
+    /* Forma e profundidade */
+    --raio: 10px;
+    --raio-peq: 6px;
+    --sombra: 0 1px 2px rgba(20, 31, 43, 0.06), 0 8px 24px rgba(20, 31, 43, 0.08);
+    --sombra-suave: 0 1px 3px rgba(20, 31, 43, 0.08);
+
+    /* Tipografia */
+    --fonte: 'Inter', 'Segoe UI', Roboto, Arial, sans-serif;
+    --fonte-titulo: 'Montserrat', 'Inter', 'Segoe UI', Arial, sans-serif;
+}
+
+:root[data-tema="escuro"] {
+    color-scheme: dark;
+
     --cor-fundo: #0d1218;
     --cor-fundo-card: #161f29;
     --cor-fundo-card-alt: #1d2733;
+    --cor-fundo-entrada: #0d1218;
     --cor-borda: #2a3846;
+    --cor-borda-forte: #3e5163;
+
     --cor-texto: #e9eef3;
     --cor-texto-suave: #9fb0c0;
-    --cor-texto-fraco: #6f8296;
+    --cor-texto-fraco: #7b8ea2;
 
-    /* Azul Acinzentado Clássico / Azul Chumbo (identidade Ákron) */
-    --cor-primaria: #6A89A7;
-    --cor-primaria-clara: #8CA6BE;
-    --cor-primaria-escura: #4F6B85;
-    --cor-secundaria: #7393B3;
+    --cor-marca: #9db3c8;
+    --cor-primaria: #6a89a7;
+    --cor-primaria-hover: #4f6b85;
+    --cor-texto-sobre-primaria: #0a121a;
+    --cor-link: #8ca6be;
+    --cor-link-hover: #aabfd2;
+    --cor-foco: #8ca6be;
 
     --cor-sucesso: #3fc98a;
     --cor-sucesso-fundo: rgba(63, 201, 138, 0.12);
-    --cor-erro: #e5636f;
-    --cor-erro-fundo: rgba(229, 99, 111, 0.12);
+    --cor-sucesso-borda: rgba(63, 201, 138, 0.35);
+    --cor-erro: #ef7480;
+    --cor-erro-fundo: rgba(239, 116, 128, 0.12);
+    --cor-erro-borda: rgba(239, 116, 128, 0.35);
+    --cor-erro-hover: #f59aa3;
+    --cor-texto-sobre-erro: #2b0709;
     --cor-alerta: #e0a83f;
     --cor-alerta-fundo: rgba(224, 168, 63, 0.12);
+    --cor-alerta-borda: rgba(224, 168, 63, 0.35);
+    --cor-info-fundo: rgba(106, 137, 167, 0.16);
 
-    --raio: 10px;
-    --raio-peq: 6px;
+    --cor-grafico-linha: #8ca6be;
+    --cor-grafico-area: rgba(106, 137, 167, 0.18);
+    --cor-grafico-grade: #2a3846;
+    --cor-grafico-texto: #9fb0c0;
+    --cor-grafico-critico: rgba(229, 99, 111, 0.75);
+    --cor-grafico-atencao: rgba(224, 168, 63, 0.75);
+    --cor-grafico-info: rgba(106, 137, 167, 0.80);
+
+    --cor-login-topo: #182330;
+    --cor-login-base: #0d1218;
+
     --sombra: 0 8px 24px rgba(0, 0, 0, 0.35);
     --sombra-suave: 0 2px 10px rgba(0, 0, 0, 0.25);
-    --fonte: 'Segoe UI', Roboto, Arial, sans-serif;
 }
 
+
+/* ═══ 3. RESET E BASE ═════════════════════════════════════════════════════════ */
 * {
     box-sizing: border-box;
 }
@@ -45,24 +204,28 @@ body {
     background: var(--cor-fundo);
     color: var(--cor-texto);
     line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+    /* Suaviza a troca de tema sem atrasar a primeira pintura */
+    transition: background-color 0.2s ease, color 0.2s ease;
 }
 
 a {
-    color: var(--cor-primaria-clara);
+    color: var(--cor-link);
     text-decoration: none;
 }
 
 a:hover {
-    color: var(--cor-primaria);
+    color: var(--cor-link-hover);
     text-decoration: underline;
 }
 
 h1,
 h2,
 h3 {
+    font-family: var(--fonte-titulo);
     font-weight: 600;
     margin-top: 0;
-    letter-spacing: 0.2px;
+    letter-spacing: 0.1px;
 }
 
 hr {
@@ -79,7 +242,52 @@ code {
     font-size: 0.85em;
 }
 
-/* Barra superior padrão de todas as telas internas */
+::selection {
+    background: var(--cor-primaria);
+    color: var(--cor-texto-sobre-primaria);
+}
+
+
+/* ═══ 4. LOGO ═════════════════════════════════════════════════════════════════
+   A logo é um SVG usado como MÁSCARA: a forma vem do arquivo e a cor vem de
+   var(--cor-marca) — por isso ela muda sozinha com o tema (azul-ardósia no
+   claro, azul-ardósia claro no escuro). Defina apenas a altura (ou a largura)
+   do elemento; a proporção é mantida pelo aspect-ratio. */
+.logo {
+    display: inline-block;
+    flex-shrink: 0;
+    background-color: var(--cor-marca);
+    -webkit-mask-repeat: no-repeat;
+    mask-repeat: no-repeat;
+    -webkit-mask-position: center;
+    mask-position: center;
+    -webkit-mask-size: contain;
+    mask-size: contain;
+}
+
+/* Símbolo: escudo alado com o "A" */
+.logo-simbolo {
+    aspect-ratio: 1070 / 820;
+    -webkit-mask-image: url('../img/akron-simbolo.svg');
+    mask-image: url('../img/akron-simbolo.svg');
+}
+
+/* Nome: ÁKRON */
+.logo-nome {
+    aspect-ratio: 1125 / 281;
+    -webkit-mask-image: url('../img/akron-nome.svg');
+    mask-image: url('../img/akron-nome.svg');
+}
+
+/* Logo completa: símbolo + ÁKRON + Άκρον */
+.logo-completa {
+    aspect-ratio: 771 / 902;
+    -webkit-mask-image: url('../img/akron-logo-completa.svg');
+    mask-image: url('../img/akron-logo-completa.svg');
+}
+
+
+/* ═══ 5. BARRA SUPERIOR (TOPBAR) ══════════════════════════════════════════════ */
 .topbar {
     display: flex;
     justify-content: space-between;
@@ -87,65 +295,145 @@ code {
     gap: 16px;
     background: var(--cor-fundo-card);
     border-bottom: 1px solid var(--cor-borda);
-    padding: 12px 28px;
+    padding: 10px 28px;
     box-shadow: var(--sombra-suave);
     position: sticky;
     top: 0;
     z-index: 10;
 }
 
+/* Marca à esquerda: símbolo + nome (+ seção atual) */
 .topbar .marca {
     display: flex;
     align-items: center;
-    gap: 10px;
-    font-weight: 700;
-    letter-spacing: 0.3px;
+    gap: 12px;
     color: var(--cor-texto);
     white-space: nowrap;
 }
 
+.topbar .marca:hover {
+    text-decoration: none;
+}
+
 .topbar .marca-logo {
-    height: 34px;
-    width: auto;
-    display: block;
-    flex-shrink: 0;
+    height: 32px;
 }
 
 .topbar .marca-texto {
     display: flex;
     flex-direction: column;
-    line-height: 1.15;
+    gap: 5px;
+    line-height: 1;
 }
 
-.topbar .marca-texto .marca-nome {
-    font-size: 1rem;
-    font-weight: 700;
-    color: var(--cor-texto);
+.topbar .marca-nome {
+    height: 13px;
 }
 
-.topbar .marca-texto .marca-secao {
-    font-size: 0.72rem;
-    font-weight: 500;
-    letter-spacing: 0.4px;
-    color: var(--cor-primaria-clara);
+.topbar .marca-secao {
+    font-family: var(--fonte-titulo);
+    font-size: 0.68rem;
+    font-weight: 600;
+    letter-spacing: 1.2px;
+    color: var(--cor-link);
     text-transform: uppercase;
 }
 
+/* Lado direito: usuário, tema e sair */
+.topbar .acoes {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+}
+
 .topbar .usuario-info {
-    font-size: 0.88rem;
+    font-size: 0.86rem;
     color: var(--cor-texto-suave);
     text-align: right;
+    line-height: 1.3;
 }
 
 .topbar .usuario-info strong {
     color: var(--cor-texto);
+    font-weight: 600;
 }
 
-/* Container geral de conteúdo */
+.topbar .usuario-perfil {
+    display: block;
+    font-size: 0.74rem;
+    color: var(--cor-texto-fraco);
+}
+
+.topbar .sair {
+    font-size: 0.86rem;
+    font-weight: 500;
+    color: var(--cor-texto-suave);
+    padding: 7px 12px;
+    border: 1px solid var(--cor-borda);
+    border-radius: 8px;
+    transition: border-color 0.15s ease, color 0.15s ease;
+}
+
+.topbar .sair:hover {
+    color: var(--cor-erro);
+    border-color: var(--cor-erro);
+    text-decoration: none;
+}
+
+/* Botão de alternar tema claro/escuro (também usado na tela de login).
+   Mostra o ícone da AÇÃO: lua no tema claro (vai escurecer), sol no escuro. */
+.tema-botao {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    padding: 0;
+    background: transparent;
+    color: var(--cor-texto-suave);
+    border: 1px solid var(--cor-borda);
+    border-radius: 8px;
+}
+
+.tema-botao:hover {
+    background: var(--cor-fundo-card-alt);
+    color: var(--cor-texto);
+    border-color: var(--cor-borda-forte);
+}
+
+.tema-botao svg {
+    width: 18px;
+    height: 18px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+.tema-botao .icone-sol {
+    display: none;
+}
+
+:root[data-tema="escuro"] .tema-botao .icone-sol {
+    display: block;
+}
+
+:root[data-tema="escuro"] .tema-botao .icone-lua {
+    display: none;
+}
+
+
+/* ═══ 6. CONTAINER, CARTÕES E TÍTULOS ═════════════════════════════════════════ */
 .container {
     max-width: 1100px;
     margin: 0 auto;
-    padding: 28px 20px 60px;
+    padding: 28px 20px 40px;
+}
+
+.container h1 {
+    font-size: 1.6rem;
+    font-weight: 700;
 }
 
 .card {
@@ -162,13 +450,14 @@ code {
     margin-bottom: 16px;
 }
 
-/* Botões */
+
+/* ═══ 7. BOTÕES ═══════════════════════════════════════════════════════════════ */
 button,
 .btn {
     font-family: var(--fonte);
     background: var(--cor-primaria);
-    color: #0a121a;
-    border: none;
+    color: var(--cor-texto-sobre-primaria);
+    border: 1px solid transparent;
     border-radius: 8px;
     padding: 10px 18px;
     font-weight: 600;
@@ -179,8 +468,8 @@ button,
 
 button:hover,
 .btn:hover {
-    background: var(--cor-primaria-escura);
-    color: var(--cor-texto);
+    background: var(--cor-primaria-hover);
+    color: #ffffff;
     text-decoration: none;
 }
 
@@ -189,40 +478,42 @@ button:active,
     transform: translateY(1px);
 }
 
-button:focus-visible,
-.btn:focus-visible,
-a:focus-visible,
-input:focus-visible,
-select:focus-visible {
-    outline: 2px solid var(--cor-primaria-clara);
-    outline-offset: 2px;
+button:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
 }
 
 button.btn-perigo {
     background: var(--cor-erro);
-    color: #29070a;
+    color: var(--cor-texto-sobre-erro);
 }
 
 button.btn-perigo:hover {
-    background: #c94e59;
-    color: #fff;
+    background: var(--cor-erro-hover);
+    color: var(--cor-texto-sobre-erro);
 }
 
-button.btn-secundario {
+/* Botão secundário (contorno); serve para <button> e para link .btn */
+button.btn-secundario,
+.btn.btn-secundario {
+    display: inline-block;
     background: transparent;
     color: var(--cor-texto);
-    border: 1px solid var(--cor-borda);
+    border-color: var(--cor-borda-forte);
 }
 
-button.btn-secundario:hover {
+button.btn-secundario:hover,
+.btn.btn-secundario:hover {
     background: var(--cor-fundo-card-alt);
     color: var(--cor-texto);
 }
 
-/* Formulários */
+
+/* ═══ 8. FORMULÁRIOS ══════════════════════════════════════════════════════════ */
 label {
     display: block;
     font-size: 0.85rem;
+    font-weight: 500;
     color: var(--cor-texto-suave);
     margin-bottom: 6px;
 }
@@ -232,20 +523,27 @@ select,
 textarea {
     font-family: var(--fonte);
     width: 100%;
-    background: var(--cor-fundo);
+    background: var(--cor-fundo-entrada);
     border: 1px solid var(--cor-borda);
     color: var(--cor-texto);
     border-radius: 8px;
     padding: 10px 12px;
     font-size: 0.95rem;
-    transition: border-color 0.15s ease;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+/* Altura uniforme: campos e listas alinham na mesma linha dos formulários em grade */
+input:not([type="checkbox"]):not([type="radio"]),
+select {
+    min-height: 42px;
 }
 
 input:focus,
 select:focus,
 textarea:focus {
     outline: none;
-    border-color: var(--cor-primaria);
+    border-color: var(--cor-foco);
+    box-shadow: 0 0 0 3px var(--cor-info-fundo);
 }
 
 input:disabled,
@@ -271,7 +569,14 @@ legend {
     font-weight: 600;
 }
 
-/* Tabelas */
+
+/* ═══ 9. TABELAS ══════════════════════════════════════════════════════════════ */
+/* Envolva a <table> em .tabela-rolagem para rolar na horizontal em telas pequenas */
+.tabela-rolagem {
+    overflow-x: auto;
+    border-radius: var(--raio);
+}
+
 table {
     width: 100%;
     border-collapse: collapse;
@@ -301,14 +606,21 @@ tbody tr {
 }
 
 tbody tr:hover {
-    background: rgba(106, 137, 167, 0.06);
+    background: var(--cor-info-fundo);
 }
 
 tr:last-child td {
     border-bottom: none;
 }
 
-/* Mensagens de feedback */
+/* Título que vem logo depois de uma tabela ganha respiro */
+.tabela-rolagem + h2,
+.relatorio-tabela-detalhe + h2 {
+    margin-top: 28px;
+}
+
+
+/* ═══ 10. MENSAGENS, BADGES E ESTADOS VAZIOS ══════════════════════════════════ */
 .msg-sucesso,
 .msg-erro,
 .msg-alerta {
@@ -321,19 +633,25 @@ tr:last-child td {
 .msg-sucesso {
     background: var(--cor-sucesso-fundo);
     color: var(--cor-sucesso);
-    border: 1px solid rgba(63, 201, 138, 0.35);
+    border: 1px solid var(--cor-sucesso-borda);
 }
 
 .msg-erro {
     background: var(--cor-erro-fundo);
     color: var(--cor-erro);
-    border: 1px solid rgba(229, 99, 111, 0.35);
+    border: 1px solid var(--cor-erro-borda);
 }
 
 .msg-alerta {
     background: var(--cor-alerta-fundo);
     color: var(--cor-alerta);
-    border: 1px solid rgba(224, 168, 63, 0.35);
+    border: 1px solid var(--cor-alerta-borda);
+}
+
+.msg-erro ul,
+.msg-sucesso ul {
+    margin: 6px 0 0;
+    padding-left: 20px;
 }
 
 .msg-vazio {
@@ -361,7 +679,30 @@ tr:last-child td {
     color: var(--cor-erro);
 }
 
-/* Navegação de voltar / rodapé de página */
+/* Badges de severidade dos alertas: a COR indica a gravidade */
+.badge-critico {
+    background: var(--cor-erro-fundo);
+    color: var(--cor-erro);
+}
+
+.badge-atencao {
+    background: var(--cor-alerta-fundo);
+    color: var(--cor-alerta);
+}
+
+.badge-info {
+    background: var(--cor-info-fundo);
+    color: var(--cor-link);
+}
+
+/* Itens já resolvidos ficam em segundo plano */
+.alerta-resolvido {
+    opacity: 0.62;
+}
+
+
+/* ═══ 11. NAVEGAÇÃO DE RODAPÉ E RODAPÉ DA MARCA ═══════════════════════════════ */
+/* Links de "voltar" no fim de cada página */
 .nav-rodape {
     margin-top: 24px;
     padding-top: 20px;
@@ -372,13 +713,95 @@ tr:last-child td {
     gap: 16px;
 }
 
-/* Rodapé de marca (fim das páginas internas) */
+/* Assinatura da marca no fim das páginas internas */
 .rodape-marca {
     max-width: 1100px;
     margin: 0 auto;
-    padding: 10px 20px 30px;
-    text-align: center;
+    padding: 6px 20px 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
     font-size: 0.75rem;
     color: var(--cor-texto-fraco);
     letter-spacing: 0.3px;
+}
+
+.rodape-marca .logo-simbolo {
+    height: 16px;
+    opacity: 0.8;
+}
+
+
+/* ═══ 12. ACESSIBILIDADE E RESPONSIVIDADE ═════════════════════════════════════ */
+button:focus-visible,
+.btn:focus-visible,
+a:focus-visible,
+input:focus-visible,
+select:focus-visible {
+    outline: 2px solid var(--cor-foco);
+    outline-offset: 2px;
+}
+
+/* Formulário que não quebra a linha (ex.: botão "Ativar" dentro de uma tabela) */
+.form-inline {
+    display: inline;
+    margin: 0;
+}
+
+/* Texto só para leitores de tela */
+.sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+}
+
+/* Respeita quem prefere menos animação */
+@media (prefers-reduced-motion: reduce) {
+    * {
+        transition: none !important;
+        animation: none !important;
+    }
+}
+
+@media (max-width: 720px) {
+    .topbar {
+        padding: 10px 14px;
+        gap: 10px;
+    }
+
+    .topbar .acoes {
+        gap: 8px;
+    }
+
+    .topbar .usuario-info .rotulo {
+        display: none;
+    }
+
+    .topbar .usuario-info {
+        max-width: 110px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .container {
+        padding: 20px 14px 32px;
+    }
+
+    .card {
+        padding: 18px 16px;
+    }
+}
+
+@media (max-width: 480px) {
+    .topbar .usuario-info {
+        display: none;
+    }
 }

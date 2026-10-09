@@ -1,6 +1,7 @@
 /* usuarios.css — referente a app/views/usuarios/*.php
    (cadastro.php, editar.php, excluir.php, gestao_usuarios.php) */
 
+/* Seções do formulário (Dados, Credencial, Nível de acesso) */
 .usuarios-secao {
     margin-bottom: 22px;
     padding-bottom: 18px;
@@ -12,10 +13,12 @@
 }
 
 .usuarios-secao-titulo {
+    font-family: var(--fonte-titulo);
     font-size: 0.78rem;
+    font-weight: 600;
     text-transform: uppercase;
-    letter-spacing: 0.6px;
-    color: var(--cor-primaria);
+    letter-spacing: 0.8px;
+    color: var(--cor-link);
     margin-bottom: 14px;
 }
 
@@ -31,14 +34,19 @@
     margin-top: 6px;
 }
 
+/* Menu da Gestão de Usuários (Cadastrar / Editar / Excluir) */
 .usuarios-menu-lista a.menu-item {
-    display: block;
+    display: flex;
+    align-items: center;
+    gap: 14px;
     background: var(--cor-fundo-card);
     border: 1px solid var(--cor-borda);
     border-radius: var(--raio);
+    box-shadow: var(--sombra-suave);
     padding: 16px 18px;
     margin-bottom: 12px;
     color: var(--cor-texto);
+    transition: border-color 0.15s ease;
 }
 
 .usuarios-menu-lista a.menu-item:hover {
@@ -46,9 +54,41 @@
     text-decoration: none;
 }
 
+.usuarios-menu-lista .icone {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    width: 42px;
+    height: 42px;
+    border-radius: 10px;
+    background: var(--cor-info-fundo);
+    color: var(--cor-link);
+}
+
+.usuarios-menu-lista .icone svg {
+    width: 22px;
+    height: 22px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.8;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+/* Quadro de confirmação de exclusão */
 .usuarios-perigo-box {
-    border: 1px solid rgba(229, 99, 111, 0.35);
+    border: 1px solid var(--cor-erro-borda);
     background: var(--cor-erro-fundo);
     border-radius: var(--raio);
     padding: 16px 18px;
+}
+
+/* Linha de botões de ação (ex.: "Sim, excluir" + "Não, cancelar") */
+.usuarios-acoes {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 12px;
+    margin-top: 16px;
 }

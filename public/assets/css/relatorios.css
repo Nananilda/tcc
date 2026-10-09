@@ -1,5 +1,21 @@
 /* relatorios.css — referente a app/views/relatorios/relatorio_qualidade.php */
 
+/* Linha de campos do filtro */
+.relatorio-filtros {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 14px;
+    align-items: end;
+}
+
+.relatorio-acoes {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-top: 16px;
+}
+
+/* Colunas numéricas do resumo centralizadas */
 .relatorio-resumo-tabela td:nth-child(n+2),
 .relatorio-resumo-tabela th:nth-child(n+2) {
     text-align: center;
@@ -9,15 +25,22 @@
     color: var(--cor-texto-suave);
     font-size: 0.85rem;
     font-weight: 400;
+    font-family: var(--fonte);
 }
 
+/* Tabela de leituras com rolagem vertical própria */
 .relatorio-tabela-detalhe {
     max-height: 480px;
-    overflow-y: auto;
+    overflow: auto;
     border: 1px solid var(--cor-borda);
     border-radius: var(--raio);
 }
 
 .relatorio-tabela-detalhe table {
     border-radius: 0;
+}
+
+.relatorio-tabela-detalhe th {
+    position: sticky;
+    top: 0;
 }

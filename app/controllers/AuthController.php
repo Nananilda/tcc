@@ -1,14 +1,14 @@
 <?php
 /**
- * AuthController.php
+ * app/controllers/AuthController.php
+ * Controller: AuthController
+ * Orquestra o login e o logout: confere o bloqueio por IP, valida as
+ * credenciais (autenticarUsuario, de includes/auth.php), cria a sessão e
+ * registra o log da tentativa.
  *
- * Wrapper orientado a objeto para as funções de autenticação já existentes
- * em includes/auth.php. O login funcional do sistema continua sendo feito
- * em index.php (fluxo procedural, já testado); esta classe apenas organiza
- * a mesma lógica em formato de controller, para quem quiser reaproveitar
- * a autenticação em outro ponto de entrada sem duplicar regras.
- *
- * Não substitui nem altera o comportamento de index.php.
+ * É a ÚNICA implementação do fluxo de login, usada tanto pela tela web
+ * (index.php) quanto pela API (api/login.php) — assim as duas portas de
+ * entrada obedecem às mesmas regras.
  */
 
 require_once __DIR__ . '/../../includes/auth.php';
@@ -23,8 +23,9 @@ class AuthController
     }
 
     /**
-     * Autentica um usuário, delegando para autenticarUsuario() de auth.php.
-     * Retorna ['sucesso' => bool, 'usuario' => array|null, 'mensagem' => string].
+     * Autentica um usuário e, se der certo, abre a sessão.
+     *
+     * @return array{sucesso:bool, usuario:array|null, mensagem:string}
      */
     public function login(string $login, string $senha, string $ip): array
     {
@@ -40,7 +41,7 @@ class AuthController
 
         if ($resultado['sucesso']) {
             $this->criarSessao($resultado['usuario'], $ip);
-            registrarLog($this->pdo, $resultado['usuario']['id'], 'LOGIN_SUCESSO', "Login: {$resultado['usuario']['login']} - IP: $ip");
+            registrarLog($this->pdo, (int) $resultado['usuario']['id'], 'LOGIN_SUCESSO', "Login: {$resultado['usuario']['login']} - IP: $ip");
         } else {
             registrarLog($this->pdo, null, 'LOGIN_FALHA', "Login tentado: $login - IP: $ip - Motivo: {$resultado['mensagem']}");
         }
@@ -53,10 +54,13 @@ class AuthController
     }
 
     /**
-     * Popula a $_SESSION da mesma forma que index.php faz após um login bem-sucedido.
+     * Popula a $_SESSION após um login bem-sucedido.
+     * A sessão é regenerada para evitar "session fixation" (um atacante fixar
+     * previamente o identificador de sessão da vítima).
      */
     private function criarSessao(array $usuario, string $ip): void
     {
+        iniciarSessao();
         session_regenerate_id(true);
 
         $_SESSION['usuario_id'] = $usuario['id'];

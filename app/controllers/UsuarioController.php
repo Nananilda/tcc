@@ -1,81 +1,180 @@
 <?php
 /**
- * UsuarioController.php
- * Controller — orquestra o cadastro de usuários
+ * app/controllers/UsuarioController.php
+ * Controller: UsuarioController
+ * Orquestra o cadastro, a edição e a exclusão de contas de usuário. As regras
+ * (validações, proteção do último administrador, hash da senha) ficam no
+ * UsuarioModel; este controller aplica as permissões e registra os logs.
+ *
+ * É usado pelas telas web (app/views/usuarios/cadastro|editar|excluir.php) e
+ * pela API (api/usuarios.php), de modo que as duas portas de entrada
+ * obedeçam exatamente às mesmas regras.
+ *
+ * TODAS as operações exigem administrador.
  */
 
-session_start();
-require_once __DIR__ . '/../config/conexao.php';
-require_once __DIR__ . '/../../includes/auth.php';
-require_once __DIR__ . '/../models/Usuario.php';
+require_once __DIR__ . '/../models/UsuarioModel.php';
 
-// Apenas administradores
-exigirAdmin();
+class UsuarioController
+{
+    private UsuarioModel $model;
+    private PDO $pdo;
+    private bool $ehAdmin;
+    private ?int $usuarioLogadoId;
 
-$sucesso = '';
-$erros = [];
-$dados = ['nome' => '', 'login' => '', 'tipo' => 'usuario', 'status' => 'ativo'];
+    /**
+     * @param PDO      $pdo             conexão com o banco
+     * @param bool     $ehAdmin         o usuário logado é administrador?
+     * @param int|null $usuarioLogadoId ID do usuário logado (para logs e para
+     *                                  impedir que ele exclua a própria conta)
+     */
+    public function __construct(PDO $pdo, bool $ehAdmin, ?int $usuarioLogadoId)
+    {
+        $this->pdo = $pdo;
+        $this->model = new UsuarioModel($pdo);
+        $this->ehAdmin = $ehAdmin;
+        $this->usuarioLogadoId = $usuarioLogadoId;
+    }
 
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    // ── Consultas ────────────────────────────────────────────────────────────
 
-    // Valida CSRF
-    if (!validarCSRF($_POST['csrf_token'] ?? '')) {
-        $erros[] = 'Token de segurança inválido. Recarregue a página.';
-    } else {
-        $nome = trim($_POST['nome'] ?? '');
-        $login = trim($_POST['login'] ?? '');
-        $senha = $_POST['senha'] ?? '';
-        $conf = $_POST['confirmar'] ?? '';
-        $tipo = $_POST['tipo'] ?? 'usuario';
-        $status = $_POST['status'] ?? 'ativo';
+    /** Lista todos os usuários (sem senha). */
+    public function listar(): array
+    {
+        return $this->model->listarTodos();
+    }
 
-        $dados = compact('nome', 'login', 'tipo', 'status');
+    /** Busca um usuário pelo ID. Devolve false se não existir. */
+    public function buscarPorId(int $id): array|false
+    {
+        return $this->model->buscarPorId($id);
+    }
 
-        $usuario = new Usuario($pdo);
+    /** Busca um usuário pelo login. Devolve false se não existir. */
+    public function buscarPorLogin(string $login): array|false
+    {
+        return $this->model->buscarPorLogin(trim($login));
+    }
 
-        // Validações via Model
-        $erros = array_merge($erros, $usuario->validarNome($nome));
+    // ── Ações ────────────────────────────────────────────────────────────────
+    // Todas devolvem ['mensagem' => string, 'erros' => string[]] (e, no
+    // cadastro, também 'id' com o código do novo usuário).
 
-        if (!validarLogin($login)) {
-            $erros[] = 'Login inválido (3-50 chars, apenas letras, números, ponto, hífen, underscore).';
+    /**
+     * Cadastra um novo usuário.
+     *
+     * @param array $dados nome, login, senha, confirmar, tipo, status
+     */
+    public function cadastrar(array $dados): array
+    {
+        if (!$this->ehAdmin) {
+            return $this->resposta('', ['Acesso negado.']);
         }
 
-        $erros = array_merge($erros, $usuario->validarTipo($tipo));
-        $erros = array_merge($erros, $usuario->validarStatus($status));
+        $nome = trim($dados['nome'] ?? '');
+        $login = trim($dados['login'] ?? '');
+        $senha = (string) ($dados['senha'] ?? '');
+        $confirmar = (string) ($dados['confirmar'] ?? '');
+        $tipo = (string) ($dados['tipo'] ?? 'usuario');
+        $status = (string) ($dados['status'] ?? 'ativo');
 
-        $erros_senha = validarSenha($senha);
-        if (!empty($erros_senha)) {
-            $erros = array_merge($erros, $erros_senha);
-        }
-        if ($senha !== $conf) {
-            $erros[] = 'As senhas não coincidem.';
-        }
-
-        // Verifica duplicidade de login
-        if (empty($erros) && $usuario->loginExiste($login)) {
-            $erros[] = "O login '$login' já está em uso.";
+        $erros = $this->model->validarCadastro($nome, $login, $senha, $confirmar, $tipo, $status);
+        if (!empty($erros)) {
+            return $this->resposta('', $erros);
         }
 
-        // Tudo ok: persiste via Model
-        if (empty($erros)) {
-            $novo_id = $usuario->criar($nome, $login, $senha, $tipo, $status);
-
-            if (function_exists('registrarLog')) {
-                registrarLog(
-                    $pdo,
-                    $_SESSION['usuario_id'],
-                    'CADASTRO_USUARIO',
-                    "Novo usuário: $login (ID $novo_id) - Tipo: $tipo"
-                );
-            }
-
-            $sucesso = "Usuário <strong>" . htmlspecialchars($login, ENT_QUOTES, 'UTF-8') . "</strong> cadastrado com sucesso.";
-            $dados = ['nome' => '', 'login' => '', 'tipo' => 'usuario', 'status' => 'ativo'];
+        try {
+            $novoId = $this->model->criar($nome, $login, $senha, $tipo, $status);
+            $this->registrarLog('CADASTRO_USUARIO', "Novo usuário: $login (ID $novoId) - Tipo: $tipo");
+            $resposta = $this->resposta("Usuário \"$login\" cadastrado com sucesso.", []);
+            $resposta['id'] = $novoId;
+            return $resposta;
+        } catch (PDOException $e) {
+            return $this->resposta('', [$this->erroDeBanco('cadastrar o usuário', $e)]);
         }
     }
+
+    /**
+     * Atualiza os dados de um usuário (a senha só muda se uma nova for enviada).
+     *
+     * @param array $dados id, nome, login, tipo, status, senha?, confirmar_senha?
+     */
+    public function atualizar(array $dados): array
+    {
+        if (!$this->ehAdmin) {
+            return $this->resposta('', ['Acesso negado.']);
+        }
+
+        $id = (int) ($dados['id'] ?? 0);
+        $nome = trim($dados['nome'] ?? '');
+        $login = trim($dados['login'] ?? '');
+        $tipo = (string) ($dados['tipo'] ?? 'usuario');
+        $status = (string) ($dados['status'] ?? 'ativo');
+        $senha = (string) ($dados['senha'] ?? '');
+        $confirmar = (string) ($dados['confirmar_senha'] ?? '');
+
+        $erros = $this->model->validarEdicao($id, $nome, $login, $tipo, $status, $senha, $confirmar);
+        if (!empty($erros)) {
+            return $this->resposta('', $erros);
+        }
+
+        try {
+            $this->model->atualizar($id, $nome, $login, $tipo, $status, $senha !== '' ? $senha : null);
+            $this->registrarLog('EDICAO_USUARIO', "Usuário ID $id atualizado: $login");
+            return $this->resposta('Usuário atualizado com sucesso.', []);
+        } catch (PDOException $e) {
+            return $this->resposta('', [$this->erroDeBanco('atualizar o usuário', $e)]);
+        }
+    }
+
+    /**
+     * Exclui um usuário. Não permite excluir a própria conta.
+     */
+    public function excluir(int $id): array
+    {
+        if (!$this->ehAdmin) {
+            return $this->resposta('', ['Acesso negado.']);
+        }
+        if ($id <= 0) {
+            return $this->resposta('', ['ID do usuário inválido.']);
+        }
+        if ($id === $this->usuarioLogadoId) {
+            return $this->resposta('', ['Você não pode excluir seu próprio usuário.']);
+        }
+
+        try {
+            if (!$this->model->excluir($id)) {
+                return $this->resposta('', ['Usuário não encontrado para exclusão.']);
+            }
+            $this->registrarLog('EXCLUSAO_USUARIO', "Usuário ID $id excluído");
+            return $this->resposta('Usuário excluído com sucesso.', []);
+        } catch (PDOException $e) {
+            return $this->resposta('', [$this->erroDeBanco('excluir o usuário', $e)]);
+        }
+    }
+
+    // ── Helpers ──────────────────────────────────────────────────────────────
+
+    /** Monta o formato padrão de resposta. */
+    private function resposta(string $mensagem, array $erros): array
+    {
+        return ['mensagem' => $mensagem, 'erros' => $erros];
+    }
+
+    private function registrarLog(string $acao, string $detalhe): void
+    {
+        if (function_exists('registrarLog')) {
+            registrarLog($this->pdo, $this->usuarioLogadoId, $acao, $detalhe);
+        }
+    }
+
+    /**
+     * Grava o erro técnico no log do servidor e devolve uma mensagem genérica
+     * para o usuário (não expor detalhes do SQL na tela).
+     */
+    private function erroDeBanco(string $acao, PDOException $e): string
+    {
+        error_log('[' . APP_NOME . '] Erro ao ' . $acao . ': ' . $e->getMessage());
+        return "Não foi possível $acao. Tente novamente.";
+    }
 }
-
-$csrf_token = gerarCSRF();
-
-// Carrega a View
-require __DIR__ . '/../views/usuarios/cadastro.php';

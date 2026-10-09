@@ -1,5 +1,6 @@
 /* graficos.css — referente a app/views/graficos/*.php
-   (graficos_sensores.php e alerta.php) */
+   (graficos_sensores.php e alerta.php): filtros, área do gráfico,
+   cartões de severidade e lista de alertas. */
 
 .graficos-filtros {
     display: flex;
@@ -13,11 +14,22 @@
     min-width: 180px;
 }
 
+/* Área que contém o <canvas> do Chart.js */
 .grafico-wrapper {
-    background: var(--cor-fundo-card-alt);
+    background: var(--cor-fundo-card);
     border: 1px solid var(--cor-borda);
     border-radius: var(--raio);
     padding: 20px;
+}
+
+/* Área de altura fixa: o Chart.js preenche este espaço (maintainAspectRatio: false) */
+.grafico-area {
+    position: relative;
+    height: 380px;
+}
+
+.grafico-area.grafico-area-baixa {
+    height: 260px;
 }
 
 .grafico-wrapper canvas {
@@ -30,11 +42,14 @@
     color: var(--cor-texto-suave);
 }
 
+/* Selo "tempo real" ao lado do título do gráfico */
 .grafico-status-tempo-real {
     display: inline-flex;
     align-items: center;
     gap: 6px;
     font-size: 0.8rem;
+    font-family: var(--fonte);
+    font-weight: 500;
     color: var(--cor-texto-suave);
     margin-left: 14px;
 }
@@ -47,6 +62,7 @@
     box-shadow: 0 0 6px var(--cor-sucesso);
 }
 
+/* ── Alertas: cartões de resumo por severidade ───────────────────────────── */
 .alertas-cards {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
@@ -58,39 +74,60 @@
     border-radius: var(--raio);
     padding: 14px 16px;
     border: 1px solid var(--cor-borda);
+    border-top-width: 3px;
 }
 
 .card-severidade.critico {
     background: var(--cor-erro-fundo);
+    border-top-color: var(--cor-erro);
 }
 
 .card-severidade.atencao {
     background: var(--cor-alerta-fundo);
+    border-top-color: var(--cor-alerta);
 }
 
 .card-severidade.info {
-    background: rgba(106, 137, 167, 0.16);
+    background: var(--cor-info-fundo);
+    border-top-color: var(--cor-primaria);
 }
 
 .card-severidade .valor {
+    font-family: var(--fonte-titulo);
     font-size: 1.6rem;
     font-weight: 700;
 }
 
-.lista-alertas li {
-    list-style: none;
-    padding: 10px 14px;
-    border-bottom: 1px solid var(--cor-borda);
-    display: flex;
-    justify-content: space-between;
-    gap: 12px;
-}
-
+/* ── Alertas: histórico ──────────────────────────────────────────────────── */
 .lista-alertas {
     margin: 0;
     padding: 0;
 }
 
+.lista-alertas li {
+    list-style: none;
+    padding: 12px 14px;
+    border-bottom: 1px solid var(--cor-borda);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+}
+
 .lista-alertas li:last-child {
     border-bottom: none;
+}
+
+.lista-alertas .alerta-titulo {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+}
+
+@media (max-width: 720px) {
+    .lista-alertas li {
+        flex-direction: column;
+        align-items: flex-start;
+    }
 }

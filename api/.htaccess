@@ -1,0 +1,21 @@
+# api/.htaccess — ajustes do Apache (XAMPP/WAMP) para a API do app ÁKRON.
+# Em servidores que não usam Apache (php -S, nginx) este arquivo é ignorado.
+
+# 1) Repassa o cabeçalho "Authorization: Bearer <token>" ao PHP. Sem isso, o
+#    Apache o descarta quando o PHP roda como CGI/FastCGI e o login do app
+#    parece "não persistir".
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    RewriteCond %{HTTP:Authorization} .
+    RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
+</IfModule>
+
+# 2) Respostas da API nunca devem ser guardadas em cache.
+<IfModule mod_headers.c>
+    Header set Cache-Control "no-store"
+</IfModule>
+
+# 3) O arquivo de inicialização não é um endpoint: bloqueia acesso direto.
+<Files "_bootstrap.php">
+    Require all denied
+</Files>
