@@ -2,7 +2,7 @@
 /**
  * POST api/login.php
  * Body: { "login": "...", "senha": "..." }
- * Retorna: { sucesso, mensagem, usuario: {id, nome, login, tipo, status, criado_em}, token }
+ * Retorna: { sucesso, mensagem, usuario: {id, nome, login, tipo, status}, token }
  *
  * Em caso de sucesso devolve o `token` que o app deve enviar nas próximas
  * chamadas, no cabeçalho "Authorization: Bearer <token>" (ver _bootstrap.php).

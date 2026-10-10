@@ -32,7 +32,7 @@ define('API_CONTEXT', true);
 // cookies/credenciais, o curinga "*" é seguro.
 header('Access-Control-Allow-Origin: *');
 header('Access-Control-Allow-Methods: GET, POST, OPTIONS');
-header('Access-Control-Allow-Headers: Content-Type, Authorization');
+header('Access-Control-Allow-Headers: Content-Type, Authorization, X-Chave-Sensor');
 header('Access-Control-Max-Age: 86400');
 header('Content-Type: application/json; charset=utf-8');
 header('Cache-Control: no-store');

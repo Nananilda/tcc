@@ -21,16 +21,17 @@ Tem **tema claro e escuro** e uma **API JSON** que alimenta o aplicativo móvel
 1. [Telas](#telas)
 2. [Como instalar e rodar](#como-instalar-e-rodar)
 3. [Contas de teste](#contas-de-teste)
-4. [Estrutura do projeto](#estrutura-do-projeto)
-5. [Padrão de nomes](#padrão-de-nomes)
-6. [Tema claro e escuro](#tema-claro-e-escuro)
-7. [Identidade visual](#identidade-visual)
-8. [Banco de dados](#banco-de-dados)
-9. [API do aplicativo](#api-do-aplicativo)
-10. [Segurança](#segurança)
-11. [Testes](#testes)
-12. [Limitações conhecidas e próximos passos](#limitações-conhecidas-e-próximos-passos)
-13. [Licenças de terceiros](#licenças-de-terceiros)
+4. [Alertas: manuais e automáticos](#alertas-manuais-e-automáticos)
+5. [Estrutura do projeto](#estrutura-do-projeto)
+6. [Padrão de nomes](#padrão-de-nomes)
+7. [Tema claro e escuro](#tema-claro-e-escuro)
+8. [Identidade visual](#identidade-visual)
+9. [Banco de dados](#banco-de-dados)
+10. [API do aplicativo](#api-do-aplicativo)
+11. [Segurança](#segurança)
+12. [Testes](#testes)
+13. [Limitações conhecidas e próximos passos](#limitações-conhecidas-e-próximos-passos)
+14. [Licenças de terceiros](#licenças-de-terceiros)
 
 ---
 
@@ -43,7 +44,8 @@ Cada imagem mostra o **tema claro** (esquerda) e o **tema escuro** (direita).
 | Login | ![Login](docs/capturas/desktop/01-login.png) |
 | Painel (administrador) | ![Painel](docs/capturas/desktop/03-painel.png) |
 | Gráficos de sensores (atualização a cada 15 s) | ![Gráficos](docs/capturas/desktop/04-graficos-temperatura.png) |
-| Alertas | ![Alertas](docs/capturas/desktop/06-alertas.png) |
+| Alertas (com o botão **Adicionar alerta**, para administradores) | ![Alertas](docs/capturas/desktop/06-alertas.png) |
+| Novo alerta: manual, leitura de teste e limites automáticos (administrador) | ![Novo alerta](docs/capturas/desktop/17-novo-alerta.png) |
 | Relatório de qualidade ambiental | ![Relatório](docs/capturas/desktop/07-relatorio.png) |
 | Consulta de sensores (somente leitura) | ![Consulta](docs/capturas/desktop/09-sensores-consulta.png) |
 | Gestão de sensores (administrador) | ![Gestão de sensores](docs/capturas/desktop/10-sensores-gestao.png) |
@@ -120,9 +122,56 @@ Criadas por `schema.sql` (admin) e `dados_exemplo.sql` (demais).
 | `maria.souza` | `Usuario@123` | Funcionário | só consulta |
 | `joao.silva` | `Usuario@123` | Funcionário | conta **inativa** (serve para testar o bloqueio) |
 
-**Administrador** vê e gerencia tudo. **Funcionário** consulta painel, gráficos, alertas,
+**Administrador** vê e gerencia tudo (inclusive adiciona e resolve alertas). **Funcionário** consulta painel, gráficos, alertas,
 relatórios e a lista de sensores; não vê a gestão de sensores nem a de usuários (e,
 se digitar o endereço, recebe a página de acesso negado).
+
+---
+
+## Alertas: manuais e automáticos
+
+Um alerta pode nascer de duas formas:
+
+1. **Manual** — o administrador clica em **+ Adicionar alerta** (tela *Alertas*), escolhe o
+   sensor, a severidade (informativo, atenção ou crítico), escreve a mensagem e, se quiser,
+   o valor medido. Serve para manutenção programada, avisos da equipe, ocorrências observadas…
+2. **Automática, por limites** — toda vez que uma **leitura** é registrada, o valor é comparado
+   com os limites do tipo do sensor. Se passar, o alerta é criado sozinho, com a severidade
+   correspondente e o valor medido. Enquanto houver um alerta **igual e ainda pendente** para o
+   mesmo sensor, nenhum duplicado é criado (um sensor que continua quente não gera um alerta a
+   cada leitura); depois que o administrador o resolve, a próxima leitura fora do limite gera outro.
+
+Limites em vigor (ficam em `AlertaModel::LIMITES`, em `app/models/AlertaModel.php` — basta
+mudar o número para ajustar; a tela *Novo alerta* e o aplicativo mostram a tabela atualizada):
+
+| Sensor | Atenção | Crítico |
+|--------|---------|---------|
+| Temperatura | acima de 30 °C | acima de 35 °C |
+| Ruído | acima de 85 dB | acima de 95 dB |
+| Qualidade do ar | acima de 100 AQI | acima de 150 AQI |
+| Umidade | abaixo de 35% ou acima de 80% | abaixo de 20% ou acima de 90% |
+| Pressão | abaixo de 1.000 hPa ou acima de 1.030 hPa | abaixo de 990 hPa ou acima de 1.040 hPa |
+| UV | acima de índice 6 | acima de índice 8 |
+
+**Como as leituras chegam?** Por `POST api/leituras.php` com `{"sensor_id": 1, "valor": 36.5}`
+(só sensores **ativos**):
+
+- por um **administrador logado** (token `Bearer`) — é o que a tela *Novo alerta → Registrar
+  leitura* e o aplicativo fazem, para testar e demonstrar;
+- por um **sensor/gateway** (ESP32, Arduino, CLP…) sem conta de usuário, enviando a chave no
+  cabeçalho `X-Chave-Sensor`. A chave (mín. 16 caracteres) é definida na variável de ambiente
+  `AKRON_CHAVE_SENSORES` ou em `app/config/conexao.local.php` (`'chave_sensores' => '…'`).
+  Sem chave configurada, esse caminho fica **desligado**. A chave só vale para `leituras.php`.
+
+```bash
+curl -s -X POST http://localhost/tcc/api/leituras.php \
+     -H "Content-Type: application/json" -H "X-Chave-Sensor: SUA-CHAVE-COM-16-OU-MAIS-CARACTERES" \
+     -d '{"sensor_id": 1, "valor": 36.5}'
+# → {"sucesso":true,"mensagem":"Leitura registrada. Alerta crítico gerado automaticamente: …","alerta":{…}}
+```
+
+Os dados de demonstração (`sql/dados_exemplo.sql`) são fixos: os 9 alertas de exemplo foram
+inseridos à mão no script, não gerados pelos limites.
 
 ---
 
@@ -141,7 +190,7 @@ tcc/
 │   ├── controllers/           Regras de negócio e validações (*Controller.php) — usadas pelas telas e pela API
 │   └── views/                 Telas (HTML + PHP), organizadas por assunto
 │       ├── partials/          Pedaços reutilizados: cabeçalho, rodapé, <head>, ícones
-│       ├── dashboard/  graficos/  relatorios/  sensores/  usuarios/
+│       ├── dashboard/  graficos/  (gráficos, alertas, novo alerta)  relatorios/  sensores/  usuarios/
 │       └── 403.php            Página de acesso negado
 ├── includes/auth.php          Sessão, login, CSRF, permissões (exigirLogin / exigirAdmin)
 ├── routes/                    Ações sem tela: logout e dados do gráfico em tempo real (AJAX)
@@ -151,7 +200,7 @@ tcc/
 │   ├── img/                   Logos ÁKRON (SVG), favicons e ícone do iPhone
 │   └── fonts/                 Inter e Montserrat (arquivos locais — funciona sem internet)
 ├── sql/                       schema.sql (estrutura) e dados_exemplo.sql (demonstração)
-├── tests/api_test.py          Teste de integração da API (73 verificações)
+├── tests/api_test.py          Teste de integração da API (101 verificações)
 └── docs/                      Logo em alta resolução e capturas de tela
 ```
 
@@ -227,12 +276,16 @@ Banco `banco_tcc` (utf8mb4), criado por `sql/schema.sql`:
 
 | Tabela | Conteúdo |
 |--------|----------|
-| `usuario` | contas (nome, login único, senha em **hash bcrypt**, perfil `admin`/`usuario`, status `ativo`/`inativo`) |
+| `usuario` | contas (nome, login único, senha em **hash bcrypt**, perfil `admin`/`usuario`, status `ativo`/`inativo`; a coluna `criado_em` é opcional — o sistema funciona com ou sem ela) |
 | `sensores` | sensores da planta (nome, tipo, localização, status) |
 | `leitura_sensor` | uma linha por medição (`sensor_id`, `valor`, `lido_em`) — chave estrangeira para `sensores` |
 | `alertas` | ocorrências por severidade (`info`/`atencao`/`critico`), com quem resolveu (`resolvido_por`) |
 
 Os tipos de sensor são `temperatura`, `ruido`, `qualidade_ar`, `umidade`, `pressao` e `uv`.
+
+> **Banco já criado com a versão antiga do `schema.sql`?** Aquela tabela `usuario` não tinha a
+> coluna `criado_em`. O sistema **não depende mais dela** (cadastrar, editar e excluir usuários
+> funcionam nos dois formatos), então não é preciso recriar o banco.
 
 `sql/dados_exemplo.sql` gera 7 sensores, cerca de 1.100 leituras (**uma por hora, nos últimos
 7 dias**) e 9 alertas. As datas são relativas a `NOW()`: rode o script de novo antes de uma
@@ -258,9 +311,11 @@ Sessões expiram em 2 horas.
 | `GET dashboard.php` | logado | números do painel (sensores ativos, alertas pendentes…) |
 | `GET sensores.php` | logado | lista de sensores |
 | `POST sensores.php` `{acao: "cadastrar" \| "toggle_status", …}` | **admin** | cadastra / ativa / desativa sensor |
-| `GET alertas.php` | logado | alertas recentes + contagem de pendentes por severidade |
+| `GET alertas.php` | logado | alertas recentes + contagem de pendentes por severidade + `limites` dos alertas automáticos |
 | `POST alertas.php` `{acao: "resolver", alerta_id}` | **admin** | marca alerta como resolvido |
+| `POST alertas.php` `{acao: "criar", sensor_id, severidade, mensagem, valor?}` | **admin** | cria um alerta manualmente |
 | `GET leituras.php?sensor=&horas=` | logado | série de leituras (6, 12, 24, 48 ou 168 h) |
+| `POST leituras.php` `{sensor_id, valor}` | **admin** ou sensor com `X-Chave-Sensor` | registra uma leitura e gera o alerta automático, se passar de um limite |
 | `GET relatorio.php?data_ini=&data_fim=&sensor=&val_min=&val_max=` | logado | leituras (até 200) + resumo estatístico |
 | `GET usuarios.php[?login=]` | **admin** | lista ou busca usuário por login |
 | `POST usuarios.php` `{acao: "cadastrar" \| "atualizar" \| "excluir", …}` | **admin** | gestão de usuários |
@@ -302,8 +357,11 @@ tokens inválidos, rebaixamento de administrador…). Só precisa de Python 3:
 
 ```bash
 php -S 127.0.0.1:8000                    # na raiz do projeto, em outro terminal
-python3 tests/api_test.py                # espera: 73/73 verificações passaram
+python3 tests/api_test.py                # espera: 101/101 verificações passaram
 ```
+
+Para testar também o envio de leituras por sensor, inicie o servidor com a variável
+`AKRON_CHAVE_SENSORES=chave-de-teste-123456` e rode o teste com a mesma variável (103 verificações).
 
 O teste cria e altera registros; para voltar ao estado original, carregue
 `sql/schema.sql` e `sql/dados_exemplo.sql` de novo.
@@ -319,8 +377,12 @@ O teste cria e altera registros; para voltar ao estado original, carregue
   vale restringir à origem do app e servir tudo por **HTTPS**.
 - Nomes de tabelas do banco misturam singular e plural (`usuario`, `sensores`, `leitura_sensor`,
   `alertas`). Padronizar exigiria recriar o banco (ou `RENAME TABLE`) e ajustar os *models*.
-- Não há envio automático de leituras pelos sensores: os dados de exemplo simulam isso.
-  Para receber medições reais, falta um endpoint de *ingestão* com chave de API por sensor.
+- A recepção de leituras (`POST api/leituras.php`) existe, mas os **sensores físicos** ainda precisam
+  ser programados para chamá-la; os dados de exemplo simulam isso. A chave dos sensores é uma só,
+  compartilhada — uma chave por sensor seria o próximo passo.
+- Os alertas aparecem nas telas, mas **não há notificação** (e-mail, push ou som) quando um é criado.
+- Os limites dos alertas ficam no código (`AlertaModel::LIMITES`); uma tela para editá-los
+  (com os valores guardados no banco) seria uma evolução natural.
 
 ---
 

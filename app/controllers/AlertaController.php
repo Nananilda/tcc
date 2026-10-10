@@ -7,6 +7,7 @@
  */
 
 require_once __DIR__ . '/../models/AlertaModel.php';
+require_once __DIR__ . '/../models/SensorModel.php';
 
 class AlertaController
 {
@@ -25,7 +26,7 @@ class AlertaController
 
     /**
      * Entrada para formulários web: confere o método (POST) e o token CSRF e
-     * executa a ação pedida em $_POST['acao'] (somente admin resolve alertas).
+     * executa a ação pedida em $_POST['acao'] (somente admin cria/resolve alertas).
      *
      * @return array{mensagem:string,erros:string[]}
      */
@@ -45,18 +46,81 @@ class AlertaController
     /**
      * Executa uma ação sobre alertas. Reutilizado pela API.
      *
-     * @param string $acao  atualmente apenas 'resolver'
-     * @param array  $dados campos da ação (alerta_id)
-     * @return array{mensagem:string,erros:string[]}
+     * @param string $acao  'resolver' ou 'criar'
+     * @param array  $dados campos da ação (alerta_id; ou sensor_id, severidade, mensagem, valor)
+     * @return array{mensagem:string,erros:string[],id?:int}
      */
     public function executar(string $acao, array $dados): array
     {
-        if ($acao !== 'resolver') {
-            return ['mensagem' => '', 'erros' => ['Ação desconhecida.']];
+        switch ($acao) {
+            case 'resolver':
+                [$mensagem, $erros] = $this->resolver($dados);
+                return compact('mensagem', 'erros');
+
+            case 'criar':
+                return $this->criar($dados);
+
+            default:
+                return ['mensagem' => '', 'erros' => ['Ação desconhecida.']];
+        }
+    }
+
+    /**
+     * Cria um alerta manualmente (somente admin). Cobre o que os limites
+     * automáticos não enxergam: manutenção programada, aviso da equipe, ocorrência
+     * observada no chão de fábrica etc.
+     *
+     * @param array $dados sensor_id, severidade, mensagem e valor (opcional; aceita vírgula)
+     * @return array{mensagem:string,erros:string[],id?:int}
+     */
+    private function criar(array $dados): array
+    {
+        if (!$this->ehAdmin) {
+            return ['mensagem' => '', 'erros' => ['Acesso negado.']];
         }
 
-        [$mensagem, $erros] = $this->resolver($dados);
-        return compact('mensagem', 'erros');
+        $sensorId = (int) ($dados['sensor_id'] ?? 0);
+        $severidade = (string) ($dados['severidade'] ?? '');
+        $mensagem = trim((string) ($dados['mensagem'] ?? ''));
+        $valorInformado = $dados['valor'] ?? null;
+        $valor = null;
+
+        $erros = [];
+        if ($sensorId <= 0) {
+            $erros[] = 'Selecione o sensor do alerta.';
+        }
+        if (!AlertaModel::severidadeValida($severidade)) {
+            $erros[] = 'Severidade inválida.';
+        }
+        $tamanho = mb_strlen($mensagem, 'UTF-8');
+        if ($tamanho < 3) {
+            $erros[] = 'A mensagem do alerta deve ter ao menos 3 caracteres.';
+        } elseif ($tamanho > 200) {
+            $erros[] = 'A mensagem do alerta é muito longa (máx 200 caracteres).';
+        }
+        // O valor é opcional, mas, se vier preenchido, precisa ser um número
+        if ($valorInformado !== null && trim((string) $valorInformado) !== '') {
+            $valor = lerNumero($valorInformado);
+            if ($valor === null) {
+                $erros[] = 'O valor medido deve ser um número (ex.: 36,5) ou ficar em branco.';
+            }
+        }
+        if (!empty($erros)) {
+            return ['mensagem' => '', 'erros' => $erros];
+        }
+
+        try {
+            if (!(new SensorModel($this->pdo))->buscarPorId($sensorId)) {
+                return ['mensagem' => '', 'erros' => ['Sensor não encontrado.']];
+            }
+
+            $id = $this->model->criar($sensorId, $severidade, $mensagem, $valor);
+            $this->registrarLog('ALERTA_CRIADO', "Alerta ID $id ($severidade) criado manualmente no sensor $sensorId");
+            return ['mensagem' => 'Alerta criado com sucesso.', 'erros' => [], 'id' => $id];
+        } catch (PDOException $e) {
+            error_log('[' . APP_NOME . '] Erro ao criar alerta: ' . $e->getMessage());
+            return ['mensagem' => '', 'erros' => ['Não foi possível criar o alerta. Tente novamente.']];
+        }
     }
 
     private function resolver(array $dados): array

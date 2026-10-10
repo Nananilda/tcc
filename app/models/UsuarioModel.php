@@ -19,8 +19,15 @@ class UsuarioModel
     /** Situações de conta aceitas (valores do ENUM `usuario.status`). */
     public const STATUS = ['ativo', 'inativo'];
 
-    /** Colunas públicas (tudo, menos o hash da senha). */
-    private const COLUNAS = 'id, nome, login, tipo, status, criado_em';
+    /**
+     * Colunas públicas (tudo, menos o hash da senha).
+     *
+     * `criado_em` NÃO entra aqui de propósito: a tabela `usuario` do schema
+     * original não tinha essa coluna, e bancos já criados com ele continuam
+     * sem ela. Depender dela quebrava a listagem, o cadastro, a edição e a
+     * exclusão de usuários nesses bancos.
+     */
+    private const COLUNAS = 'id, nome, login, tipo, status';
 
     private PDO $pdo;
 
@@ -102,8 +109,8 @@ class UsuarioModel
         $hash = password_hash($senha, PASSWORD_BCRYPT, ['cost' => 12]);
 
         $stmt = $this->pdo->prepare("
-            INSERT INTO usuario (nome, login, senha, tipo, status, criado_em)
-            VALUES (:nome, :login, :senha, :tipo, :status, NOW())
+            INSERT INTO usuario (nome, login, senha, tipo, status)
+            VALUES (:nome, :login, :senha, :tipo, :status)
         ");
         $stmt->execute([
             ':nome' => $nome,

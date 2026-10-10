@@ -100,4 +100,20 @@ class LeituraModel
         }
         return $serie;
     }
+
+    // ── Escrita ──────────────────────────────────────────────────────────────
+
+    /**
+     * Grava uma leitura (a data/hora é a do servidor) e devolve o ID gerado.
+     * A validação do sensor e do valor é feita pelo LeituraController.
+     */
+    public function registrar(int $sensorId, float $valor): int
+    {
+        $stmt = $this->pdo->prepare("
+            INSERT INTO leitura_sensor (sensor_id, valor, lido_em)
+            VALUES (:sensor, :valor, NOW())
+        ");
+        $stmt->execute([':sensor' => $sensorId, ':valor' => $valor]);
+        return (int) $this->pdo->lastInsertId();
+    }
 }

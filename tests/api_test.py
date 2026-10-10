@@ -7,10 +7,15 @@ Antes:  carregue sql/schema.sql e sql/dados_exemplo.sql e deixe o servidor rodan
 Depois: o teste CRIA e ALTERA registros (sensor, usuário, alerta). Para voltar ao
         estado original, carregue schema.sql e dados_exemplo.sql de novo.
 
+Opcional: para testar também o envio de leituras por sensor (cabeçalho X-Chave-Sensor),
+        inicie o servidor com AKRON_CHAVE_SENSORES=<chave de 16+ caracteres> e rode o teste
+        com a MESMA variável definida.
+
 Só precisa do Python 3 (nenhuma biblioteca externa). Termina com código 0 se todas
 as verificações passarem e 1 se alguma falhar.
 """
 import json
+import os
 import sys
 import urllib.error
 import urllib.request
@@ -208,6 +213,83 @@ checar("promovido a admin: token antigo ganha poder imediatamente", s == 200 and
 s, j, _ = chamar("POST", "usuarios.php", {"acao": "atualizar", "id": 2, "nome": "Usuário Comum", "login": "usuario", "tipo": "usuario", "status": "ativo"}, token=ADM)
 s, j, _ = chamar("POST", "sensores.php", {"acao": "toggle_status", "sensor_id": sid, "novo_status": "inativo"}, token=USR)
 checar("rebaixado: perde o poder imediatamente → 403", s == 403, (s, j))
+
+print("== Alertas manuais (adicionar alerta)")
+s, j, _ = chamar("POST", "alertas.php", {"acao": "criar", "sensor_id": 2, "severidade": "info", "mensagem": "Manutenção preventiva agendada", "valor": "24,5"}, token=USR)
+checar("funcionário NÃO cria alerta → 403", s == 403, (s, j))
+s, j, _ = chamar("POST", "alertas.php", {"acao": "criar", "sensor_id": 2, "severidade": "info", "mensagem": "Manutenção preventiva agendada", "valor": "24,5"}, token=ADM)
+checar("admin cria alerta (valor com vírgula) → 200 com id", s == 200 and j["sucesso"] and isinstance(j.get("id"), int), (s, j))
+ID_MANUAL = j.get("id")
+s, j, _ = chamar("GET", "alertas.php", token=ADM)
+criado = next((a for a in j["alertas"] if a["id"] == ID_MANUAL), None)
+checar("alerta criado aparece na lista, pendente, com valor 24.5", criado and not criado["resolvido"] and criado["valor"] == 24.5 and criado["severidade"] == "info", criado)
+checar("contagem de pendentes subiu (info = 2)", j["contagem"]["info"] == 2, j["contagem"])
+s, j, _ = chamar("POST", "alertas.php", {"acao": "criar", "sensor_id": 2, "severidade": "critico", "mensagem": "Sem valor medido"}, token=ADM)
+checar("valor é opcional", s == 200 and j["sucesso"], (s, j))
+s, j, _ = chamar("POST", "alertas.php", {"acao": "criar", "sensor_id": 99999, "severidade": "info", "mensagem": "Sensor que não existe"}, token=ADM)
+checar("sensor inexistente → 422", s == 422 and "Sensor não encontrado." in j["erros"], (s, j))
+s, j, _ = chamar("POST", "alertas.php", {"acao": "criar", "sensor_id": 0, "severidade": "urgente", "mensagem": "ab", "valor": "abc"}, token=ADM)
+checar("dados inválidos → 422 com 4 erros", s == 422 and len(j["erros"]) == 4, (s, j))
+s, j, _ = chamar("POST", "alertas.php", {"acao": "criar", "sensor_id": 2, "severidade": "info", "mensagem": "x" * 201}, token=ADM)
+checar("mensagem longa demais → 422", s == 422 and any("longa" in e for e in j["erros"]), (s, j))
+s, j, _ = chamar("POST", "alertas.php", {"acao": "criar", "sensor_id": 7, "severidade": "info", "mensagem": "Aviso sobre sensor inativo"}, token=ADM)
+checar("pode criar alerta de sensor inativo", s == 200 and j["sucesso"], (s, j))
+
+print("== Alertas automáticos (leituras)")
+s, j, _ = chamar("GET", "alertas.php", token=ADM)
+antes = len(j["alertas"])
+s, j, _ = chamar("POST", "leituras.php", {"sensor_id": 1, "valor": 36.5}, token=USR)
+checar("funcionário NÃO registra leitura → 403", s == 403, (s, j))
+s, j, _ = chamar("POST", "leituras.php", {"sensor_id": 1, "valor": 22.3})
+checar("sem token nem chave → 401", s == 401, (s, j))
+s, j, _ = chamar("POST", "leituras.php", {"sensor_id": 1, "valor": 22.3}, token=ADM)
+checar("leitura normal → 200, sem alerta", s == 200 and j["sucesso"] and j["alerta"] is None and j["leitura_id"] > 0, (s, j))
+s, j, _ = chamar("POST", "leituras.php", {"sensor_id": 1, "valor": "36,2"}, token=ADM)
+checar("temperatura 36,2 → alerta CRÍTICO automático", s == 200 and j["alerta"] and j["alerta"]["severidade"] == "critico" and j["alerta"]["novo"] and "35 °C" in j["alerta"]["mensagem"], (s, j))
+ID_AUTO = (j.get("alerta") or {}).get("id")
+s, j, _ = chamar("POST", "leituras.php", {"sensor_id": 1, "valor": 38}, token=ADM)
+checar("nova leitura fora do limite NÃO duplica o alerta pendente", s == 200 and j["alerta"] and not j["alerta"]["novo"] and j["alerta"]["id"] == ID_AUTO, (s, j))
+s, j, _ = chamar("GET", "alertas.php", token=ADM)
+auto = next((a for a in j["alertas"] if a["id"] == ID_AUTO), None)
+checar("alerta automático guarda o valor medido e o sensor", auto and auto["valor"] == 36.2 and auto["sensor_id"] == 1 and not auto["resolvido"], auto)
+checar("só 1 alerta novo criado pelas 3 leituras", len(j["alertas"]) == antes + 1, (antes, len(j["alertas"])))
+s, j, _ = chamar("POST", "alertas.php", {"acao": "resolver", "alerta_id": ID_AUTO}, token=ADM)
+s, j, _ = chamar("POST", "leituras.php", {"sensor_id": 1, "valor": 37}, token=ADM)
+checar("depois de resolvido, nova leitura fora do limite gera outro alerta", s == 200 and j["alerta"] and j["alerta"]["novo"] and j["alerta"]["id"] != ID_AUTO, (s, j))
+s, j, _ = chamar("POST", "leituras.php", {"sensor_id": 1, "valor": 31}, token=ADM)
+checar("31 °C → alerta de ATENÇÃO", s == 200 and j["alerta"] and j["alerta"]["severidade"] == "atencao" and j["alerta"]["novo"], (s, j))
+s, j, _ = chamar("POST", "leituras.php", {"sensor_id": 5, "valor": 18}, token=ADM)
+checar("umidade 18% → crítico por valor ABAIXO do mínimo", s == 200 and j["alerta"] and j["alerta"]["severidade"] == "critico" and "abaixo" in j["alerta"]["mensagem"], (s, j))
+s, j, _ = chamar("POST", "leituras.php", {"sensor_id": 3, "valor": 95}, token=ADM)
+checar("limite exato (95 dB) não é ultrapassado → só atenção", s == 200 and j["alerta"] and j["alerta"]["severidade"] == "atencao", (s, j))
+s, j, _ = chamar("POST", "leituras.php", {"sensor_id": 7, "valor": 3}, token=ADM)
+checar("sensor inativo não envia leitura → 422", s == 422 and any("inativo" in e for e in j["erros"]), (s, j))
+s, j, _ = chamar("POST", "leituras.php", {"sensor_id": 99999, "valor": 3}, token=ADM)
+checar("sensor inexistente → 422", s == 422, (s, j))
+s, j, _ = chamar("POST", "leituras.php", {"sensor_id": 1, "valor": "abc"}, token=ADM)
+checar("valor não numérico → 422", s == 422 and j["erros"], (s, j))
+s, j, _ = chamar("POST", "leituras.php", {"sensor_id": 1, "valor": 1e12}, token=ADM)
+checar("valor fora da faixa da coluna → 422", s == 422, (s, j))
+s, j, _ = chamar("POST", "leituras.php", {"sensor_id": 0}, token=ADM)
+checar("sem sensor e sem valor → 422 com 2 erros", s == 422 and len(j["erros"]) == 2, (s, j))
+s, j, _ = chamar("GET", "leituras.php?sensor=temperatura&horas=6", token=ADM)
+checar("gráfico (GET) continua funcionando", s == 200 and j["sucesso"] and j["total"] > 0, (s, j))
+s, j, _ = chamar("PUT", "leituras.php", {"sensor_id": 1, "valor": 3}, token=ADM)
+checar("método PUT → 405", s == 405, (s, j))
+
+CHAVE = os.environ.get("AKRON_CHAVE_SENSORES", "")
+if len(CHAVE) >= 16:
+    print("== Sensor com chave (X-Chave-Sensor)")
+    s, j, _ = chamar("POST", "leituras.php", {"sensor_id": 4, "valor": 160}, cabecalhos={"X-Chave-Sensor": CHAVE})
+    checar("sensor com a chave certa registra leitura e gera alerta crítico", s == 200 and j["alerta"] and j["alerta"]["severidade"] == "critico", (s, j))
+    s, j, _ = chamar("POST", "leituras.php", {"sensor_id": 4, "valor": 160}, cabecalhos={"X-Chave-Sensor": CHAVE + "x"})
+    checar("chave errada → 401", s == 401, (s, j))
+    s, j, _ = chamar("POST", "alertas.php", {"acao": "criar", "sensor_id": 4, "severidade": "info", "mensagem": "Teste"}, cabecalhos={"X-Chave-Sensor": CHAVE})
+    checar("a chave do sensor NÃO dá acesso às demais rotas → 401", s == 401, (s, j))
+else:
+    print("== Sensor com chave: ignorado (defina AKRON_CHAVE_SENSORES no servidor e no teste)")
+    s, j, _ = chamar("POST", "leituras.php", {"sensor_id": 4, "valor": 160}, cabecalhos={"X-Chave-Sensor": "uma-chave-qualquer-123456"})
+    checar("sem chave configurada, qualquer X-Chave-Sensor → 401", s == 401, (s, j))
 
 print("== Logout")
 s, j, _ = chamar("POST", "logout.php", token=USR)

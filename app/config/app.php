@@ -130,3 +130,51 @@ function jsonParaScript($valor): string
         JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_PRESERVE_ZERO_FRACTION
     );
 }
+
+/**
+ * Interpreta um número digitado/enviado pelo usuário ou por um sensor.
+ * Aceita int, float e texto numérico — inclusive com vírgula decimal
+ * ("36,4") —, arredonda para 2 casas (precisão das colunas DECIMAL(10,2)) e
+ * devolve null se o valor não for um número finito dentro do limite da coluna.
+ *
+ * @param mixed $valor
+ */
+function lerNumero($valor): ?float
+{
+    if (is_string($valor)) {
+        $valor = str_replace(',', '.', trim($valor));
+        if ($valor === '') {
+            return null;
+        }
+    }
+    if (!is_int($valor) && !is_float($valor) && !(is_string($valor) && is_numeric($valor))) {
+        return null;
+    }
+
+    $numero = round((float) $valor, 2);
+    return (is_finite($numero) && abs($numero) <= 99999999.99) ? $numero : null;
+}
+
+/**
+ * Chave secreta que sensores/gateways enviam no cabeçalho "X-Chave-Sensor" ao
+ * registrar leituras em api/leituras.php (POST). Assim um dispositivo pode
+ * enviar dados sem ter uma conta de usuário.
+ *
+ * Defina-a (mínimo de 16 caracteres) pela variável de ambiente
+ * AKRON_CHAVE_SENSORES ou pela chave 'chave_sensores' de
+ * app/config/conexao.local.php. Se não estiver definida (ou for curta demais),
+ * devolve '' e o recurso fica DESLIGADO — só administradores logados registram
+ * leituras.
+ */
+function chaveDosSensores(): string
+{
+    $chave = getenv('AKRON_CHAVE_SENSORES');
+
+    if ($chave === false || $chave === '') {
+        $arquivoLocal = __DIR__ . '/conexao.local.php';
+        $local = is_file($arquivoLocal) ? require $arquivoLocal : null;
+        $chave = (is_array($local) && is_string($local['chave_sensores'] ?? null)) ? $local['chave_sensores'] : '';
+    }
+
+    return strlen($chave) >= 16 ? $chave : '';
+}

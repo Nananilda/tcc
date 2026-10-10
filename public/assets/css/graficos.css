@@ -62,6 +62,52 @@
     box-shadow: 0 0 6px var(--cor-sucesso);
 }
 
+/* ── Alertas: título com o botão "Adicionar alerta" ──────────────────────── */
+.alertas-topo {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.alertas-topo h1 {
+    margin-bottom: 0;
+}
+
+.alertas-topo + .alertas-cards,
+.alertas-topo + .msg-sucesso,
+.alertas-topo + .msg-erro {
+    margin-top: 18px;
+}
+
+/* ── Alertas: formulários de "Novo alerta" (grade responsiva) ─────────────── */
+.alertas-form {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 16px;
+    align-items: end;
+}
+
+.alertas-form .campo-full {
+    grid-column: 1 / -1;
+}
+
+.alertas-dica {
+    font-size: 0.82rem;
+    color: var(--cor-texto-suave);
+    margin: 0 0 14px;
+}
+
+.tabela-rolagem + .alertas-dica {
+    margin: 12px 0 0;
+}
+
+label .alertas-dica {
+    margin: 0;
+    font-weight: 400;
+}
+
 /* ── Alertas: cartões de resumo por severidade ───────────────────────────── */
 .alertas-cards {
     display: grid;

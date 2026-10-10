@@ -18,4 +18,9 @@ return [
     'banco' => 'banco_tcc',
     'usuario' => 'root',
     'senha' => 'troque-esta-senha',
+
+    // OPCIONAL — chave (mín. 16 caracteres) que os sensores enviam no cabeçalho
+    // "X-Chave-Sensor" para registrar leituras em api/leituras.php. Sem ela,
+    // apenas administradores logados registram leituras.
+    // 'chave_sensores' => 'troque-por-uma-chave-longa-e-secreta',
 ];

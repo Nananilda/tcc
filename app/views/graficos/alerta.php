@@ -3,7 +3,8 @@
  * app/views/graficos/alerta.php — Alertas dos sensores.
  *
  * Mostra, por severidade, quantos alertas estão pendentes (cartões + gráfico
- * de barras) e o histórico recente. Administradores podem marcar alertas como
+ * de barras) e o histórico recente. Administradores podem adicionar alertas
+ * (botão "Adicionar alerta" → novo_alerta.php) e marcar alertas como
  * resolvidos (formulário POST protegido por token CSRF).
  */
 
@@ -31,7 +32,12 @@ $scriptsHead = ['vendor/chart.umd.js', 'graficos.js'];
 require __DIR__ . '/../partials/cabecalho.php';
 ?>
 
-<h1>Alertas dos Sensores</h1>
+<div class="alertas-topo">
+    <h1>Alertas dos Sensores</h1>
+    <?php if ($ehAdmin): ?>
+        <a href="novo_alerta.php" class="btn">+ Adicionar alerta</a>
+    <?php endif; ?>
+</div>
 
 <?php if ($mensagem): ?>
     <div class="msg-sucesso" role="status"><?php echo escapar($mensagem); ?></div>
