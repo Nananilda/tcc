@@ -13,7 +13,7 @@
  */
 
 return [
-    'host' => '127.0.0.1',   // no laboratório, use o IP do servidor MySQL
+    'host' => '10.140.169.45',   // no laboratório, use o IP do servidor MySQL
     'porta' => '3306',
     'banco' => 'banco_tcc',
     'usuario' => 'root',

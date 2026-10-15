@@ -37,7 +37,7 @@ function configuracaoBanco(): array
         'porta' => '3306',
         'banco' => 'banco_tcc',
         'usuario' => 'root',
-        'senha' => '',
+        'senha' => '123456',
     ];
 
     // Arquivo local opcional (não versionado)
