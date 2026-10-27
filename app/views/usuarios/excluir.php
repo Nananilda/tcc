@@ -78,6 +78,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['excluir_usuario'])) {
 
 $csrf_token = gerarCSRF();
 
+// Lista de usuários já existentes (exibida no final da página)
+$usuarios = $controller->listar();
+
 $tituloPagina = 'Excluir Usuário';
 $secaoTopbar = 'Usuários';
 $cssPagina = ['usuarios.css'];
@@ -175,6 +178,45 @@ require __DIR__ . '/../partials/cabecalho.php';
         </form>
     </div>
 <?php endif; ?>
+
+<!-- Lista de usuários cadastrados -->
+<div class="card">
+    <h2>Usuários cadastrados</h2>
+    <p class="usuarios-dica">Use a lista abaixo para conferir os logins existentes.</p>
+
+    <?php if (empty($usuarios)): ?>
+        <p class="usuarios-dica">Nenhum usuário cadastrado.</p>
+    <?php else: ?>
+        <div class="tabela-rolagem">
+            <table>
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Nome</th>
+                        <th>Login</th>
+                        <th>Tipo</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php foreach ($usuarios as $u): ?>
+                        <tr>
+                            <td><?php echo (int) $u['id']; ?></td>
+                            <td><?php echo escapar($u['nome']); ?></td>
+                            <td><?php echo escapar($u['login']); ?></td>
+                            <td><?php echo escapar(rotuloTipoUsuario($u['tipo'])); ?></td>
+                            <td>
+                                <span class="badge badge-<?php echo $u['status'] === 'ativo' ? 'ativo' : 'inativo'; ?>">
+                                    <?php echo $u['status'] === 'ativo' ? 'Ativo' : 'Inativo'; ?>
+                                </span>
+                            </td>
+                        </tr>
+                    <?php endforeach; ?>
+                </tbody>
+            </table>
+        </div>
+    <?php endif; ?>
+</div>
 
 <div class="nav-rodape">
     <a href="gestao_usuarios.php">← Voltar à gestão de usuários</a>

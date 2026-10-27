@@ -132,6 +132,31 @@ class SensorModel
     }
 
     /**
+     * Atualiza nome, tipo, localização e status de um sensor.
+     *
+     * @param int   $id    ID do sensor
+     * @param array $dados ['nome', 'tipo', 'localizacao', 'status']
+     */
+    public function atualizar(int $id, array $dados): void
+    {
+        $stmt = $this->pdo->prepare("
+            UPDATE sensores
+            SET nome = :nome,
+                tipo = :tipo,
+                localizacao = :localizacao,
+                status = :status
+            WHERE id = :id
+        ");
+        $stmt->execute([
+            ':nome' => $dados['nome'],
+            ':tipo' => $dados['tipo'],
+            ':localizacao' => $dados['localizacao'] ?? null,
+            ':status' => $dados['status'],
+            ':id' => $id,
+        ]);
+    }
+
+    /**
      * Atualiza apenas o status de um sensor.
      *
      * @param int    $id     ID do sensor
@@ -143,6 +168,19 @@ class SensorModel
             UPDATE sensores SET status = :status WHERE id = :id
         ");
         $stmt->execute([':status' => $status, ':id' => $id]);
+        return $stmt->rowCount() > 0;
+    }
+
+    /**
+     * Remove um sensor. Pode lançar PDOException (código 23000) se houver
+     * registros vinculados (ex.: leituras) protegidos por chave estrangeira.
+     *
+     * @return bool true se um registro foi removido
+     */
+    public function excluir(int $id): bool
+    {
+        $stmt = $this->pdo->prepare("DELETE FROM sensores WHERE id = :id");
+        $stmt->execute([':id' => $id]);
         return $stmt->rowCount() > 0;
     }
 }

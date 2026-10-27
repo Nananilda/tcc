@@ -26,8 +26,8 @@ require __DIR__ . '/../partials/cabecalho.php';
 
 <h1>Consulta de Sensores</h1>
 <?php if ($ehAdmin): ?>
-    <p>Lista somente leitura. Para cadastrar ou alterar sensores, acesse a
-        <a href="gestao_sensores.php">Gestão de Sensores</a>.
+    <p>Lista somente leitura. Para cadastrar, alterar ou excluir sensores, acesse
+        <a href="editar_sensores.php">Editar Sensores</a>.
     </p>
 <?php else: ?>
     <p>Lista somente leitura dos sensores cadastrados.</p>
@@ -82,7 +82,7 @@ require __DIR__ . '/../partials/cabecalho.php';
 
 <div class="nav-rodape">
     <a href="../graficos/graficos_sensores.php">Ver gráficos →</a>
-    <a href="../dashboard/painel.php">← Voltar ao painel</a>
+    <a href="gestao_sensores.php">← Voltar à gestão de sensores</a>
 </div>
 
 <?php require __DIR__ . '/../partials/rodape.php'; ?>

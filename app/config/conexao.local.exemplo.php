@@ -13,11 +13,11 @@
  */
 
 return [
-    'host' => '10.140.169.45',   // no laboratório, use o IP do servidor MySQL
+    'host' => '10.140.169.78',   // no laboratório, use o IP do servidor MySQL
     'porta' => '3306',
     'banco' => 'banco_tcc',
     'usuario' => 'root',
-    'senha' => 'troque-esta-senha',
+    'senha' => '123456',
 
     // OPCIONAL — chave (mín. 16 caracteres) que os sensores enviam no cabeçalho
     // "X-Chave-Sensor" para registrar leituras em api/leituras.php. Sem ela,

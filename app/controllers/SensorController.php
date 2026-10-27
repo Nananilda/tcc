@@ -50,8 +50,9 @@ class SensorController
     /**
      * Executa uma ação de gestão de sensores. Reutilizado pela API.
      *
-     * @param string $acao  'cadastrar' ou 'toggle_status'
-     * @param array  $dados campos da ação (nome, tipo, localizacao, status, sensor_id, novo_status)
+     * @param string $acao  'cadastrar', 'atualizar', 'excluir' ou 'toggle_status'
+     * @param array  $dados campos da ação (sensor_id, nome, tipo, localizacao, status,
+     *                      novo_status, confirmacao)
      * @return array{mensagem:string,erros:string[]}
      */
     public function executar(string $acao, array $dados): array
@@ -59,6 +60,14 @@ class SensorController
         switch ($acao) {
             case 'cadastrar':
                 [$mensagem, $erros] = $this->cadastrar($dados);
+                break;
+
+            case 'atualizar':
+                [$mensagem, $erros] = $this->atualizar($dados);
+                break;
+
+            case 'excluir':
+                [$mensagem, $erros] = $this->excluir($dados);
                 break;
 
             case 'toggle_status':
@@ -72,26 +81,22 @@ class SensorController
         return compact('mensagem', 'erros');
     }
 
-    // ── Ações ────────────────────────────────────────────────────────────────
+    // ── Validação compartilhada ──────────────────────────────────────────────
 
     /**
-     * Valida e cadastra um novo sensor (somente admin).
+     * Valida os campos de um sensor (usado no cadastro e na edição).
+     *
+     * @return array{0:array,1:string[]} [campos já saneados, erros]
      */
-    private function cadastrar(array $dados): array
+    private function validarCamposSensor(array $dados): array
     {
-        $mensagem = '';
         $erros = [];
-
-        if (!$this->ehAdmin) {
-            return [$mensagem, ['Acesso negado.']];
-        }
 
         $nome = trim($dados['nome'] ?? '');
         $tipo = trim($dados['tipo'] ?? '');
         $localizacao = trim($dados['localizacao'] ?? '');
         $status = $dados['status'] ?? 'ativo';
 
-        // Validações
         $tamanhoNome = function_exists('mb_strlen') ? mb_strlen($nome, 'UTF-8') : strlen($nome);
         if ($tamanhoNome < 3) {
             $erros[] = 'Nome do sensor deve ter ao menos 3 caracteres.';
@@ -109,25 +114,124 @@ class SensorController
             $erros[] = 'Localização muito longa (máx 150 caracteres).';
         }
 
+        return [
+            [
+                'nome' => $nome,
+                'tipo' => $tipo,
+                'localizacao' => $localizacao ?: null,
+                'status' => $status,
+            ],
+            $erros,
+        ];
+    }
+
+    // ── Ações ────────────────────────────────────────────────────────────────
+
+    /**
+     * Valida e cadastra um novo sensor (somente admin).
+     */
+    private function cadastrar(array $dados): array
+    {
+        $mensagem = '';
+
+        if (!$this->ehAdmin) {
+            return [$mensagem, ['Acesso negado.']];
+        }
+
+        [$campos, $erros] = $this->validarCamposSensor($dados);
         if (!empty($erros)) {
             return [$mensagem, $erros];
         }
 
         try {
-            $id = $this->model->cadastrar([
-                'nome' => $nome,
-                'tipo' => $tipo,
-                'localizacao' => $localizacao ?: null,
-                'status' => $status,
-            ]);
+            $id = $this->model->cadastrar($campos);
 
-            $this->registrarLog('SENSOR_CADASTRO', "Sensor ID $id: $nome ($tipo)");
-            $mensagem = "Sensor \"$nome\" cadastrado com sucesso.";
+            $this->registrarLog('SENSOR_CADASTRO', "Sensor ID $id: {$campos['nome']} ({$campos['tipo']})");
+            $mensagem = "Sensor \"{$campos['nome']}\" cadastrado com sucesso.";
         } catch (PDOException $e) {
             $erros[] = $this->erroDeBanco('salvar o sensor', $e);
         }
 
         return [$mensagem, $erros];
+    }
+
+    /**
+     * Atualiza todos os dados de um sensor (nome, tipo, localização, status) — somente admin.
+     */
+    private function atualizar(array $dados): array
+    {
+        $mensagem = '';
+
+        if (!$this->ehAdmin) {
+            return [$mensagem, ['Acesso negado.']];
+        }
+
+        $sensorId = (int) ($dados['sensor_id'] ?? 0);
+        if ($sensorId <= 0) {
+            return [$mensagem, ['ID de sensor inválido.']];
+        }
+
+        [$campos, $erros] = $this->validarCamposSensor($dados);
+        if (!empty($erros)) {
+            return [$mensagem, $erros];
+        }
+
+        try {
+            if (!$this->model->buscarPorId($sensorId)) {
+                return [$mensagem, ['Sensor não encontrado.']];
+            }
+
+            $this->model->atualizar($sensorId, $campos);
+            $this->registrarLog('SENSOR_EDICAO', "Sensor ID $sensorId: {$campos['nome']} ({$campos['tipo']}, {$campos['status']})");
+            $mensagem = "Sensor \"{$campos['nome']}\" atualizado com sucesso.";
+        } catch (PDOException $e) {
+            $erros[] = $this->erroDeBanco('atualizar o sensor', $e);
+        }
+
+        return [$mensagem, $erros];
+    }
+
+    /**
+     * Exclui um sensor — somente admin e só com a palavra "excluir" como confirmação.
+     */
+    private function excluir(array $dados): array
+    {
+        $mensagem = '';
+
+        if (!$this->ehAdmin) {
+            return [$mensagem, ['Acesso negado.']];
+        }
+
+        $sensorId = (int) ($dados['sensor_id'] ?? 0);
+        if ($sensorId <= 0) {
+            return [$mensagem, ['ID de sensor inválido.']];
+        }
+
+        $confirmacao = trim($dados['confirmacao'] ?? '');
+        $confirmacao = function_exists('mb_strtolower') ? mb_strtolower($confirmacao, 'UTF-8') : strtolower($confirmacao);
+        if ($confirmacao !== 'excluir') {
+            return [$mensagem, ['Para excluir, digite a palavra "excluir" no campo de confirmação.']];
+        }
+
+        try {
+            $sensor = $this->model->buscarPorId($sensorId);
+            if (!$sensor) {
+                return [$mensagem, ['Sensor não encontrado.']];
+            }
+
+            $this->model->excluir($sensorId);
+            $this->registrarLog('SENSOR_EXCLUSAO', "Sensor ID $sensorId: {$sensor['nome']}");
+            $mensagem = "Sensor \"{$sensor['nome']}\" excluído com sucesso.";
+        } catch (PDOException $e) {
+            // 23000 = violação de integridade (ex.: sensor com leituras vinculadas)
+            if ($e->getCode() === '23000') {
+                error_log('[' . APP_NOME . '] Exclusão de sensor bloqueada por vínculo: ' . $e->getMessage());
+                return [$mensagem, ['Este sensor possui registros vinculados (ex.: leituras) e não pode ser excluído. Considere desativá-lo.']];
+            }
+            return [$mensagem, [$this->erroDeBanco('excluir o sensor', $e)]];
+        }
+
+        return [$mensagem, []];
     }
 
     /**
@@ -185,12 +289,33 @@ class SensorController
         }
     }
 
+    /**
+     * Retorna um sensor pelo ID (ou null se não existir) — usado na tela de edição.
+     */
+    public function buscarSensor(int $id): ?array
+    {
+        try {
+            return $this->model->buscarPorId($id) ?: null;
+        } catch (PDOException $e) {
+            error_log('[' . APP_NOME . '] Erro ao buscar sensor: ' . $e->getMessage());
+            return null;
+        }
+    }
+
     // ── Helpers ──────────────────────────────────────────────────────────────
 
     private function registrarLog(string $acao, string $detalhe): void
     {
-        if (function_exists('registrarLog')) {
+        if (!function_exists('registrarLog')) {
+            return;
+        }
+
+        // O log é secundário: se falhar (ex.: ação nova não aceita pela tabela de
+        // logs), registra no log do servidor mas não desfaz nem mascara a operação.
+        try {
             registrarLog($this->pdo, $_SESSION['usuario_id'] ?? null, $acao, $detalhe);
+        } catch (Throwable $e) {
+            error_log('[' . APP_NOME . '] Falha ao registrar log ' . $acao . ': ' . $e->getMessage());
         }
     }
 

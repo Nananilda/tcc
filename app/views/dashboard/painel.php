@@ -21,11 +21,12 @@ $atalhos = [
     ['grafico', 'Gráficos de Sensores', 'app/views/graficos/graficos_sensores.php'],
     ['alerta', 'Alertas', 'app/views/graficos/alerta.php'],
     ['relatorio', 'Relatórios', 'app/views/relatorios/relatorio_qualidade.php'],
-    ['lista', 'Consulta de Sensores', 'app/views/sensores/listar_sensores.php'],
-];
+//     ['lista', 'Consulta de Sensores', 'app/views/sensores/listar_sensores.php'],
+//colocar o listar sensores dentro de gestão de sensores
+ ];
 if (ehAdmin()) {
     $atalhos[] = ['sensor', 'Gestão de Sensores', 'app/views/sensores/gestao_sensores.php'];
-    $atalhos[] = ['usuarios', 'Gestão de Cadastro', 'app/views/usuarios/gestao_usuarios.php'];
+    $atalhos[] = ['usuarios', 'Gestão de Usuários', 'app/views/usuarios/gestao_usuarios.php'];
 }
 
 $tituloPagina = 'Painel';
