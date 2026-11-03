@@ -1,132 +1,52 @@
 <?php
-/**
- * app/views/graficos/alerta.php — Alertas dos sensores.
- *
- * Mostra, por severidade, quantos alertas estão pendentes (cartões + gráfico
- * de barras) e o histórico recente. Administradores podem adicionar alertas
- * (botão "Adicionar alerta" → novo_alerta.php) e marcar alertas como
- * resolvidos (formulário POST protegido por token CSRF).
- */
-
 require_once __DIR__ . '/../../../includes/auth.php';
 exigirLogin();
-
 require_once __DIR__ . '/../../config/conexao.php';
 require_once __DIR__ . '/../../controllers/AlertaController.php';
-require_once __DIR__ . '/../../models/SensorModel.php';
-
-$ehAdmin = ehAdmin();
-$controller = new AlertaController($pdo, $ehAdmin);
-
-// Se for um POST ("Marcar resolvido"), executa a ação antes de consultar os dados
-['mensagem' => $mensagem, 'erros' => $erros] = $controller->processarRequisicao();
-
-$alertas = $controller->listarAlertas();
-$contagem = $controller->contarPorSeveridade();
-$csrf_token = gerarCSRF();
-
-$tituloPagina = 'Alertas';
-$secaoTopbar = 'Alertas';
-$cssPagina = ['graficos.css'];
-$scriptsHead = ['vendor/chart.umd.js', 'graficos.js'];
-require __DIR__ . '/../partials/cabecalho.php';
+require_once __DIR__ . '/../../models/EstoqueModel.php';
+$controller=new AlertaController($pdo,ehAdmin());
+['mensagem'=>$mensagem,'erros'=>$erros]=$controller->processarRequisicao();
+$alertas=[]; $contagem=['critico'=>0,'atencao'=>0,'info'=>0]; $total=0; $estoques=[]; $sensores=[];
+$pagina=max(1,min(100000,(int)($_GET['pagina'] ?? 1))); $filtros=[];
+try {
+    $filtros=AlertaModel::validarFiltros($_GET);
+    $porPagina=in_array((int)($_GET['por_pagina']??25),[25,50,100],true)?(int)($_GET['por_pagina']??25):25;
+    $alertas=(new AlertaModel($pdo))->listarRecentes($porPagina,$filtros,$pagina);
+    $total=$controller->contarTodos($filtros);
+    $contagem=$controller->contarPorSeveridade($filtros);
+    $estoques=(new EstoqueModel($pdo))->listarTodos();
+    $sensores=$pdo->query('SELECT s.id,s.nome,s.estoque_id,GROUP_CONCAT(DISTINCT a.estoque_id) AS estoques_historicos FROM sensores s LEFT JOIN alertas a ON a.sensor_id=s.id AND '.escopoEstoque('a.estoque_id').' WHERE '.escopoEstoque('s.estoque_id').' OR a.id IS NOT NULL GROUP BY s.id,s.nome,s.estoque_id ORDER BY s.nome')->fetchAll();
+} catch (InvalidArgumentException $e) { $erros[]=$e->getMessage();
+} catch (PDOException $e) { error_log($e->getMessage()); $erros[]='Não foi possível carregar os alertas. Tente novamente.'; }
+$csrf=gerarCSRF(); $tituloPagina='Alertas'; $secaoTopbar='Alertas'; $cssPagina=['graficos.css'];
+require __DIR__.'/../partials/cabecalho.php';
 ?>
-
-<div class="alertas-topo">
-    <h1>Alertas dos Sensores</h1>
-    <?php if ($ehAdmin): ?>
-        <a href="novo_alerta.php" class="btn">+ Adicionar alerta</a>
-    <?php endif; ?>
+<div class="page-heading"><div><h1>Alertas</h1><p class="subtitulo">Acompanhe irregularidades, reconheça ocorrências e registre o atendimento.</p></div>
+<?php if(ehAdmin()): ?><a class="btn" href="novo_alerta.php">Adicionar alerta</a><?php endif; ?></div>
+<?php if($mensagem): ?><div class="msg-sucesso" role="status"><?= escapar($mensagem) ?></div><?php endif; ?>
+<?php foreach($erros as $erro): ?><div class="msg-erro" role="alert"><?= escapar($erro) ?></div><?php endforeach; ?>
+<form method="get" class="card form-filtros">
+<div><label for="estoque-id">Estoque</label><select id="estoque-id" name="estoque_id"><option value="">Todos autorizados</option>
+<?php foreach($estoques as $e): ?><option value="<?= (int)$e['id'] ?>" <?= ($filtros['estoque_id'] ?? '')==$e['id']?'selected':'' ?>><?= escapar($e['nome']) ?></option><?php endforeach; ?></select></div>
+<div><label for="sensor-id">Sensor</label><select id="sensor-id" name="sensor_id"><option value="">Todas as opções</option>
+<?php foreach($sensores as $s): ?><option data-estoques="<?= escapar($s['estoque_id'].','.($s['estoques_historicos']??'')) ?>" value="<?= (int)$s['id'] ?>" <?= ($filtros['sensor_id'] ?? '')==$s['id']?'selected':'' ?>><?= escapar($s['nome']) ?></option><?php endforeach; ?></select></div>
+<?php foreach(['severidade'=>['Gravidade',AlertaModel::SEVERIDADES],'status'=>['Status',AlertaModel::STATUS]] as $campo=>[$titulo,$opcoes]): ?>
+<div><label for="<?= $campo ?>"><?= $titulo ?></label><select id="<?= $campo ?>" name="<?= $campo ?>"><option value="">Todas as opções</option><?php foreach($opcoes as $v=>$r): ?><option value="<?= $v ?>" <?= ($filtros[$campo] ?? '')===$v?'selected':'' ?>><?= $r ?></option><?php endforeach; ?></select></div>
+<?php endforeach; ?>
+<div><label for="data-inicial">Data inicial</label><input type="date" id="data-inicial" name="data_inicial" value="<?= escapar($filtros['data_inicial'] ?? '') ?>"></div>
+<div><label for="data-final">Data final</label><input type="date" id="data-final" name="data_final" value="<?= escapar($filtros['data_final'] ?? '') ?>"></div>
+<label>Registros por página<select name="por_pagina"><?php foreach([25,50,100] as $n): ?><option value="<?= $n ?>" <?= ($porPagina??25)===$n?'selected':'' ?>><?= $n ?></option><?php endforeach ?></select></label><div class="form-acoes"><button type="submit" class="btn">Filtrar</button><a href="alerta.php" class="btn-secundario">Limpar</a></div>
+</form>
+<div class="alertas-cards" aria-label="Alertas ativos nos filtros selecionados">
+<?php foreach(AlertaModel::SEVERIDADES as $grau=>$rotulo): ?><div class="card-severidade <?= $grau ?>"><strong class="valor"><?= $contagem[$grau] ?></strong><span><?= $rotulo ?> · ativos</span></div><?php endforeach; ?>
 </div>
-
-<?php if ($mensagem): ?>
-    <div class="msg-sucesso" role="status"><?php echo escapar($mensagem); ?></div>
-<?php endif; ?>
-
-<?php if (!empty($erros)): ?>
-    <div class="msg-erro" role="alert">
-        <ul>
-            <?php foreach ($erros as $erro): ?>
-                <li><?php echo escapar($erro); ?></li>
-            <?php endforeach; ?>
-        </ul>
-    </div>
-<?php endif; ?>
-
-<!-- ── Cartões de resumo por severidade (somente alertas pendentes) ─────── -->
-<div class="alertas-cards">
-    <div class="card-severidade critico">
-        <div class="valor"><?php echo (int) $contagem['critico']; ?></div>
-        <div>Críticos</div>
-    </div>
-    <div class="card-severidade atencao">
-        <div class="valor"><?php echo (int) $contagem['atencao']; ?></div>
-        <div>Atenção</div>
-    </div>
-    <div class="card-severidade info">
-        <div class="valor"><?php echo (int) $contagem['info']; ?></div>
-        <div>Informativos</div>
-    </div>
-</div>
-
-<!-- ── Gráfico de barras (contagem de pendentes por severidade) ─────────── -->
-<div class="card grafico-wrapper">
-    <div class="grafico-area grafico-area-baixa"><canvas id="graficoAlertas"></canvas></div>
-</div>
-<script>
-    criarGraficoBarras(
-        'graficoAlertas',
-        ['Crítico', 'Atenção', 'Informativo'],
-        <?php echo jsonParaScript([(int) $contagem['critico'], (int) $contagem['atencao'], (int) $contagem['info']]); ?>,
-        'Alertas pendentes',
-        'Alertas pendentes por severidade',
-        ['critico', 'atencao', 'info'] // chaves da paleta do tema (ver graficos.js)
-    );
-</script>
-
-<!-- ── Histórico recente ─────────────────────────────────────────────────── -->
-<div class="card">
-    <h2>Histórico recente</h2>
-
-    <?php if (empty($alertas)): ?>
-        <p class="msg-vazio">Nenhum alerta registrado.</p>
-    <?php else: ?>
-        <ul class="lista-alertas">
-            <?php foreach ($alertas as $alerta): ?>
-                <?php $resolvido = (int) $alerta['resolvido'] === 1; ?>
-                <li class="<?php echo $resolvido ? 'alerta-resolvido' : ''; ?>">
-                    <div>
-                        <div class="alerta-titulo">
-                            <span class="badge badge-<?php echo escapar($alerta['severidade']); ?>">
-                                <?php echo escapar(AlertaModel::rotuloSeveridade($alerta['severidade'])); ?>
-                            </span>
-                            <strong><?php echo escapar(SensorModel::rotulo($alerta['sensor_tipo'])); ?></strong>
-                            <span>— <?php echo escapar($alerta['mensagem']); ?></span>
-                        </div>
-                        <div class="grafico-total-leituras">
-                            <?php echo escapar($alerta['sensor_nome']); ?>
-                            | Valor: <?php echo $alerta['valor'] === null ? '—' : escapar(number_format((float) $alerta['valor'], 2, ',', '.')); ?>
-                            | <?php echo escapar(date('d/m/Y H:i', strtotime($alerta['criado_em']))); ?>
-                            | <?php echo $resolvido ? 'Resolvido' : 'Pendente'; ?>
-                        </div>
-                    </div>
-                    <?php if ($ehAdmin && !$resolvido): ?>
-                        <form method="POST" class="form-inline">
-                            <input type="hidden" name="csrf_token" value="<?php echo escapar($csrf_token); ?>">
-                            <input type="hidden" name="acao" value="resolver">
-                            <input type="hidden" name="alerta_id" value="<?php echo (int) $alerta['id']; ?>">
-                            <button type="submit" class="btn-secundario">Marcar resolvido</button>
-                        </form>
-                    <?php endif; ?>
-                </li>
-            <?php endforeach; ?>
-        </ul>
-    <?php endif; ?>
-</div>
-
-<div class="nav-rodape">
-    <a href="graficos_sensores.php">← Gráficos de sensores</a>
-    <a href="../dashboard/painel.php">← Voltar ao painel</a>
-</div>
-
-<?php require __DIR__ . '/../partials/rodape.php'; ?>
+<div class="actions"><a class="btn-secundario" href="<?= urlApp('routes/exportar.php').'?'.escapar(http_build_query($filtros+['entidade'=>'alertas','formato'=>'csv'])) ?>">Baixar alertas em CSV</a><a class="btn-secundario" href="<?= urlApp('routes/exportar.php').'?'.escapar(http_build_query($filtros+['entidade'=>'alertas','formato'=>'pdf'])) ?>">Baixar alertas em PDF</a></div>
+<section class="card"><h2>Histórico de alertas</h2><p><?= $total ?> registro(s). Reconhecimento, normalização e resolução são momentos diferentes do atendimento.</p>
+<?php if(!$alertas): ?><p class="msg-vazio">Nenhum alerta encontrado para os filtros selecionados.</p><?php endif; ?>
+<div class="alertas-grade"><?php $permitirAcoes=true;foreach($alertas as $a) require __DIR__.'/../partials/cartao_alerta.php'; ?></div>
+<nav class="paginacao" aria-label="Páginas de alertas">
+<?php if($pagina>1): ?><a class="btn-secundario" href="?<?= escapar(http_build_query($filtros+['por_pagina'=>$porPagina,'pagina'=>$pagina-1])) ?>">Anterior</a><?php endif; ?>
+<span>Página <?= $pagina ?> de <?= max(1,(int)ceil($total/$porPagina)) ?></span>
+<?php if($pagina*$porPagina<$total): ?><a class="btn-secundario" href="?<?= escapar(http_build_query($filtros+['por_pagina'=>$porPagina,'pagina'=>$pagina+1])) ?>">Próxima</a><?php endif; ?>
+</nav></section>
+<?php require __DIR__.'/../partials/rodape.php'; ?>

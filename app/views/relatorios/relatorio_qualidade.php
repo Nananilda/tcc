@@ -1,160 +1,26 @@
 <?php
-/**
- * app/views/relatorios/relatorio_qualidade.php — Relatório de Qualidade Ambiental.
- *
- * Filtra as leituras dos sensores por tipo, período e faixa de valores e exibe
- * o resumo estatístico (média/mínimo/máximo por sensor) e as leituras
- * detalhadas. Os filtros chegam por GET e são validados no RelatorioModel.
- */
-
-require_once __DIR__ . '/../../../includes/auth.php';
-exigirLogin();
-
-require_once __DIR__ . '/../../config/conexao.php';
-require_once __DIR__ . '/../../controllers/RelatorioController.php';
-
-$controller = new RelatorioController($pdo);
-$relatorio = $controller->consultar($_GET);
-
-$filtros = $relatorio['filtros'];     // valores sanitizados (repreenchem o formulário)
-$leituras = $relatorio['leituras'];   // até RelatorioModel::LIMITE_LEITURAS linhas
-$resumo = $relatorio['resumo'];       // média/mín./máx. por tipo de sensor
-$rotulosSensores = $controller->rotulosSensores();
-
-/** Formata números no padrão brasileiro (1.234,56). */
-function formatarNumero($valor): string
-{
-    return number_format((float) $valor, 2, ',', '.');
-}
-
-$tituloPagina = 'Relatório de Qualidade';
-$secaoTopbar = 'Relatórios';
-$cssPagina = ['relatorios.css'];
-require __DIR__ . '/../partials/cabecalho.php';
+require_once __DIR__.'/../../../includes/auth.php'; exigirLogin();
+require_once __DIR__.'/../../config/conexao.php';
+require_once __DIR__.'/../../controllers/RelatorioController.php';
+require_once __DIR__.'/../../controllers/GraficoController.php';
+$formato=$_GET['formato']??'';
+if(!is_string($formato)||!in_array($formato,['','csv','pdf'],true)){http_response_code(422);exit('Formato inválido.');}
+$r=(new RelatorioController($pdo))->consultar($_GET+['por_pagina'=>25],$formato!=='');
+if($formato!=='' && $r['erro']===''){require_once __DIR__.'/../../services/ExportacaoRelatorio.php';exportarRelatorio($r,$formato);}
+$filtros=$r['filtros'];$filtroTodosTipos=true;$series=[];
+if(!$r['erro'])foreach($r['resumo'] as $linha){$tipo=$linha['sensor_tipo'];$series[$tipo]=(new GraficoController($pdo))->serieJson(array_replace($filtros,['sensor'=>$tipo]));}
+$tituloPagina='Relatórios';$cssPagina=['relatorios.css','graficos.css','monitoramento.css'];$scriptsHead=['vendor/chart.umd.js','graficos.js','monitoramento.js'];
+require __DIR__.'/../partials/cabecalho.php';
 ?>
-
-<h1>Relatório de Qualidade Ambiental</h1>
-
-<?php if ($relatorio['erro'] !== ''): ?>
-    <div class="msg-erro" role="alert"><?php echo escapar($relatorio['erro']); ?></div>
-<?php endif; ?>
-
-<!-- ── Filtros ───────────────────────────────────────────────────────────── -->
-<form method="GET">
-    <fieldset>
-        <legend>Filtros</legend>
-
-        <div class="relatorio-filtros">
-            <div>
-                <label for="sensor">Sensor</label>
-                <select id="sensor" name="sensor">
-                    <option value="">— Todos —</option>
-                    <?php foreach ($rotulosSensores as $tipo => $rotulo): ?>
-                        <option value="<?php echo escapar($tipo); ?>" <?php echo $filtros['sensor'] === $tipo ? 'selected' : ''; ?>>
-                            <?php echo escapar($rotulo); ?>
-                        </option>
-                    <?php endforeach; ?>
-                </select>
-            </div>
-
-            <div>
-                <label for="data_ini">De</label>
-                <input type="date" id="data_ini" name="data_ini" value="<?php echo escapar($filtros['data_ini']); ?>">
-            </div>
-
-            <div>
-                <label for="data_fim">Até</label>
-                <input type="date" id="data_fim" name="data_fim" value="<?php echo escapar($filtros['data_fim']); ?>">
-            </div>
-
-            <div>
-                <label for="val_min">Valor mín.</label>
-                <input type="number" id="val_min" name="val_min" step="any" value="<?php echo escapar($filtros['val_min']); ?>">
-            </div>
-
-            <div>
-                <label for="val_max">Valor máx.</label>
-                <input type="number" id="val_max" name="val_max" step="any" value="<?php echo escapar($filtros['val_max']); ?>">
-            </div>
-        </div>
-
-        <div class="relatorio-acoes">
-            <button type="submit">Filtrar</button>
-            <a href="relatorio_qualidade.php">Limpar filtros</a>
-        </div>
-    </fieldset>
-</form>
-
-<hr>
-
-<!-- ── Resumo estatístico ────────────────────────────────────────────────── -->
-<?php if (!empty($resumo)): ?>
-    <h2>Resumo do período</h2>
-    <div class="tabela-rolagem">
-        <table class="relatorio-resumo-tabela">
-            <thead>
-                <tr>
-                    <th>Sensor</th>
-                    <th>Leituras</th>
-                    <th>Média</th>
-                    <th>Mínimo</th>
-                    <th>Máximo</th>
-                </tr>
-            </thead>
-            <tbody>
-                <?php foreach ($resumo as $linha): ?>
-                    <tr>
-                        <td><?php echo escapar($rotulosSensores[$linha['sensor_tipo']] ?? $linha['sensor_tipo']); ?></td>
-                        <td><?php echo (int) $linha['total']; ?></td>
-                        <td><?php echo formatarNumero($linha['media']); ?></td>
-                        <td><?php echo formatarNumero($linha['minimo']); ?></td>
-                        <td><?php echo formatarNumero($linha['maximo']); ?></td>
-                    </tr>
-                <?php endforeach; ?>
-            </tbody>
-        </table>
-    </div>
-<?php endif; ?>
-
-<!-- ── Leituras detalhadas ───────────────────────────────────────────────── -->
-<h2>Leituras detalhadas
-    <span class="relatorio-contagem">
-        <?php echo count($leituras) >= RelatorioModel::LIMITE_LEITURAS
-            ? '(últimas ' . RelatorioModel::LIMITE_LEITURAS . ')'
-            : '(' . count($leituras) . ' registros)'; ?>
-    </span>
-</h2>
-
-<?php if (empty($leituras)): ?>
-    <p class="msg-vazio">Nenhuma leitura encontrada com os filtros aplicados.</p>
-<?php else: ?>
-    <div class="relatorio-tabela-detalhe">
-        <table>
-            <thead>
-                <tr>
-                    <th>Sensor</th>
-                    <th>Valor</th>
-                    <th>Data/Hora</th>
-                </tr>
-            </thead>
-            <tbody>
-                <?php foreach ($leituras as $leitura): ?>
-                    <tr>
-                        <td>
-                            <?php echo escapar($rotulosSensores[$leitura['sensor_tipo']] ?? $leitura['sensor_tipo']); ?>
-                            <div class="usuarios-dica"><?php echo escapar($leitura['sensor_nome']); ?></div>
-                        </td>
-                        <td><?php echo formatarNumero($leitura['valor']); ?></td>
-                        <td><?php echo escapar(date('d/m/Y H:i', strtotime($leitura['lido_em']))); ?></td>
-                    </tr>
-                <?php endforeach; ?>
-            </tbody>
-        </table>
-    </div>
-<?php endif; ?>
-
-<div class="nav-rodape">
-    <a href="../dashboard/painel.php">← Voltar ao painel</a>
-</div>
-
-<?php require __DIR__ . '/../partials/rodape.php'; ?>
+<header class="page-header"><div><h1>Relatórios</h1><p>Analise o período e exporte todos os registros dos estoques autorizados.</p></div></header>
+<?php require __DIR__.'/../partials/filtros_monitoramento.php'; ?>
+<?php if($r['erro']): ?><div class="msg-erro" role="alert"><?= escapar($r['erro']) ?></div><?php else: ?>
+<div class="actions"><a class="btn" href="?<?= escapar(http_build_query(array_replace($filtros,['formato'=>'csv']))) ?>">Baixar CSV</a><a class="btn-secundario" href="?<?= escapar(http_build_query(array_replace($filtros,['formato'=>'pdf']))) ?>">Baixar PDF</a></div>
+<section class="card"><h2>Resumo estatístico</h2><p><?= (int)$r['total'] ?> leituras · <?= $r['total_alertas'] ?> alertas · <?= number_format($r['segundos_fora_limites']/60,1,',','.') ?> minutos estimados fora dos limites.</p><p class="texto-auxiliar">O tempo é estimado entre leituras consecutivas dentro do prazo de comunicação, sem preencher lacunas. Filtros por valor desativam essa estimativa. Os resumos e as exportações incluem todos os registros, independentemente da página.</p><div class="table-wrapper"><table><thead><tr><th>Tipo</th><th>Leituras</th><th>Média</th><th>Mínimo</th><th>Máximo</th><th>Fora dos limites</th></tr></thead><tbody><?php if(!$r['resumo']): ?><tr><td colspan="6">Nenhuma leitura no período.</td></tr><?php endif ?><?php foreach($r['resumo'] as $linha): ?><tr><td><?= escapar(SensorModel::rotuloComUnidade($linha['sensor_tipo'])) ?></td><td><?= (int)$linha['total'] ?></td><td><?= escapar($linha['media']) ?></td><td><?= escapar($linha['minimo']) ?></td><td><?= escapar($linha['maximo']) ?></td><td><?= (int)$linha['fora_limites'] ?></td></tr><?php endforeach ?></tbody></table></div></section>
+<div class="graficos-grid"><?php foreach($series as $tipo=>$serie): ?><section class="card"><h2><?= escapar(SensorModel::rotulo($tipo)) ?> no período</h2><div class="grafico-area"><canvas id="relatorio-<?= $tipo ?>" role="img" aria-label="Evolução ambiental; dados no histórico abaixo"></canvas></div><p>Médias por intervalo e limites registrados no momento da leitura.</p></section><?php endforeach ?></div>
+<section class="card"><h2>Histórico de leituras</h2><div class="table-wrapper"><table><thead><tr><th>Data e horário</th><th>Estoque</th><th>Sensor</th><th>Tipo</th><th>Valor</th><th>Unidade</th><th>Situação</th></tr></thead><tbody><?php if(!$r['leituras']): ?><tr><td colspan="7">Nenhuma leitura no período.</td></tr><?php endif ?><?php foreach($r['leituras'] as $l): ?><tr><td><?= escapar(dataBr($l['lido_em'])) ?></td><td><?= escapar($l['estoque_nome']) ?></td><td><?= escapar($l['sensor_nome']) ?></td><td><?= escapar(SensorModel::rotulo($l['sensor_tipo'])) ?></td><td><?= escapar($l['valor']) ?></td><td><?= escapar($l['unidade']) ?></td><td><span class="badge badge-<?= escapar($l['situacao']) ?>"><?= escapar(['normal'=>'Normal','atencao'=>'Atenção','critico'=>'Crítico'][$l['situacao']]) ?></span></td></tr><?php endforeach ?></tbody></table></div>
+<nav class="paginacao" aria-label="Páginas de leituras"><?php $pag=(int)$filtros['pagina'];$paginas=max(1,(int)ceil($r['total']/$filtros['por_pagina']));if($pag>1): ?><a href="?<?= escapar(http_build_query(array_replace($filtros,['pagina'=>$pag-1]))) ?>">Anterior</a><?php endif ?><span>Página <?= $pag ?> de <?= $paginas ?> · até <?= (int)$filtros['por_pagina'] ?> leituras por página</span><?php if($pag<$paginas): ?><a href="?<?= escapar(http_build_query(array_replace($filtros,['pagina'=>$pag+1]))) ?>">Próxima</a><?php endif ?></nav></section>
+<section class="card"><h2>Alertas no período</h2><p>Até 25 ocorrências recentes. O PDF inclui todos os alertas filtrados.</p><div class="table-wrapper"><table><thead><tr><th>Data</th><th>Estoque / sensor</th><th>Mensagem</th><th>Gravidade / status</th></tr></thead><tbody><?php if(!$r['alertas']): ?><tr><td colspan="4">Nenhum alerta encontrado.</td></tr><?php endif ?><?php foreach($r['alertas'] as $a): ?><tr><td><?= escapar(dataBr($a['criado_em'])) ?></td><td><?= escapar($a['estoque_nome'].' / '.$a['sensor_nome']) ?></td><td><?= escapar($a['mensagem']) ?></td><td><?= escapar(['info'=>'Informativo','atencao'=>'Atenção','critico'=>'Crítico'][$a['severidade']].' / '.ucfirst($a['status'])) ?></td></tr><?php endforeach ?></tbody></table></div></section>
+<script>const seriesRelatorio=<?= jsonParaScript($series) ?>;Object.entries(seriesRelatorio).forEach(([tipo,s])=>criarGraficoAmbiental('relatorio-'+tipo,s.pontos));</script>
+<?php endif ?>
+<?php require __DIR__.'/../partials/rodape.php'; ?>

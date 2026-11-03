@@ -11,6 +11,7 @@
  *   ?saiu=1                          mostra "Você saiu do sistema"
  */
 
+define('AKRON_ACESSO_BANCO_LEGADO', true);
 require_once __DIR__ . '/includes/auth.php';
 require_once __DIR__ . '/app/views/partials/icones.php';
 
@@ -85,11 +86,13 @@ require __DIR__ . '/app/views/partials/head.php';
 
     <header class="login-marca">
         <span class="logo logo-completa" role="img" aria-label="<?php echo escapar(APP_NOME); ?>"></span>
+        <button type="button" class="ajuda-sistema btn-secundario" data-dialog="sobre-akron" aria-label="Sobre o ÁKRON">?</button>
         <div class="login-marca-tagline"><?php echo escapar(APP_LEMA); ?></div>
     </header>
 
     <main class="login-box">
-        <h2>Autenticação</h2>
+        <h1>Entrar no ÁKRON</h1>
+        <p class="login-subtitulo">Acompanhe os seus estoques.</p>
 
         <?php if ($erro): ?>
             <div class="msg-erro" role="alert"><?php echo escapar($erro); ?></div>
@@ -101,26 +104,32 @@ require __DIR__ . '/app/views/partials/head.php';
             <input type="hidden" name="csrf_token" value="<?php echo escapar($csrf_token); ?>">
 
             <div class="login-campo">
-                <label for="login">Identificação do Usuário</label>
+                <label for="login">Usuário</label>
                 <input type="text" id="login" name="login" placeholder="usuario.nome" maxlength="50"
                     value="<?php echo isset($_POST['login']) ? escapar($_POST['login']) : ''; ?>"
                     autocomplete="username" autofocus required <?php echo $tentativasBloqueadas ? 'disabled' : ''; ?>>
             </div>
 
             <div class="login-campo">
-                <label for="senha">Credencial de Acesso</label>
+                <label for="senha">Senha</label>
                 <input type="password" id="senha" name="senha" placeholder="••••••••" maxlength="128"
                     autocomplete="current-password" required <?php echo $tentativasBloqueadas ? 'disabled' : ''; ?>>
             </div>
 
             <button type="submit" id="btnLogin" <?php echo $tentativasBloqueadas ? 'disabled' : ''; ?>>
-                AUTENTICAR ACESSO
+                Entrar
             </button>
         </form>
 
         <p class="login-versao">Acesso restrito a usuários autorizados.</p>
     </main>
 
+    <dialog id="sobre-akron" aria-labelledby="sobre-titulo">
+        <h2 id="sobre-titulo">Conheça o ÁKRON</h2>
+        <p>Monitore as condições ambientais dos seus estoques por meio de sensores conectados.</p>
+        <p>Acompanhe temperatura, umidade, qualidade do ar, ruído, pressão e índice UV, consulte históricos e relatórios e receba alertas quando as medições ultrapassarem os limites configurados.</p>
+        <form method="dialog"><button>Fechar explicação</button></form>
+    </dialog>
 </body>
 
 </html>

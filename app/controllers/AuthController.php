@@ -66,6 +66,8 @@ class AuthController
         $_SESSION['usuario_id'] = $usuario['id'];
         $_SESSION['usuario_nome'] = $usuario['nome'];
         $_SESSION['usuario_tipo'] = $usuario['tipo'];
+        $_SESSION['usuario_tema'] = $usuario['tema'] ?? 'automatico';
+        $_SESSION['usuario_foto'] = $usuario['foto'] ?? null;
         $_SESSION['login_hora'] = date('Y-m-d H:i:s');
         $_SESSION['ip_login'] = $ip;
         $_SESSION['csrf_token'] = bin2hex(random_bytes(32));

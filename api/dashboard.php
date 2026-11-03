@@ -1,14 +1,7 @@
 <?php
-/**
- * GET api/dashboard.php
- * Retorna o resumo exibido no painel principal.
- * { sucesso, resumo: { sensores_ativos, sensores_total, alertas_pendentes, ultima_atualizacao } }
- */
-
-require_once __DIR__ . '/_bootstrap.php';
+require_once __DIR__.'/_bootstrap.php';
 exigirLoginApi();
-
-require_once __DIR__ . '/../app/controllers/DashboardController.php';
-
-$controller = new DashboardController($pdo);
-jsonResponse(['sucesso' => true, 'resumo' => $controller->obterResumo()]);
+if($_SERVER['REQUEST_METHOD']!=='GET')jsonResponse(['sucesso'=>false,'mensagem'=>'Método não permitido.'],405);
+require_once __DIR__.'/../app/controllers/DashboardController.php';
+$r=(new DashboardController($pdo))->obterResumo($_GET);
+jsonResponse(['sucesso'=>$r['erro']==='','resumo'=>$r,'mensagem'=>$r['erro']],$r['erro']===''?200:422);

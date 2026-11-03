@@ -25,8 +25,15 @@ require_once __DIR__ . '/../app/controllers/SensorController.php';
 $controller = new SensorController($pdo, ehAdmin());
 
 if ($_SERVER['REQUEST_METHOD'] === 'GET') {
+    if (isset($_GET['id'])) {
+        $id = filter_var($_GET['id'], FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]);
+        if (!$id) jsonResponse(['sucesso' => false, 'mensagem' => 'ID inválido.'], 422);
+        $sensor = $controller->buscarSensor($id);
+        jsonResponse(['sucesso' => (bool) $sensor, 'sensor' => $sensor], $sensor ? 200 : 404);
+    }
+    if(isset($_GET['estoque_id']) && $_GET['estoque_id']!=='' && (filter_var($_GET['estoque_id'],FILTER_VALIDATE_INT)===false || (int)$_GET['estoque_id']<0)) jsonResponse(['sucesso'=>false,'mensagem'=>'Estoque inválido.'],422);
     $erros = [];
-    $sensores = $controller->listarSensores($erros);
+    $sensores = $controller->listarSensores($erros, $_GET);
 
     // Tipos numéricos corretos no JSON (o PDO devolve o id como texto em alguns drivers)
     $sensores = array_map(fn($s) => ['id' => (int) $s['id']] + $s, $sensores);

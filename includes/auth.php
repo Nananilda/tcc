@@ -37,6 +37,7 @@ function iniciarSessao(): void
     session_set_cookie_params([
         'lifetime' => 0,          // cookie de sessão (some ao fechar o navegador)
         'path' => '/',
+        'secure' => !empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off',
         'httponly' => true,
         'samesite' => 'Lax',
     ]);
@@ -92,9 +93,9 @@ function autenticarUsuario(?PDO $pdo, string $login, string $senha): array
 /**
  * Confere se o token recebido do formulário é o mesmo da sessão.
  */
-function validarCSRF(string $token): bool
+function validarCSRF($token): bool
 {
-    return !empty($_SESSION['csrf_token']) && hash_equals($_SESSION['csrf_token'], $token);
+    return is_string($token) && !empty($_SESSION['csrf_token']) && hash_equals($_SESSION['csrf_token'], $token);
 }
 
 /**
@@ -135,6 +136,15 @@ function verificarBloqueioIP(?PDO $pdo, string $ip): bool
 function registrarLog(?PDO $pdo, ?int $usuario_id, string $acao, string $descricao = ''): void
 {
     error_log("Log - Usuário: " . ($usuario_id ?? 'anônimo') . " | Ação: $acao | Descrição: $descricao");
+    if ($pdo !== null) {
+        try {
+            $stmt = $pdo->prepare('INSERT INTO auditoria (usuario_id,acao,descricao) VALUES (?,?,?)');
+            $stmt->execute([$usuario_id, substr($acao, 0, 80), $descricao]);
+        } catch (PDOException $e) {
+            // Falha de auditoria é registrada no servidor sem expor detalhes ao usuário.
+            error_log('[ÁKRON] Não foi possível persistir auditoria: ' . $e->getMessage());
+        }
+    }
 }
 
 // ─── SESSÃO E PERMISSÕES ────────────────────────────────────────────────────
@@ -167,6 +177,20 @@ function verificarSessao(): ?string
         return 'seguranca';
     }
 
+    // Revogação de conta/perfil vale também para a sessão web já aberta.
+    global $pdo;
+    require_once __DIR__ . '/../app/config/conexao.php';
+    $stmt = $pdo->prepare('SELECT * FROM usuario WHERE id=?');
+    $stmt->execute([(int) $_SESSION['usuario_id']]);
+    $usuario = $stmt->fetch();
+    if (!$usuario || $usuario['status'] !== 'ativo') {
+        encerrarSessao();
+        return 'sessao';
+    }
+    $_SESSION['usuario_tipo'] = $usuario['tipo'];
+    $_SESSION['usuario_nome'] = $usuario['nome'];
+    $_SESSION['usuario_tema'] = $usuario['tema'] ?? 'automatico';
+    $_SESSION['usuario_foto'] = $usuario['foto'] ?? null;
     return null;
 }
 

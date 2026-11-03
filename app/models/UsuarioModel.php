@@ -27,7 +27,7 @@ class UsuarioModel
      * sem ela. Depender dela quebrava a listagem, o cadastro, a edição e a
      * exclusão de usuários nesses bancos.
      */
-    private const COLUNAS = 'id, nome, login, tipo, status';
+    private const COLUNAS = 'id, nome, login, tipo, status, criado_em, tema, foto, administrador_principal';
 
     private PDO $pdo;
 
@@ -44,7 +44,10 @@ class UsuarioModel
     public function listarTodos(): array
     {
         $stmt = $this->pdo->query("SELECT " . self::COLUNAS . " FROM usuario ORDER BY nome ASC");
-        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        $usuarios = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        $vinculos=[];foreach($this->pdo->query('SELECT usuario_id,estoque_id FROM usuario_estoque ORDER BY estoque_id') as $v)$vinculos[(int)$v['usuario_id']][]=(int)$v['estoque_id'];
+        foreach ($usuarios as &$usuario) $usuario['estoque_ids'] = $vinculos[(int)$usuario['id']]??[];
+        return $usuarios;
     }
 
     /**
@@ -54,7 +57,9 @@ class UsuarioModel
     {
         $stmt = $this->pdo->prepare("SELECT " . self::COLUNAS . " FROM usuario WHERE id = :id");
         $stmt->execute([':id' => $id]);
-        return $stmt->fetch(PDO::FETCH_ASSOC);
+        $usuario = $stmt->fetch(PDO::FETCH_ASSOC);
+        if ($usuario) $usuario['estoque_ids'] = $this->estoquesDoUsuario((int) $usuario['id']);
+        return $usuario;
     }
 
     /**
@@ -64,7 +69,9 @@ class UsuarioModel
     {
         $stmt = $this->pdo->prepare("SELECT " . self::COLUNAS . " FROM usuario WHERE login = :login");
         $stmt->execute([':login' => $login]);
-        return $stmt->fetch(PDO::FETCH_ASSOC);
+        $usuario = $stmt->fetch(PDO::FETCH_ASSOC);
+        if ($usuario) $usuario['estoque_ids'] = $this->estoquesDoUsuario((int) $usuario['id']);
+        return $usuario;
     }
 
     /**
@@ -166,9 +173,36 @@ class UsuarioModel
      */
     public function excluir(int $id): bool
     {
-        $stmt = $this->pdo->prepare("DELETE FROM usuario WHERE id = :id");
+        $stmt = $this->pdo->prepare("UPDATE usuario SET status='inativo' WHERE id = :id");
         $stmt->execute([':id' => $id]);
         return $stmt->rowCount() > 0;
+    }
+
+    public function estoquesDoUsuario(int $id): array
+    {
+        $stmt = $this->pdo->prepare('SELECT estoque_id FROM usuario_estoque WHERE usuario_id=? ORDER BY estoque_id');
+        $stmt->execute([$id]);
+        return array_map('intval', $stmt->fetchAll(PDO::FETCH_COLUMN));
+    }
+
+    public function validarEstoques($ids): array
+    {
+        if (!is_array($ids)) return ['A lista de estoques é inválida.'];
+        foreach ($ids as $id) {
+            if (!is_scalar($id) || filter_var($id, FILTER_VALIDATE_INT, ['options'=>['min_range'=>1]]) === false) return ['Há um estoque inválido na seleção.'];
+        }
+        $ids = array_values(array_unique(array_map('intval', $ids)));
+        if (!$ids) return [];
+        $stmt = $this->pdo->prepare('SELECT COUNT(*) FROM estoques WHERE id IN (' . implode(',', array_fill(0,count($ids),'?')) . ')');
+        $stmt->execute($ids);
+        return (int)$stmt->fetchColumn() === count($ids) ? [] : ['Um dos estoques selecionados não existe.'];
+    }
+
+    public function vincularEstoques(int $usuarioId, array $ids): void
+    {
+        $this->pdo->prepare('DELETE FROM usuario_estoque WHERE usuario_id=?')->execute([$usuarioId]);
+        $stmt = $this->pdo->prepare('INSERT INTO usuario_estoque (usuario_id,estoque_id) VALUES (?,?)');
+        foreach (array_unique(array_map('intval',$ids)) as $estoqueId) $stmt->execute([$usuarioId,$estoqueId]);
     }
 
     // ── Validações ───────────────────────────────────────────────────────────
@@ -246,6 +280,7 @@ class UsuarioModel
         string $confirmar = ''
     ): array {
         $usuarioAtual = $id > 0 ? $this->buscarPorId($id) : false;
+        if (!empty($usuarioAtual['administrador_principal'])) return ['O administrador principal só pode alterar seus dados pessoais em Minha conta.'];
         if (!$usuarioAtual) {
             return ['Usuário não encontrado.'];
         }

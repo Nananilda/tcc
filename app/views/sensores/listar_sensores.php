@@ -1,88 +1,19 @@
 <?php
-/**
- * app/views/sensores/listar_sensores.php — Consulta de Sensores.
- *
- * Versão somente-leitura da listagem de sensores (sem cadastro nem alteração
- * de status), reaproveitando o mesmo SensorController de gestao_sensores.php.
- * Pensada para consulta rápida por qualquer usuário logado.
- */
-
-require_once __DIR__ . '/../../../includes/auth.php';
-exigirLogin();
-
+require_once __DIR__ . '/../../../includes/auth.php'; exigirLogin();
 require_once __DIR__ . '/../../config/conexao.php';
 require_once __DIR__ . '/../../controllers/SensorController.php';
-
-$ehAdmin = ehAdmin();
-$controller = new SensorController($pdo, $ehAdmin);
-
-$erros = [];
-$sensores = $controller->listarSensores($erros);
-
-$tituloPagina = 'Consulta de Sensores';
-$secaoTopbar = 'Sensores';
+$controller = new SensorController($pdo, ehAdmin()); $erros=[];
+$sensores = $controller->listarSensores($erros, $_GET);
+$estoques = $pdo->query('SELECT id,nome FROM estoques e WHERE ' . escopoEstoque('e.id') . ' ORDER BY nome')->fetchAll();
+$tituloPagina = 'Sensores'; $secaoTopbar = 'Sensores';
 require __DIR__ . '/../partials/cabecalho.php';
 ?>
+<h1>Sensores</h1><p class="pagina-subtitulo">Consulte os sensores dos estoques autorizados e sua comunicação real.</p>
 
-<h1>Consulta de Sensores</h1>
-<?php if ($ehAdmin): ?>
-    <p>Lista somente leitura. Para cadastrar, alterar ou excluir sensores, acesse
-        <a href="editar_sensores.php">Editar Sensores</a>.
-    </p>
-<?php else: ?>
-    <p>Lista somente leitura dos sensores cadastrados.</p>
-<?php endif; ?>
-
-<?php if (!empty($erros)): ?>
-    <div class="msg-erro" role="alert">
-        <ul>
-            <?php foreach ($erros as $erro): ?>
-                <li><?php echo escapar($erro); ?></li>
-            <?php endforeach; ?>
-        </ul>
-    </div>
-<?php endif; ?>
-
-<div class="card">
-    <?php if (empty($sensores)): ?>
-        <p class="msg-vazio">Nenhum sensor cadastrado.</p>
-    <?php else: ?>
-        <div class="tabela-rolagem">
-            <table>
-                <thead>
-                    <tr>
-                        <th>ID</th>
-                        <th>Nome</th>
-                        <th>Tipo</th>
-                        <th>Localização</th>
-                        <th>Status</th>
-                        <th>Cadastrado em</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <?php foreach ($sensores as $sensor): ?>
-                        <tr>
-                            <td><?php echo (int) $sensor['id']; ?></td>
-                            <td><?php echo escapar($sensor['nome']); ?></td>
-                            <td><?php echo escapar(SensorModel::rotulo($sensor['tipo'])); ?></td>
-                            <td><?php echo escapar($sensor['localizacao'] ?? '—'); ?></td>
-                            <td>
-                                <span class="badge badge-<?php echo $sensor['status'] === 'ativo' ? 'ativo' : 'inativo'; ?>">
-                                    <?php echo $sensor['status'] === 'ativo' ? 'Ativo' : 'Inativo'; ?>
-                                </span>
-                            </td>
-                            <td><?php echo escapar(date('d/m/Y H:i', strtotime($sensor['criado_em']))); ?></td>
-                        </tr>
-                    <?php endforeach; ?>
-                </tbody>
-            </table>
-        </div>
-    <?php endif; ?>
-</div>
-
-<div class="nav-rodape">
-    <a href="../graficos/graficos_sensores.php">Ver gráficos →</a>
-    <a href="gestao_sensores.php">← Voltar à gestão de sensores</a>
-</div>
-
+<form method="get" class="card filtros-linha"><label for="filtro-estoque">Estoque</label><select id="filtro-estoque" name="estoque_id"><option value="">Todos os autorizados</option><?php foreach($estoques as $e): ?><option value="<?= (int)$e['id'] ?>" <?= (int)($_GET['estoque_id']??0)===(int)$e['id']?'selected':'' ?>><?= escapar($e['nome']) ?></option><?php endforeach ?></select><button>Filtrar</button><?php if(ehAdmin()): ?><a class="btn-primario" href="editar_sensores.php?estoque_id=<?= (int)($_GET['estoque_id']??0) ?>">Cadastrar sensor</a><?php endif ?></form>
+<?php foreach($erros as $erro): ?><p class="msg-erro" role="alert"><?= escapar($erro) ?></p><?php endforeach ?>
+<div class="card tabela-rolagem"><?php if(!$sensores): ?><p class="msg-vazio">Nenhum sensor vinculado aos estoques selecionados.</p><?php else: ?>
+<table><thead><tr><th>Sensor</th><th>Estoque</th><th>Tipo</th><th>Última leitura</th><th>Situação cadastral</th><th>Comunicação</th><th>Ações</th></tr></thead><tbody>
+<?php foreach($sensores as $s): ?><tr><td><?= escapar($s['nome']) ?><br><small><?= escapar($s['localizacao']??'') ?></small></td><td><?= escapar($s['estoque_nome']) ?></td><td><?= escapar(SensorModel::rotulo($s['tipo'])) ?></td><td><?= $s['ultimo_valor']===null?'Sem leitura':escapar($s['ultimo_valor'].' '.SensorModel::unidade($s['tipo'])) ?><br><small><?= escapar(dataBr($s['ultima_leitura']??null)) ?></small></td><td><?= $s['status']==='ativo'?'Ativo':'Inativo' ?></td><td><span class="badge badge-<?= $s['comunicacao']==='online'?'ativo':'inativo' ?>"><?= escapar(['online'=>'Online','sem_comunicacao'=>'Sem comunicação','inativo'=>'Inativo'][$s['comunicacao']]) ?></span></td><td><a href="detalhes.php?id=<?= (int)$s['id'] ?>">Detalhes</a><?php if(ehAdmin()): ?> · <a href="editar_sensores.php?id=<?= (int)$s['id'] ?>">Editar</a> · <a href="excluir_sensores.php?id=<?= (int)$s['id'] ?>">Desativar</a><?php endif ?></td></tr><?php endforeach ?>
+</tbody></table><?php endif ?></div>
 <?php require __DIR__ . '/../partials/rodape.php'; ?>

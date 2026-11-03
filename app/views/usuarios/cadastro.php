@@ -29,6 +29,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             'login' => trim($_POST['login'] ?? ''),
             'tipo' => $_POST['tipo'] ?? 'usuario',
             'status' => $_POST['status'] ?? 'ativo',
+            'estoque_ids' => $_POST['estoque_ids'] ?? [],
         ];
 
         $resposta = $controller->cadastrar($_POST);
@@ -42,6 +43,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
+$estoques = $pdo->query('SELECT id,nome,status,localizacao,descricao FROM estoques ORDER BY nome')->fetchAll();
 $csrf_token = gerarCSRF();
 
 $tituloPagina = 'Cadastro de Usuário';
@@ -104,6 +106,7 @@ require __DIR__ . '/../partials/cabecalho.php';
             </div>
         </div>
 
+        <?= avatarUsuario(['nome'=>$dados['nome']?:'Usuário']) ?>
         <!-- Acesso e status -->
         <div class="usuarios-secao">
             <div class="usuarios-secao-titulo">Nível de acesso</div>
@@ -134,7 +137,10 @@ require __DIR__ . '/../partials/cabecalho.php';
             </div>
         </div>
 
-        <button type="submit">Cadastrar Usuário</button>
+        <fieldset><legend>Estoques autorizados</legend>
+<p class="usuarios-dica">Administradores acessam todos os estoques. Usuários comuns acessam apenas os selecionados. Nenhuma seleção significa nenhum acesso.</p>
+<?php $selecionados=$dados['estoque_ids']??[];require __DIR__.'/../partials/selecao_estoques.php'; ?></fieldset>
+<button type="submit">Cadastrar Usuário</button> <a class="btn-secundario" href="gestao_usuarios.php">Cancelar</a>
     </form>
 </div>
 

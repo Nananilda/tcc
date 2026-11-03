@@ -71,6 +71,7 @@ class UsuarioController
             return $this->resposta('', ['Acesso negado.']);
         }
 
+        foreach (['nome','login','senha','confirmar','confirmar_senha','tipo','status'] as $campo) if (isset($dados[$campo])&&!is_string($dados[$campo])) return $this->resposta('', ['Campo inválido: '.$campo]);
         $nome = trim($dados['nome'] ?? '');
         $login = trim($dados['login'] ?? '');
         $senha = (string) ($dados['senha'] ?? '');
@@ -78,18 +79,23 @@ class UsuarioController
         $tipo = (string) ($dados['tipo'] ?? 'usuario');
         $status = (string) ($dados['status'] ?? 'ativo');
 
-        $erros = $this->model->validarCadastro($nome, $login, $senha, $confirmar, $tipo, $status);
+        $erros = array_merge($this->model->validarCadastro($nome, $login, $senha, $confirmar, $tipo, $status), $this->model->validarEstoques($dados['estoque_ids'] ?? []));
         if (!empty($erros)) {
             return $this->resposta('', $erros);
         }
 
         try {
+            $this->pdo->beginTransaction();
             $novoId = $this->model->criar($nome, $login, $senha, $tipo, $status);
+            $this->model->vincularEstoques($novoId, $dados['estoque_ids'] ?? []);
+            $this->registrarLog('PERMISSOES_USUARIO', 'Usuário ID '.$novoId.': estoques '.implode(',', $dados['estoque_ids'] ?? []));
+            $this->pdo->commit();
             $this->registrarLog('CADASTRO_USUARIO', "Novo usuário: $login (ID $novoId) - Tipo: $tipo");
             $resposta = $this->resposta("Usuário \"$login\" cadastrado com sucesso.", []);
             $resposta['id'] = $novoId;
             return $resposta;
         } catch (PDOException $e) {
+            if ($this->pdo->inTransaction()) $this->pdo->rollBack();
             return $this->resposta('', [$this->erroDeBanco('cadastrar o usuário', $e)]);
         }
     }
@@ -106,6 +112,7 @@ class UsuarioController
         }
 
         $id = (int) ($dados['id'] ?? 0);
+        foreach (['nome','login','senha','confirmar','confirmar_senha','tipo','status'] as $campo) if (isset($dados[$campo])&&!is_string($dados[$campo])) return $this->resposta('', ['Campo inválido: '.$campo]);
         $nome = trim($dados['nome'] ?? '');
         $login = trim($dados['login'] ?? '');
         $tipo = (string) ($dados['tipo'] ?? 'usuario');
@@ -114,15 +121,23 @@ class UsuarioController
         $confirmar = (string) ($dados['confirmar_senha'] ?? '');
 
         $erros = $this->model->validarEdicao($id, $nome, $login, $tipo, $status, $senha, $confirmar);
+        if (array_key_exists('estoque_ids', $dados)) $erros = array_merge($erros, $this->model->validarEstoques($dados['estoque_ids']));
         if (!empty($erros)) {
             return $this->resposta('', $erros);
         }
 
         try {
+            $this->pdo->beginTransaction();
             $this->model->atualizar($id, $nome, $login, $tipo, $status, $senha !== '' ? $senha : null);
+            if (array_key_exists('estoque_ids', $dados)) {
+                $this->model->vincularEstoques($id, $dados['estoque_ids']);
+                $this->registrarLog('PERMISSOES_USUARIO', 'Usuário ID '.$id.': estoques '.implode(',', $dados['estoque_ids']));
+            }
+            $this->pdo->commit();
             $this->registrarLog('EDICAO_USUARIO', "Usuário ID $id atualizado: $login");
             return $this->resposta('Usuário atualizado com sucesso.', []);
         } catch (PDOException $e) {
+            if ($this->pdo->inTransaction()) $this->pdo->rollBack();
             return $this->resposta('', [$this->erroDeBanco('atualizar o usuário', $e)]);
         }
     }
@@ -143,12 +158,16 @@ class UsuarioController
         }
 
         try {
+            $usuario = $this->model->buscarPorId($id);
+            if (!empty($usuario['administrador_principal'])) return $this->resposta('', ['O administrador principal não pode ser desativado.']);
+            if ($usuario && $usuario['tipo'] === 'admin' && $usuario['status'] === 'ativo' && $this->model->contarAdminsAtivos($id) === 0) return $this->resposta('', ['Não é possível desativar o último administrador ativo.']);
             if (!$this->model->excluir($id)) {
                 return $this->resposta('', ['Usuário não encontrado para exclusão.']);
             }
-            $this->registrarLog('EXCLUSAO_USUARIO', "Usuário ID $id excluído");
-            return $this->resposta('Usuário excluído com sucesso.', []);
+            $this->registrarLog('DESATIVACAO_USUARIO', "Usuário ID $id desativado");
+            return $this->resposta('Usuário desativado com sucesso. Histórico preservado.', []);
         } catch (PDOException $e) {
+            if ($this->pdo->inTransaction()) $this->pdo->rollBack();
             return $this->resposta('', [$this->erroDeBanco('excluir o usuário', $e)]);
         }
     }

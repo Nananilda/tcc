@@ -21,7 +21,7 @@ $cssPagina = $cssPagina ?? [];
 $scriptsHead = $scriptsHead ?? [];
 ?>
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="pt-BR" data-usuario="<?= (int)($_SESSION['usuario_id']??0) ?>" data-preferencia-tema="<?= escapar($_SESSION['usuario_tema']??'automatico') ?>" data-conta-url="<?= escapar(urlApp('routes/conta.php')) ?>" data-csrf="<?= escapar(gerarCSRF()) ?>">
 
 <head>
     <meta charset="UTF-8">
@@ -41,6 +41,8 @@ $scriptsHead = $scriptsHead ?? [];
     <?php foreach ($cssPagina as $css): ?>
         <link rel="stylesheet" href="<?php echo urlApp('public/assets/css/' . $css); ?>">
     <?php endforeach; ?>
+    <link rel="stylesheet" href="<?php echo urlApp('public/assets/css/componentes.css'); ?>">
+    <script defer src="<?= urlApp('public/assets/js/interface.js') ?>"></script>
     <?php foreach ($scriptsHead as $script): ?>
         <script src="<?php echo urlApp('public/assets/js/' . $script); ?>"></script>
     <?php endforeach; ?>

@@ -9,6 +9,8 @@
  * A estrutura da tabela está em sql/schema.sql.
  */
 
+require_once __DIR__ . '/../../includes/estoques.php';
+
 class SensorModel
 {
     /**
@@ -18,9 +20,9 @@ class SensorModel
      */
     public const TIPOS = [
         'temperatura' => ['label' => 'Temperatura', 'unidade' => '°C'],
-        'ruido' => ['label' => 'Ruído', 'unidade' => 'dB'],
-        'qualidade_ar' => ['label' => 'Qualidade do Ar', 'unidade' => 'AQI'],
         'umidade' => ['label' => 'Umidade', 'unidade' => '%'],
+        'qualidade_ar' => ['label' => 'Qualidade do ar', 'unidade' => 'AQI'],
+        'ruido' => ['label' => 'Ruído', 'unidade' => 'dB'],
         'pressao' => ['label' => 'Pressão', 'unidade' => 'hPa'],
         'uv' => ['label' => 'UV', 'unidade' => 'índice'],
     ];
@@ -62,125 +64,86 @@ class SensorModel
         return self::rotulo($tipo) . ($unidade !== '' ? " ($unidade)" : '');
     }
 
-    // ── Leitura ──────────────────────────────────────────────────────────────
-
-    /**
-     * Retorna todos os sensores ordenados por status (ativo primeiro) e nome.
-     * Obs.: em colunas ENUM o MySQL ordena pela posição declarada no ENUM
-     * ('ativo' = 1, 'inativo' = 2), por isso a ordem crescente.
-     */
-    public function listarTodos(): array
+    /** Consulta com escopo de estoque e última leitura real. */
+    private function consulta(): string
     {
-        $stmt = $this->pdo->query("
-            SELECT id, nome, tipo, localizacao, status, criado_em
-            FROM sensores
-            ORDER BY status ASC, nome ASC
-        ");
-        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        return "SELECT s.*, e.nome AS estoque_nome, e.status AS estoque_status,
+                l.valor AS ultimo_valor, l.lido_em AS ultima_leitura
+                FROM sensores s JOIN estoques e ON e.id=s.estoque_id
+                LEFT JOIN leitura_sensor l ON l.id=(SELECT ll.id FROM leitura_sensor ll
+                    WHERE ll.sensor_id=s.id AND ll.estoque_id=s.estoque_id ORDER BY ll.lido_em DESC,ll.id DESC LIMIT 1)";
     }
 
-    /**
-     * Retorna um sensor pelo ID, ou false se não existir.
-     */
-    public function buscarPorId(int $id): array|false
+    public static function situacaoComunicacao(array $sensor): string
     {
-        $stmt = $this->pdo->prepare("
-            SELECT id, nome, tipo, localizacao, status, criado_em
-            FROM sensores
-            WHERE id = :id
-        ");
-        $stmt->execute([':id' => $id]);
-        return $stmt->fetch(PDO::FETCH_ASSOC);
+        if (($sensor['status'] ?? '') !== 'ativo' || ($sensor['estoque_status'] ?? 'ativo') !== 'ativo') return 'inativo';
+        $ultima = $sensor['ultima_leitura'] ?? $sensor['ultima_comunicacao'] ?? null;
+        return $ultima && strtotime($ultima) >= time() - (int) ($sensor['intervalo_comunicacao'] ?? 300)
+            ? 'online' : 'sem_comunicacao';
     }
 
-    /**
-     * Conta os sensores em uma única consulta (usado pelo painel).
-     *
-     * @return array{ativos:int,total:int}
-     */
+    public function listarTodos(array $filtros = []): array
+    {
+        $sql = $this->consulta() . ' WHERE ' . escopoEstoque('s.estoque_id');
+        $params = [];
+        foreach (['estoque_id', 'id'] as $campo) {
+            if (!empty($filtros[$campo])) {
+                $sql .= " AND s.$campo = :$campo";
+                $params[$campo] = (int) $filtros[$campo];
+            }
+        }
+        $stmt = $this->pdo->prepare($sql . ' ORDER BY s.status,s.nome');
+        $stmt->execute($params);
+        return array_map(function ($s) { $s['comunicacao'] = self::situacaoComunicacao($s); return $s; }, $stmt->fetchAll());
+    }
+
+    public function buscarPorId(int $id, bool $respeitarEscopo = true): array|false
+    {
+        $stmt = $this->pdo->prepare($this->consulta() . ' WHERE s.id=:id' .
+            ($respeitarEscopo ? ' AND ' . escopoEstoque('s.estoque_id') : ''));
+        $stmt->execute(['id' => $id]);
+        $s = $stmt->fetch();
+        if ($s) $s['comunicacao'] = self::situacaoComunicacao($s);
+        return $s;
+    }
+
     public function contarPorStatus(): array
     {
-        $stmt = $this->pdo->query("
-            SELECT COUNT(*) AS total,
-                   COALESCE(SUM(status = 'ativo'), 0) AS ativos
-            FROM sensores
-        ");
-        $linha = $stmt->fetch(PDO::FETCH_ASSOC);
-        return ['ativos' => (int) $linha['ativos'], 'total' => (int) $linha['total']];
+        $sensores = $this->listarTodos();
+        return ['total' => count($sensores),
+            'ativos' => count(array_filter($sensores, fn($s) => $s['status'] === 'ativo')),
+            'online' => count(array_filter($sensores, fn($s) => $s['comunicacao'] === 'online'))];
     }
 
-    // ── Escrita ──────────────────────────────────────────────────────────────
+    private const CAMPOS = ['nome','tipo','localizacao','status','estoque_id',
+        'limite_atencao_min','limite_atencao_max','limite_critico_min','limite_critico_max','intervalo_comunicacao'];
 
-    /**
-     * Insere um novo sensor e retorna o ID gerado.
-     *
-     * @param array $dados ['nome', 'tipo', 'localizacao', 'status']
-     */
     public function cadastrar(array $dados): int
     {
-        $stmt = $this->pdo->prepare("
-            INSERT INTO sensores (nome, tipo, localizacao, status, criado_em)
-            VALUES (:nome, :tipo, :localizacao, :status, NOW())
-        ");
-        $stmt->execute([
-            ':nome' => $dados['nome'],
-            ':tipo' => $dados['tipo'],
-            ':localizacao' => $dados['localizacao'] ?? null,
-            ':status' => $dados['status'],
-        ]);
+        $campos = implode(',', self::CAMPOS);
+        $marcadores = ':' . implode(',:', self::CAMPOS);
+        $stmt = $this->pdo->prepare("INSERT INTO sensores ($campos) VALUES ($marcadores)");
+        $stmt->execute(array_intersect_key($dados, array_flip(self::CAMPOS)));
         return (int) $this->pdo->lastInsertId();
     }
 
-    /**
-     * Atualiza nome, tipo, localização e status de um sensor.
-     *
-     * @param int   $id    ID do sensor
-     * @param array $dados ['nome', 'tipo', 'localizacao', 'status']
-     */
     public function atualizar(int $id, array $dados): void
     {
-        $stmt = $this->pdo->prepare("
-            UPDATE sensores
-            SET nome = :nome,
-                tipo = :tipo,
-                localizacao = :localizacao,
-                status = :status
-            WHERE id = :id
-        ");
-        $stmt->execute([
-            ':nome' => $dados['nome'],
-            ':tipo' => $dados['tipo'],
-            ':localizacao' => $dados['localizacao'] ?? null,
-            ':status' => $dados['status'],
-            ':id' => $id,
-        ]);
+        $sql = implode(',', array_map(fn($c) => "$c=:$c", self::CAMPOS));
+        $stmt = $this->pdo->prepare("UPDATE sensores SET ultima_comunicacao=IF(estoque_id=:novo_estoque,ultima_comunicacao,NULL),$sql WHERE id=:id");
+        $stmt->execute(array_intersect_key($dados, array_flip(self::CAMPOS)) + ['id' => $id,'novo_estoque'=>$dados['estoque_id']]);
     }
 
-    /**
-     * Atualiza apenas o status de um sensor.
-     *
-     * @param int    $id     ID do sensor
-     * @param string $status 'ativo' ou 'inativo'
-     */
     public function atualizarStatus(int $id, string $status): bool
     {
-        $stmt = $this->pdo->prepare("
-            UPDATE sensores SET status = :status WHERE id = :id
-        ");
-        $stmt->execute([':status' => $status, ':id' => $id]);
+        $stmt = $this->pdo->prepare('UPDATE sensores SET status=:status WHERE id=:id');
+        $stmt->execute(['status' => $status, 'id' => $id]);
         return $stmt->rowCount() > 0;
     }
 
-    /**
-     * Remove um sensor. Pode lançar PDOException (código 23000) se houver
-     * registros vinculados (ex.: leituras) protegidos por chave estrangeira.
-     *
-     * @return bool true se um registro foi removido
-     */
+    /** Compatibilidade da ação antiga: desativa, sem apagar leituras/alertas. */
     public function excluir(int $id): bool
     {
-        $stmt = $this->pdo->prepare("DELETE FROM sensores WHERE id = :id");
-        $stmt->execute([':id' => $id]);
-        return $stmt->rowCount() > 0;
+        return $this->atualizarStatus($id, 'inativo');
     }
 }

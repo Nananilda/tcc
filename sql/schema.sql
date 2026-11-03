@@ -1,74 +1,101 @@
--- =============================================================================
--- ÁKRON — Sistema de Monitoramento Industrial
--- sql/schema.sql — estrutura do banco de dados (MySQL 5.7+ / MariaDB 10.3+)
---
--- Usado por: app/models/*.php, app/controllers/*.php e api/*.php.
---
--- COMO EXECUTAR (ajuste host/porta/usuário conforme app/config/conexao.php):
---   mysql -h 127.0.0.1 -P 3306 -u root -p < sql/schema.sql
---
--- ⚠ ATENÇÃO: este script APAGA e recria o banco `banco_tcc` do zero.
---   Use-o apenas na instalação inicial ou para reiniciar o ambiente de testes.
---
--- Depois de criar a estrutura, carregue (opcional) os dados de demonstração:
---   mysql -h 127.0.0.1 -P 3306 -u root -p banco_tcc < sql/dados_exemplo.sql
--- =============================================================================
+-- ÁKRON 3.0 — INSTALAÇÃO NOVA / MYSQL WORKBENCH
+-- Execute o arquivo inteiro no Workbench com um usuário que possa criar o banco.
+-- Banco: banco_tcc. Sem registros de exemplo; cria somente o administrador.
+-- Login no site: admin | Senha inicial: Admin@123. Altere em Minha conta.
+-- Configure app/config/conexao.local.php com host, porta, banco, usuário e senha.
+-- Use um banco vazio para esta instalação. Este arquivo não apaga bancos/tabelas.
 
--- Garante UTF-8 na conexão, qualquer que seja o charset padrão do cliente
--- (sem isto, acentos podem ser gravados com codificação dupla: "GalpÃ£o").
 SET NAMES utf8mb4;
-
--- Fuso horário de Brasília (o mesmo que o PHP usa em app/config/app.php): as datas gravadas
--- por este script (NOW()) ficam coerentes com as que o sistema exibe, mesmo que o servidor
--- MySQL esteja configurado em UTC.
 SET time_zone = '-03:00';
-
-DROP DATABASE IF EXISTS banco_tcc;
-
-CREATE DATABASE banco_tcc
-    CHARACTER SET utf8mb4
-    COLLATE utf8mb4_unicode_ci;
-
+CREATE DATABASE IF NOT EXISTS banco_tcc
+    CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 USE banco_tcc;
 
 -- ── usuario ──────────────────────────────────────────────────────────────────
 -- Contas de acesso ao sistema (web e app). A coluna `senha` guarda SEMPRE o
 -- hash bcrypt gerado por password_hash() — nunca a senha em texto puro.
-CREATE TABLE usuario (
+CREATE TABLE IF NOT EXISTS usuario (
     id        INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     nome      VARCHAR(100) NOT NULL,
     login     VARCHAR(100) NOT NULL UNIQUE,
     senha     VARCHAR(255) NOT NULL,
     tipo      ENUM('usuario', 'admin') NOT NULL DEFAULT 'usuario',
     status    ENUM('ativo', 'inativo') NOT NULL DEFAULT 'ativo',
+    criado_em DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    tema ENUM('claro','escuro','automatico') NOT NULL DEFAULT 'automatico',
+    foto MEDIUMTEXT NULL,
+    administrador_principal TINYINT(1) NOT NULL DEFAULT 0
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS estoques (
+    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    nome VARCHAR(100) NOT NULL,
+    descricao TEXT NULL,
+    localizacao VARCHAR(150) NULL,
+    status ENUM('ativo','inativo') NOT NULL DEFAULT 'ativo',
     criado_em DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS usuario_estoque (
+    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    usuario_id INT UNSIGNED NOT NULL,
+    estoque_id INT UNSIGNED NOT NULL,
+    criado_em DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE KEY uk_usuario_estoque (usuario_id,estoque_id),
+    FOREIGN KEY (usuario_id) REFERENCES usuario(id) ON DELETE RESTRICT ON UPDATE CASCADE,
+    FOREIGN KEY (estoque_id) REFERENCES estoques(id) ON DELETE RESTRICT ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS auditoria (
+    id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    usuario_id INT UNSIGNED NULL,
+    acao VARCHAR(80) NOT NULL,
+    descricao TEXT NULL,
+    criado_em DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    INDEX idx_auditoria_data (criado_em),
+    FOREIGN KEY (usuario_id) REFERENCES usuario(id) ON DELETE SET NULL ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- ── sensores ─────────────────────────────────────────────────────────────────
 -- Cadastro dos sensores instalados na planta. `tipo` define a grandeza medida
 -- (e, portanto, a unidade exibida nos gráficos e relatórios).
-CREATE TABLE sensores (
+CREATE TABLE IF NOT EXISTS sensores (
     id          INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     nome        VARCHAR(100) NOT NULL,
     tipo        ENUM('temperatura', 'ruido', 'qualidade_ar', 'umidade', 'pressao', 'uv') NOT NULL,
     localizacao VARCHAR(150) DEFAULT NULL,
     status      ENUM('ativo', 'inativo') NOT NULL DEFAULT 'ativo',
     criado_em   DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    estoque_id INT UNSIGNED NOT NULL,
+    limite_atencao_min DECIMAL(10,2) NULL,
+    limite_atencao_max DECIMAL(10,2) NULL,
+    limite_critico_min DECIMAL(10,2) NULL,
+    limite_critico_max DECIMAL(10,2) NULL,
+    intervalo_comunicacao INT UNSIGNED NOT NULL DEFAULT 300,
+    ultima_comunicacao DATETIME NULL,
+    CONSTRAINT fk_sensor_estoque FOREIGN KEY (estoque_id) REFERENCES estoques(id) ON DELETE RESTRICT ON UPDATE CASCADE,
     INDEX idx_sensor_tipo (tipo)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- ── leitura_sensor ───────────────────────────────────────────────────────────
 -- Uma linha por medição enviada por um sensor. Os gráficos e relatórios
 -- descobrem o tipo (temperatura, ruído...) fazendo JOIN com `sensores`.
-CREATE TABLE leitura_sensor (
+CREATE TABLE IF NOT EXISTS leitura_sensor (
     id        INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     sensor_id INT UNSIGNED NOT NULL,
     valor     DECIMAL(10,2) NOT NULL,
     lido_em   DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    estoque_id INT UNSIGNED NOT NULL,
+    situacao ENUM('normal','atencao','critico') NOT NULL DEFAULT 'normal',
+    limite_atencao_min DECIMAL(10,2) NULL,
+    limite_atencao_max DECIMAL(10,2) NULL,
+    limite_critico_min DECIMAL(10,2) NULL,
+    limite_critico_max DECIMAL(10,2) NULL,
+    CONSTRAINT fk_leitura_estoque FOREIGN KEY (estoque_id) REFERENCES estoques(id) ON DELETE RESTRICT ON UPDATE CASCADE,
     CONSTRAINT fk_leitura_sensor
         FOREIGN KEY (sensor_id)
         REFERENCES sensores(id)
-        ON DELETE CASCADE
+        ON DELETE RESTRICT
         ON UPDATE CASCADE,
     INDEX idx_sensor_data (sensor_id, lido_em),
     INDEX idx_leitura_data (lido_em)
@@ -77,7 +104,7 @@ CREATE TABLE leitura_sensor (
 -- ── alertas ──────────────────────────────────────────────────────────────────
 -- Ocorrências geradas a partir dos sensores. `resolvido_por` registra qual
 -- administrador marcou o alerta como resolvido (NULL enquanto pendente).
-CREATE TABLE alertas (
+CREATE TABLE IF NOT EXISTS alertas (
     id            INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     sensor_id     INT UNSIGNED NOT NULL,
     severidade    ENUM('info', 'atencao', 'critico') NOT NULL DEFAULT 'info',
@@ -86,10 +113,21 @@ CREATE TABLE alertas (
     resolvido     TINYINT(1) NOT NULL DEFAULT 0,
     criado_em     DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     resolvido_por INT UNSIGNED DEFAULT NULL,
+    estoque_id INT UNSIGNED NOT NULL,
+    limite_ultrapassado DECIMAL(10,2) NULL,
+    status ENUM('pendente','reconhecido','normalizado','resolvido') NOT NULL DEFAULT 'pendente',
+    reconhecido_por INT UNSIGNED NULL,
+    reconhecido_em DATETIME NULL,
+    resolvido_em DATETIME NULL,
+    normalizado_em DATETIME NULL,
+    observacoes TEXT NULL,
+    automatico TINYINT(1) NOT NULL DEFAULT 0,
+    CONSTRAINT fk_alerta_estoque FOREIGN KEY (estoque_id) REFERENCES estoques(id) ON DELETE RESTRICT ON UPDATE CASCADE,
+    CONSTRAINT fk_alerta_reconhecido FOREIGN KEY (reconhecido_por) REFERENCES usuario(id) ON DELETE SET NULL ON UPDATE CASCADE,
     CONSTRAINT fk_alerta_sensor
         FOREIGN KEY (sensor_id)
         REFERENCES sensores(id)
-        ON DELETE CASCADE
+        ON DELETE RESTRICT
         ON UPDATE CASCADE,
     CONSTRAINT fk_alerta_usuario
         FOREIGN KEY (resolvido_por)
@@ -104,13 +142,27 @@ CREATE TABLE alertas (
 -- ── Usuário administrador inicial ────────────────────────────────────────────
 -- login: admin   |   senha: Admin@123
 -- (hash bcrypt compatível com password_verify() do PHP). TROQUE a senha após o
--- primeiro acesso, em Gestão de Cadastro → Editar Usuário.
-INSERT INTO usuario (nome, login, senha, tipo, status)
+-- primeiro acesso, em Minha conta.
+INSERT INTO usuario (nome, login, senha, tipo, status, administrador_principal)
 VALUES (
-    'Admin de Testes',
+    'Administrador',
     'admin',
     '$2y$12$MzgPVFkpgNHnKppm0jGrP.A1X.dhWxOmOozB2m2aAl9R.E.XYWFDq',
     'admin',
-    'ativo'
+    'ativo',
+    1
 )
 ON DUPLICATE KEY UPDATE login = login;
+
+-- Controle interno de versão exigido pelo backend do ZIP entregue.
+-- A estrutura completa já foi criada acima. Nenhum script adicional é necessário.
+CREATE TABLE IF NOT EXISTS migracoes (
+    versao VARCHAR(80) NOT NULL PRIMARY KEY,
+    aplicado_em DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+INSERT INTO migracoes (versao)
+VALUES ('2026_conta_interface_02')
+ON DUPLICATE KEY UPDATE versao = versao;
+
+-- Resultado esperado: 8 tabelas criadas e administrador principal disponível.
+SELECT 'ÁKRON: banco pronto para conectar ao backend.' AS resultado;

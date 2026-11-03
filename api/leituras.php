@@ -10,7 +10,7 @@
  *
  * POST api/leituras.php   Body: { "sensor_id": N, "valor": 36.5 }
  *      Registra uma leitura de um sensor ATIVO. Se o valor passar de um limite
- *      do tipo do sensor (AlertaModel::LIMITES), um alerta é criado
+ *      configurado individualmente no sensor, um alerta é criado
  *      automaticamente (sem duplicar um alerta igual ainda pendente).
  *      Quem pode enviar:
  *        - um sensor/gateway, com o cabeçalho  X-Chave-Sensor: <chave>
@@ -48,10 +48,11 @@ require_once __DIR__ . '/../app/controllers/GraficoController.php';
 $resultado = (new GraficoController($pdo))->serie($_GET);
 
 if ($resultado['erro'] !== '') {
-    jsonResponse(['sucesso' => false, 'mensagem' => $resultado['erro']], 500);
+    jsonResponse(['sucesso' => false, 'mensagem' => $resultado['erro']], 422);
 }
 
 jsonResponse([
+    ...$resultado,
     'sucesso' => true,
     'sensor' => $resultado['sensor'],
     'horas' => $resultado['horas'],

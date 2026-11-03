@@ -44,6 +44,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['atualizar_usuario']))
     if (!validarCSRF($_POST['csrf_token'] ?? '')) {
         $erros[] = 'Token de segurança inválido.';
     } else {
+        $_POST['estoque_ids'] = $_POST['estoque_ids'] ?? [];
         $resposta = $controller->atualizar($_POST);
         $erros = $resposta['erros'];
         $sucesso = $resposta['mensagem'];
@@ -66,11 +67,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['atualizar_usuario']))
                 'login' => trim($_POST['login'] ?? ''),
                 'tipo' => $_POST['tipo'] ?? 'usuario',
                 'status' => $_POST['status'] ?? 'ativo',
+            'estoque_ids' => $_POST['estoque_ids'] ?? [],
             ];
         }
     }
 }
 
+if (isset($_GET['id']) && $_SERVER['REQUEST_METHOD']==='GET') $usuarioEncontrado=$controller->buscarPorId((int)$_GET['id'])?:null;
+if (!empty($usuarioEncontrado['administrador_principal'])) { $erros[]='O administrador principal é protegido. Altere seus dados pessoais em Minha conta.'; $usuarioEncontrado=null; }
+$estoques = $pdo->query('SELECT id,nome,status,localizacao,descricao FROM estoques ORDER BY nome')->fetchAll();
 $csrf_token = gerarCSRF();
 
 // Lista de usuários já existentes (exibida no final da página)
@@ -121,7 +126,7 @@ require __DIR__ . '/../partials/cabecalho.php';
 <!-- Passo 2: edição (aparece depois de encontrar o usuário) -->
 <?php if ($usuarioEncontrado): ?>
     <div class="card">
-        <h2>Editar dados</h2>
+        <h2>Editar dados</h2><?= avatarUsuario($usuarioEncontrado) ?>
         <form method="POST" autocomplete="off">
             <input type="hidden" name="csrf_token" value="<?php echo escapar($csrf_token); ?>">
             <input type="hidden" name="id" value="<?php echo (int) $usuarioEncontrado['id']; ?>">
@@ -188,7 +193,10 @@ require __DIR__ . '/../partials/cabecalho.php';
                 </div>
             </div>
 
-            <button type="submit">Salvar Alterações</button>
+            <fieldset><legend>Estoques autorizados</legend>
+<p class="usuarios-dica">Administradores acessam todos os estoques. Usuários comuns acessam apenas os selecionados. Nenhuma seleção significa nenhum acesso.</p>
+<?php $selecionados=$usuarioEncontrado['estoque_ids']??[];require __DIR__.'/../partials/selecao_estoques.php'; ?></fieldset>
+<button type="submit">Salvar Alterações</button> <a class="btn-secundario" href="gestao_usuarios.php">Cancelar</a>
         </form>
     </div>
 <?php endif; ?>

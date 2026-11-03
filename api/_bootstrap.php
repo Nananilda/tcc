@@ -91,6 +91,12 @@ session_start();
 
 require_once __DIR__ . '/../app/config/conexao.php';
 require_once __DIR__ . '/../includes/auth.php';
+set_exception_handler(function(Throwable $erro): never {
+    error_log('[ÁKRON API] '.$erro->getMessage());
+    jsonResponse(['sucesso'=>false,'mensagem'=>'Não foi possível processar a requisição.'],500);
+});
+foreach($_GET as $nome=>$valor) if(!is_scalar($valor)) jsonResponse(['sucesso'=>false,'mensagem'=>'Filtro inválido.'],422);
+
 
 /**
  * Lê o corpo da requisição. O app envia JSON (Content-Type: application/json);
@@ -102,10 +108,12 @@ function corpoRequisicao(): array
     $contentType = $_SERVER['CONTENT_TYPE'] ?? '';
     if (stripos($contentType, 'application/json') !== false) {
         $bruto = file_get_contents('php://input');
+        $objeto = json_decode($bruto);
+        if (!is_object($objeto)) jsonResponse(['sucesso'=>false,'mensagem'=>'Envie um objeto JSON válido.'],422);
         $dados = json_decode($bruto, true);
-        return is_array($dados) ? $dados : [];
+        return validarCorpoApi($dados);
     }
-    return $_POST;
+    return validarCorpoApi($_POST);
 }
 
 /**
@@ -166,4 +174,16 @@ function respostaDoControlador(array $resultado): never
             + array_diff_key($resultado, ['mensagem' => 1, 'erros' => 1]),
         empty($erros) ? 200 : 422
     );
+}
+
+/** Tipos inválidos são erros de entrada, nunca casts silenciosos de arrays. */
+function validarCorpoApi(array $dados): array
+{
+    foreach($dados as $campo=>$valor){
+        if($campo==='estoque_ids') {
+            if(!is_array($valor)||array_filter($valor,fn($id)=>filter_var($id,FILTER_VALIDATE_INT,['options'=>['min_range'=>1]])===false)) jsonResponse(['sucesso'=>false,'mensagem'=>'Lista de estoques inválida.'],422);
+        } elseif(is_array($valor)||is_object($valor)||is_bool($valor)) jsonResponse(['sucesso'=>false,'mensagem'=>'Campo inválido: '.$campo],422);
+        if(in_array($campo,['id','sensor_id','estoque_id'],true)&&filter_var($valor,FILTER_VALIDATE_INT,['options'=>['min_range'=>1]])===false) jsonResponse(['sucesso'=>false,'mensagem'=>'Identificador inválido.'],422);
+    }
+    return $dados;
 }

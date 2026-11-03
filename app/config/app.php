@@ -15,9 +15,9 @@
 // em todas as telas e basta alterá-lo aqui.
 if (!defined('APP_NOME')) {
     define('APP_NOME', 'ÁKRON');
-    define('APP_DESCRICAO', 'Sistema de Monitoramento Industrial');
+    define('APP_DESCRICAO', 'Monitoramento Ambiental de Estoques');
     define('APP_LEMA', 'Visão de ponta a ponta para sua operação');
-    define('APP_VERSAO', '2.0');
+    define('APP_VERSAO', '3.0');
 }
 
 // ── Fuso horário ─────────────────────────────────────────────────────────────
@@ -113,7 +113,7 @@ function escapar($valor): string
  */
 function rotuloTipoUsuario(?string $tipo): string
 {
-    return $tipo === 'admin' ? 'Administrador' : 'Funcionário';
+    return $tipo === 'admin' ? 'Administrador' : 'Usuário';
 }
 
 /**
@@ -177,4 +177,17 @@ function chaveDosSensores(): string
     }
 
     return strlen($chave) >= 16 ? $chave : '';
+}
+
+/** Datas de apresentação; valores originais permanecem intactos no banco/API. */
+function dataBr(?string $valor, bool $hora = true): string
+{
+    if (!$valor) return 'Não informado';
+    try { return (new DateTimeImmutable($valor))->format($hora ? 'd/m/Y H:i:s' : 'd/m/Y'); }
+    catch (Exception $e) { return 'Data indisponível'; }
+}
+function avatarUsuario(array $usuario): string
+{
+    if (!empty($usuario['foto'])) return '<img class="avatar" src="'.escapar($usuario['foto']).'" alt="Foto de '.escapar($usuario['nome']??'usuário').'">';
+    return '<span class="avatar avatar-padrao" role="img" aria-label="Sem foto de perfil">'.escapar(function_exists('mb_substr') ? mb_substr($usuario['nome']??'U',0,1) : substr($usuario['nome']??'U',0,1)).'</span>';
 }

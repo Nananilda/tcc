@@ -1,0 +1,20 @@
+const {chromium}=require('playwright');const fs=require('fs');const assert=require('node:assert/strict');
+(async()=>{
+ const base=process.env.AKRON_TEST_URL||'http://127.0.0.1:8000',d=JSON.parse(fs.readFileSync(process.env.AKRON_TEST_CONTEXT||'/tmp/context.json'));
+ const b=await chromium.connectOverCDP(process.env.AKRON_CDP||'http://127.0.0.1:9222');const c=await b.newContext({locale:'pt-BR',viewport:{width:390,height:844}});const p=await c.newPage();
+ const erros=[];p.on('pageerror',e=>erros.push(e.message));
+ await p.goto(base);await p.screenshot({path:'/app/docs/capturas-v3/login-celular-claro.png',fullPage:true});
+ await p.locator('#login').fill('admin');await p.locator('#senha').fill('Admin@123');await p.locator('#btnLogin').click();await p.waitForURL('**/painel.php');
+ await p.goto(base+`/app/views/graficos/graficos_sensores.php?estoque_id=${d.estoque}&sensor_id=${d.sensor}&sensor=temperatura`);
+ const antes=await p.locator('.sensor-atual .valor-atual').innerText();
+ const r=await c.request.post(base+'/api/login.php',{data:{login:'admin',senha:'Admin@123'}});const token=(await r.json()).token;
+ const l=await c.request.post(base+'/api/leituras.php',{data:{sensor_id:d.sensor,valor:26.47},headers:{Authorization:'Bearer '+token}});assert(l.ok());
+ await p.waitForFunction(()=>document.querySelector('.valor-atual')?.textContent.includes('26,47'),{},{timeout:20000});
+ console.log('PASS atualização automática exibe a nova leitura recebida');
+ const dados=await p.evaluate(()=>Object.values(Chart.instances)[0].data);assert(dados.labels.length>0&&dados.datasets[0].amostras.length>0);console.log('PASS gráfico atualizado conserva horários e quantidade de amostras');
+ await p.route('**/routes/grafico_dados.php*',route=>route.abort());
+ await p.waitForFunction(()=>document.querySelector('#monitor-status')?.className==='aviso-conexao',{},{timeout:20000});assert((await p.locator('.valor-atual').innerText()).includes('26,47'));console.log('PASS perda de conexão informa erro e mantém a última leitura');
+ await p.unroute('**/routes/grafico_dados.php*');await p.waitForFunction(()=>document.querySelector('#monitor-status')?.className==='texto-auxiliar',{},{timeout:20000});console.log('PASS atualização recupera após retorno da conexão');
+ await p.goto(base+'/app/views/usuarios/perfil.php');await p.locator('[name="nome"]').fill('Nome não salvo');let aviso=false;p.once('dialog',async x=>{aviso=x.message().includes('não salvas');await x.dismiss();});await p.locator('.sair').click();assert(aviso&&p.url().includes('perfil.php'));console.log('PASS navegação confirma alterações não salvas e permite permanecer');
+ assert(erros.length===0,erros.join('\n'));console.log('PASS fluxo sem erros JavaScript');await c.close();await b.close();
+})().catch(e=>{console.error(e);process.exit(1);});

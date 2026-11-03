@@ -1,306 +1,102 @@
-"""Teste de integração da API ÁKRON (api/*.php) contra o MySQL/MariaDB de verdade.
-
-Uso:    python3 tests/api_test.py [URL_BASE]       (padrão: http://127.0.0.1:8000/api)
-
-Antes:  carregue sql/schema.sql e sql/dados_exemplo.sql e deixe o servidor rodando
-        (por exemplo, na raiz do projeto:  php -S 127.0.0.1:8000 -t .).
-Depois: o teste CRIA e ALTERA registros (sensor, usuário, alerta). Para voltar ao
-        estado original, carregue schema.sql e dados_exemplo.sql de novo.
-
-Opcional: para testar também o envio de leituras por sensor (cabeçalho X-Chave-Sensor),
-        inicie o servidor com AKRON_CHAVE_SENSORES=<chave de 16+ caracteres> e rode o teste
-        com a MESMA variável definida.
-
-Só precisa do Python 3 (nenhuma biblioteca externa). Termina com código 0 se todas
-as verificações passarem e 1 se alguma falhar.
+"""Integração ÁKRON 2: banco de TESTES e servidor em execução são obrigatórios.
+Cria dados com prefixos únicos e não apaga históricos. Não execute em produção.
+Uso: python3 tests/api_test.py http://127.0.0.1:8000/api
+Admin configurável: AKRON_TEST_LOGIN/AKRON_TEST_PASS (padrão admin/Admin@123).
+AKRON_CHAVE_SENSORES opcional para testar a autenticação do dispositivo.
 """
-import json
-import os
-import sys
-import urllib.error
-import urllib.request
-
-BASE = sys.argv[1] if len(sys.argv) > 1 else "http://127.0.0.1:8000/api"
-resultados = []
-
-
-def chamar(metodo, caminho, corpo=None, token=None, cabecalhos=None):
-    dados = json.dumps(corpo).encode() if corpo is not None else None
-    req = urllib.request.Request(f"{BASE}/{caminho}", data=dados, method=metodo)
-    if dados is not None:
-        req.add_header("Content-Type", "application/json")
-    if token:
-        req.add_header("Authorization", f"Bearer {token}")
-    for k, v in (cabecalhos or {}).items():
-        req.add_header(k, v)
+import csv, io, json, os, sys, time, urllib.request, urllib.error
+BASE = (sys.argv[1] if len(sys.argv)>1 else 'http://127.0.0.1:8000/api').rstrip('/')
+PREFIX='teste'+str(time.time_ns())[-12:]
+checks=[]
+def call(path, body=None, token=None, headers=None, raw=False, method=None):
+    req=urllib.request.Request(BASE+'/'+path,data=None if body is None else json.dumps(body).encode(),method=method or ('GET' if body is None else 'POST'))
+    if body is not None:req.add_header('Content-Type','application/json')
+    if token:req.add_header('Authorization','Bearer '+token)
+    for k,v in (headers or {}).items():req.add_header(k,v)
     try:
-        with urllib.request.urlopen(req, timeout=20) as r:
-            bruto, status, hdrs = r.read(), r.status, r.headers
-    except urllib.error.HTTPError as e:
-        bruto, status, hdrs = e.read(), e.code, e.headers
-    try:
-        return status, json.loads(bruto or b"{}"), hdrs
-    except json.JSONDecodeError:
-        return status, {"_bruto": bruto.decode(errors="replace")[:300]}, hdrs
-
-
-def checar(nome, condicao, detalhe=""):
-    resultados.append((nome, bool(condicao), detalhe))
-    print(("  ✔ " if condicao else "  ✘ FALHOU: ") + nome + (f"   [{detalhe}]" if detalhe and not condicao else ""))
-
-
-def login(usuario, senha):
-    s, j, _ = chamar("POST", "login.php", {"login": usuario, "senha": senha})
-    return s, j
-
-
-print("== Status e CORS")
-s, j, h = chamar("GET", "status.php")
-checar("status 200 e banco ok", s == 200 and j.get("banco") == "ok" and j.get("sistema") == "ÁKRON", j)
-s, _, h = chamar("OPTIONS", "sensores.php", cabecalhos={"Origin": "http://localhost:8080", "Access-Control-Request-Method": "POST",
-                                                       "Access-Control-Request-Headers": "authorization,content-type"})
-checar("preflight CORS → 204 com Allow-Headers Authorization", s == 204 and "authorization" in (h.get("Access-Control-Allow-Headers") or "").lower(), dict(h))
-
-print("== Autenticação")
-s, j, _ = chamar("GET", "sensores.php")
-checar("sem token → 401", s == 401 and j.get("sucesso") is False, (s, j))
-s, j, _ = chamar("GET", "sensores.php", token="tokeninvalido1234567890abcdef")
-checar("token desconhecido → 401 (anti session-fixation)", s == 401, (s, j))
-s, j, _ = chamar("GET", "sensores.php", token="x")
-checar("token malformado → 401", s == 401, (s, j))
-s, j = login("admin", "senhaerrada")
-checar("senha errada → 401", s == 401 and j.get("sucesso") is False, (s, j))
-s, j = login("", "")
-checar("campos vazios → 401", s == 401, (s, j))
-s, j = login("joao.silva", "Usuario@123")
-checar("conta inativa → 401 com mensagem", s == 401 and "inativa" in j.get("mensagem", "").lower(), (s, j))
-s, j = login("admin", "Admin@123")
-checar("login admin → 200 + token", s == 200 and j.get("sucesso") and len(j.get("token", "")) >= 16, j)
-ADM = j.get("token")
-checar("resposta do login NÃO expõe a senha", "senha" not in j.get("usuario", {}), j.get("usuario"))
-checar("usuario.tipo = admin", j["usuario"]["tipo"] == "admin")
-s, j = login("usuario", "Usuario@123")
-checar("login funcionário → 200", s == 200 and j["usuario"]["tipo"] == "usuario", j)
-USR = j.get("token")
-
-print("== Painel")
-s, j, _ = chamar("GET", "dashboard.php", token=ADM)
-r = j.get("resumo", {})
-checar("dashboard: 6 ativos de 7, 5 alertas pendentes", s == 200 and r.get("sensores_ativos") == 6 and r.get("sensores_total") == 7 and r.get("alertas_pendentes") == 5, r)
-checar("dashboard: ultima_atualizacao no formato dd/mm/aaaa hh:mm", len(r.get("ultima_atualizacao", "")) == 16, r)
-
-print("== Sensores")
-s, j, _ = chamar("GET", "sensores.php", token=USR)
-sens = j.get("sensores", [])
-checar("lista de sensores (funcionário pode ler): 7 itens", s == 200 and len(sens) == 7, (s, len(sens)))
-checar("ativos vêm antes dos inativos", [x["status"] for x in sens] == sorted([x["status"] for x in sens]), [x["status"] for x in sens])
-checar("campos do sensor", set(sens[0]) >= {"id", "nome", "tipo", "localizacao", "status", "criado_em"} and isinstance(sens[0]["id"], int), sens[0])
-s, j, _ = chamar("POST", "sensores.php", {"acao": "cadastrar", "nome": "Sensor Teste", "tipo": "temperatura", "localizacao": "Lab", "status": "ativo"}, token=USR)
-checar("funcionário NÃO cadastra sensor → 403", s == 403, (s, j))
-s, j, _ = chamar("POST", "sensores.php", {"acao": "cadastrar", "nome": "ab", "tipo": "xx", "status": "talvez"}, token=ADM)
-checar("cadastro inválido → 422 com 3 erros", s == 422 and len(j.get("erros", [])) == 3, (s, j))
-s, j, _ = chamar("POST", "sensores.php", {"acao": "cadastrar", "nome": "Sensor Teste", "tipo": "temperatura", "localizacao": "Laboratório", "status": "ativo"}, token=ADM)
-checar("admin cadastra sensor → 200", s == 200 and j["sucesso"] and "Sensor Teste" in j["mensagem"], (s, j))
-s, j, _ = chamar("GET", "sensores.php", token=ADM)
-novo = [x for x in j["sensores"] if x["nome"] == "Sensor Teste"]
-checar("sensor novo aparece na lista (8 itens)", len(j["sensores"]) == 8 and len(novo) == 1)
-sid = novo[0]["id"]
-s, j, _ = chamar("POST", "sensores.php", {"acao": "toggle_status", "sensor_id": sid, "novo_status": "inativo"}, token=ADM)
-checar("toggle_status → inativo", s == 200 and j["sucesso"], (s, j))
-s, j, _ = chamar("POST", "sensores.php", {"acao": "toggle_status", "sensor_id": 99999, "novo_status": "ativo"}, token=ADM)
-checar("toggle em sensor inexistente → 422", s == 422, (s, j))
-s, j, _ = chamar("POST", "sensores.php", {"acao": "voar"}, token=ADM)
-checar("ação desconhecida → 422", s == 422, (s, j))
-
-print("== Alertas")
-s, j, _ = chamar("GET", "alertas.php", token=USR)
-al = j.get("alertas", [])
-checar("lista de alertas: 9 itens", s == 200 and len(al) == 9, (s, len(al)))
-checar("contagem de pendentes 2/2/1", j.get("contagem") == {"critico": 2, "atencao": 2, "info": 1}, j.get("contagem"))
-checar("pendentes primeiro", all(not a["resolvido"] for a in al[:5]) and all(a["resolvido"] for a in al[5:]), [a["resolvido"] for a in al])
-checar("campos do alerta (sensor_tipo, valor float|null, resolvido bool)", {"sensor_tipo", "sensor_nome", "valor", "resolvido"} <= set(al[0]) and isinstance(al[0]["resolvido"], bool))
-checar("alerta sem valor → null", any(a["valor"] is None for a in al))
-pend = [a for a in al if not a["resolvido"]][0]
-s, j, _ = chamar("POST", "alertas.php", {"acao": "resolver", "alerta_id": pend["id"]}, token=USR)
-checar("funcionário NÃO resolve alerta → 403", s == 403, (s, j))
-s, j, _ = chamar("POST", "alertas.php", {"acao": "resolver", "alerta_id": pend["id"]}, token=ADM)
-checar("admin resolve alerta → 200", s == 200 and j["sucesso"], (s, j))
-s, j, _ = chamar("POST", "alertas.php", {"acao": "resolver", "alerta_id": pend["id"]}, token=ADM)
-checar("resolver de novo → 422 'já foi resolvido'", s == 422 and "já" in " ".join(j.get("erros", [])), (s, j))
-s, j, _ = chamar("POST", "alertas.php", {"acao": "resolver", "alerta_id": 99999}, token=ADM)
-checar("alerta inexistente → 422", s == 422, (s, j))
-s, j, _ = chamar("GET", "alertas.php", token=ADM)
-checar("contagem decrementou (4 pendentes)", sum(j["contagem"].values()) == 4, j["contagem"])
-
-print("== Leituras (gráficos)")
-s, j, _ = chamar("GET", "leituras.php?sensor=temperatura&horas=24", token=USR)
-checar("temperatura 24h: pontos coerentes", s == 200 and len(j["labels"]) == len(j["valores"]) > 20 and j["total"] >= len(j["labels"]), (s, len(j.get("labels", []))))
-checar("valores são números e labels são datas", all(isinstance(v, (int, float)) for v in j["valores"]) and len(j["labels"][0]) == 19, j["labels"][:1])
-checar("temperatura mistura 2 sensores (total > pontos em janela maior)", True)
-s, j2, _ = chamar("GET", "leituras.php?sensor=ruido&horas=168", token=USR)
-checar("ruído 7 dias: tem dados", s == 200 and len(j2["valores"]) > 50 and max(j2["valores"]) > 90, (len(j2.get("valores", [])), max(j2.get("valores", [0]))))
-s, j3, _ = chamar("GET", "leituras.php?sensor=inexistente&horas=7", token=USR)
-checar("sensor inválido → temperatura, horas inválidas → 24", j3["sensor"] == "temperatura" and j3["horas"] == 24, j3.get("sensor"))
-s, j4, _ = chamar("GET", "leituras.php?sensor=uv&horas=6", token=USR)
-checar("UV (sensor inativo) 6h → série vazia mas sucesso", s == 200 and j4["sucesso"] and j4["valores"] == [], j4)
-
-print("== Relatório")
-s, j, _ = chamar("GET", "relatorio.php", token=USR)
-checar("relatório padrão (7 dias): resumo p/ 6 tipos e ≤200 leituras", s == 200 and len(j["resumo"]) == 6 and 0 < len(j["leituras"]) <= 200, (s, len(j.get("resumo", []))))
-tot = sum(r["total"] for r in j["resumo"])
-checar("resumo cobre todas as leituras (não só as 200 do detalhe)", tot > 200, tot)
-s, j, _ = chamar("GET", "relatorio.php?sensor=umidade&val_max=40", token=USR)
-checar("filtro sensor+val_max: só umidade ≤ 40", s == 200 and len(j["resumo"]) == 1 and j["resumo"][0]["sensor_tipo"] == "umidade" and j["resumo"][0]["maximo"] <= 40, j["resumo"])
-s, j, _ = chamar("GET", "relatorio.php?data_ini=2026-13-45&data_fim=lixo&val_min=abc", token=USR)
-checar("datas/valores inválidos → padrão (200)", s == 200 and j["filtros"]["val_min"] == "", j.get("filtros"))
-s, j, _ = chamar("GET", "relatorio.php?data_ini=2000-01-01&data_fim=2000-01-02", token=USR)
-checar("período sem dados → listas vazias", s == 200 and j["leituras"] == [] and j["resumo"] == [], (s, j))
-s, j, _ = chamar("GET", "relatorio.php?sensor=ruido&data_ini=2099-01-02&data_fim=2000-01-01", token=USR)
-checar("datas invertidas são trocadas", j["filtros"]["data_ini"] <= j["filtros"]["data_fim"], j["filtros"])
-
-print("== Usuários")
-s, j, _ = chamar("GET", "usuarios.php", token=USR)
-checar("funcionário NÃO acessa usuários → 403", s == 403, (s, j))
-s, j, _ = chamar("GET", "usuarios.php", token=ADM)
-checar("admin lista usuários (4) sem senha", s == 200 and len(j["usuarios"]) == 4 and all("senha" not in u for u in j["usuarios"]), (s, len(j.get("usuarios", []))))
-s, j, _ = chamar("GET", "usuarios.php?login=maria.souza", token=ADM)
-checar("busca por login", s == 200 and j["usuario"]["nome"] == "Maria Souza" and "senha" not in j["usuario"], j)
-s, j, _ = chamar("GET", "usuarios.php?login=ninguem", token=ADM)
-checar("login inexistente → 404 sucesso=false", s == 404 and j["sucesso"] is False and j["usuario"] is None, (s, j))
-base = {"acao": "cadastrar", "nome": "Carla Dias", "login": "carla.dias", "senha": "Senha@1234", "confirmar": "Senha@1234", "tipo": "usuario", "status": "ativo"}
-s, j, _ = chamar("POST", "usuarios.php", dict(base, senha="fraca", confirmar="outra"), token=ADM)
-checar("cadastro com senha fraca/diferente → 422", s == 422 and len(j["erros"]) >= 3, j)
-s, j, _ = chamar("POST", "usuarios.php", dict(base, login="admin"), token=ADM)
-checar("login duplicado → 422", s == 422 and any("já está em uso" in e for e in j["erros"]), j)
-s, j, _ = chamar("POST", "usuarios.php", dict(base, nome="1", login="a!"), token=ADM)
-checar("nome/login inválidos → 422", s == 422 and len(j["erros"]) >= 3, j)
-s, j, _ = chamar("POST", "usuarios.php", base, token=ADM)
-checar("cadastro válido → 200 com id", s == 200 and j["sucesso"] and j.get("id", 0) > 0, j)
-novo_id = j.get("id")
-s, j = login("carla.dias", "Senha@1234")
-checar("novo usuário consegue logar (hash gravado corretamente)", s == 200 and j["usuario"]["login"] == "carla.dias", (s, j))
-CARLA = j.get("token")
-s, j, _ = chamar("POST", "usuarios.php", {"acao": "atualizar", "id": novo_id, "nome": "Carla D. Souza", "login": "carla.dias", "tipo": "usuario", "status": "ativo", "senha": "Nova@Senha9", "confirmar_senha": "Nova@Senha9"}, token=ADM)
-checar("atualizar com nova senha → 200", s == 200 and j["sucesso"], j)
-s, j = login("carla.dias", "Senha@1234")
-checar("senha antiga deixa de funcionar", s == 401, (s, j))
-s, j = login("carla.dias", "Nova@Senha9")
-checar("senha nova funciona", s == 200, (s, j))
-CARLA2 = j.get("token")
-s, j, _ = chamar("POST", "usuarios.php", {"acao": "atualizar", "id": novo_id, "nome": "Carla D. Souza", "login": "carla.dias", "tipo": "usuario", "status": "inativo"}, token=ADM)
-checar("inativar usuário (sem trocar senha) → 200", s == 200 and j["sucesso"], j)
-s, j, _ = chamar("GET", "sensores.php", token=CARLA2)
-checar("token de usuário INATIVADO deixa de valer imediatamente → 401", s == 401, (s, j))
-s, j = login("carla.dias", "Nova@Senha9")
-checar("login de conta inativa → 401", s == 401, (s, j))
-s, j, _ = chamar("POST", "usuarios.php", {"acao": "atualizar", "id": 1, "nome": "Admin de Testes", "login": "admin", "tipo": "usuario", "status": "ativo"}, token=ADM)
-checar("não rebaixa o ÚNICO administrador → 422", s == 422 and any("único administrador" in e for e in j["erros"]), j)
-s, j, _ = chamar("POST", "usuarios.php", {"acao": "atualizar", "id": 1, "nome": "Admin de Testes", "login": "usuario", "tipo": "admin", "status": "ativo"}, token=ADM)
-checar("login já usado por outro → 422", s == 422, j)
-s, j, _ = chamar("POST", "usuarios.php", {"acao": "excluir", "id": 1}, token=ADM)
-checar("admin não exclui a si mesmo → 422", s == 422 and "próprio" in " ".join(j["erros"]), j)
-s, j, _ = chamar("POST", "usuarios.php", {"acao": "excluir", "id": 99999}, token=ADM)
-checar("excluir inexistente → 422", s == 422, j)
-s, j, _ = chamar("POST", "usuarios.php", {"acao": "excluir", "id": novo_id}, token=ADM)
-checar("excluir usuário → 200", s == 200 and j["sucesso"], j)
-s, j, _ = chamar("GET", "usuarios.php?login=carla.dias", token=ADM)
-checar("usuário excluído não existe mais", s == 404, (s, j))
-
-print("== Perfil muda em tempo real")
-s, j, _ = chamar("POST", "usuarios.php", {"acao": "atualizar", "id": 2, "nome": "Usuário Comum", "login": "usuario", "tipo": "admin", "status": "ativo"}, token=ADM)
-s, j, _ = chamar("POST", "sensores.php", {"acao": "toggle_status", "sensor_id": sid, "novo_status": "ativo"}, token=USR)
-checar("promovido a admin: token antigo ganha poder imediatamente", s == 200 and j["sucesso"], (s, j))
-s, j, _ = chamar("POST", "usuarios.php", {"acao": "atualizar", "id": 2, "nome": "Usuário Comum", "login": "usuario", "tipo": "usuario", "status": "ativo"}, token=ADM)
-s, j, _ = chamar("POST", "sensores.php", {"acao": "toggle_status", "sensor_id": sid, "novo_status": "inativo"}, token=USR)
-checar("rebaixado: perde o poder imediatamente → 403", s == 403, (s, j))
-
-print("== Alertas manuais (adicionar alerta)")
-s, j, _ = chamar("POST", "alertas.php", {"acao": "criar", "sensor_id": 2, "severidade": "info", "mensagem": "Manutenção preventiva agendada", "valor": "24,5"}, token=USR)
-checar("funcionário NÃO cria alerta → 403", s == 403, (s, j))
-s, j, _ = chamar("POST", "alertas.php", {"acao": "criar", "sensor_id": 2, "severidade": "info", "mensagem": "Manutenção preventiva agendada", "valor": "24,5"}, token=ADM)
-checar("admin cria alerta (valor com vírgula) → 200 com id", s == 200 and j["sucesso"] and isinstance(j.get("id"), int), (s, j))
-ID_MANUAL = j.get("id")
-s, j, _ = chamar("GET", "alertas.php", token=ADM)
-criado = next((a for a in j["alertas"] if a["id"] == ID_MANUAL), None)
-checar("alerta criado aparece na lista, pendente, com valor 24.5", criado and not criado["resolvido"] and criado["valor"] == 24.5 and criado["severidade"] == "info", criado)
-checar("contagem de pendentes subiu (info = 2)", j["contagem"]["info"] == 2, j["contagem"])
-s, j, _ = chamar("POST", "alertas.php", {"acao": "criar", "sensor_id": 2, "severidade": "critico", "mensagem": "Sem valor medido"}, token=ADM)
-checar("valor é opcional", s == 200 and j["sucesso"], (s, j))
-s, j, _ = chamar("POST", "alertas.php", {"acao": "criar", "sensor_id": 99999, "severidade": "info", "mensagem": "Sensor que não existe"}, token=ADM)
-checar("sensor inexistente → 422", s == 422 and "Sensor não encontrado." in j["erros"], (s, j))
-s, j, _ = chamar("POST", "alertas.php", {"acao": "criar", "sensor_id": 0, "severidade": "urgente", "mensagem": "ab", "valor": "abc"}, token=ADM)
-checar("dados inválidos → 422 com 4 erros", s == 422 and len(j["erros"]) == 4, (s, j))
-s, j, _ = chamar("POST", "alertas.php", {"acao": "criar", "sensor_id": 2, "severidade": "info", "mensagem": "x" * 201}, token=ADM)
-checar("mensagem longa demais → 422", s == 422 and any("longa" in e for e in j["erros"]), (s, j))
-s, j, _ = chamar("POST", "alertas.php", {"acao": "criar", "sensor_id": 7, "severidade": "info", "mensagem": "Aviso sobre sensor inativo"}, token=ADM)
-checar("pode criar alerta de sensor inativo", s == 200 and j["sucesso"], (s, j))
-
-print("== Alertas automáticos (leituras)")
-s, j, _ = chamar("GET", "alertas.php", token=ADM)
-antes = len(j["alertas"])
-s, j, _ = chamar("POST", "leituras.php", {"sensor_id": 1, "valor": 36.5}, token=USR)
-checar("funcionário NÃO registra leitura → 403", s == 403, (s, j))
-s, j, _ = chamar("POST", "leituras.php", {"sensor_id": 1, "valor": 22.3})
-checar("sem token nem chave → 401", s == 401, (s, j))
-s, j, _ = chamar("POST", "leituras.php", {"sensor_id": 1, "valor": 22.3}, token=ADM)
-checar("leitura normal → 200, sem alerta", s == 200 and j["sucesso"] and j["alerta"] is None and j["leitura_id"] > 0, (s, j))
-s, j, _ = chamar("POST", "leituras.php", {"sensor_id": 1, "valor": "36,2"}, token=ADM)
-checar("temperatura 36,2 → alerta CRÍTICO automático", s == 200 and j["alerta"] and j["alerta"]["severidade"] == "critico" and j["alerta"]["novo"] and "35 °C" in j["alerta"]["mensagem"], (s, j))
-ID_AUTO = (j.get("alerta") or {}).get("id")
-s, j, _ = chamar("POST", "leituras.php", {"sensor_id": 1, "valor": 38}, token=ADM)
-checar("nova leitura fora do limite NÃO duplica o alerta pendente", s == 200 and j["alerta"] and not j["alerta"]["novo"] and j["alerta"]["id"] == ID_AUTO, (s, j))
-s, j, _ = chamar("GET", "alertas.php", token=ADM)
-auto = next((a for a in j["alertas"] if a["id"] == ID_AUTO), None)
-checar("alerta automático guarda o valor medido e o sensor", auto and auto["valor"] == 36.2 and auto["sensor_id"] == 1 and not auto["resolvido"], auto)
-checar("só 1 alerta novo criado pelas 3 leituras", len(j["alertas"]) == antes + 1, (antes, len(j["alertas"])))
-s, j, _ = chamar("POST", "alertas.php", {"acao": "resolver", "alerta_id": ID_AUTO}, token=ADM)
-s, j, _ = chamar("POST", "leituras.php", {"sensor_id": 1, "valor": 37}, token=ADM)
-checar("depois de resolvido, nova leitura fora do limite gera outro alerta", s == 200 and j["alerta"] and j["alerta"]["novo"] and j["alerta"]["id"] != ID_AUTO, (s, j))
-s, j, _ = chamar("POST", "leituras.php", {"sensor_id": 1, "valor": 31}, token=ADM)
-checar("31 °C → alerta de ATENÇÃO", s == 200 and j["alerta"] and j["alerta"]["severidade"] == "atencao" and j["alerta"]["novo"], (s, j))
-s, j, _ = chamar("POST", "leituras.php", {"sensor_id": 5, "valor": 18}, token=ADM)
-checar("umidade 18% → crítico por valor ABAIXO do mínimo", s == 200 and j["alerta"] and j["alerta"]["severidade"] == "critico" and "abaixo" in j["alerta"]["mensagem"], (s, j))
-s, j, _ = chamar("POST", "leituras.php", {"sensor_id": 3, "valor": 95}, token=ADM)
-checar("limite exato (95 dB) não é ultrapassado → só atenção", s == 200 and j["alerta"] and j["alerta"]["severidade"] == "atencao", (s, j))
-s, j, _ = chamar("POST", "leituras.php", {"sensor_id": 7, "valor": 3}, token=ADM)
-checar("sensor inativo não envia leitura → 422", s == 422 and any("inativo" in e for e in j["erros"]), (s, j))
-s, j, _ = chamar("POST", "leituras.php", {"sensor_id": 99999, "valor": 3}, token=ADM)
-checar("sensor inexistente → 422", s == 422, (s, j))
-s, j, _ = chamar("POST", "leituras.php", {"sensor_id": 1, "valor": "abc"}, token=ADM)
-checar("valor não numérico → 422", s == 422 and j["erros"], (s, j))
-s, j, _ = chamar("POST", "leituras.php", {"sensor_id": 1, "valor": 1e12}, token=ADM)
-checar("valor fora da faixa da coluna → 422", s == 422, (s, j))
-s, j, _ = chamar("POST", "leituras.php", {"sensor_id": 0}, token=ADM)
-checar("sem sensor e sem valor → 422 com 2 erros", s == 422 and len(j["erros"]) == 2, (s, j))
-s, j, _ = chamar("GET", "leituras.php?sensor=temperatura&horas=6", token=ADM)
-checar("gráfico (GET) continua funcionando", s == 200 and j["sucesso"] and j["total"] > 0, (s, j))
-s, j, _ = chamar("PUT", "leituras.php", {"sensor_id": 1, "valor": 3}, token=ADM)
-checar("método PUT → 405", s == 405, (s, j))
-
-CHAVE = os.environ.get("AKRON_CHAVE_SENSORES", "")
-if len(CHAVE) >= 16:
-    print("== Sensor com chave (X-Chave-Sensor)")
-    s, j, _ = chamar("POST", "leituras.php", {"sensor_id": 4, "valor": 160}, cabecalhos={"X-Chave-Sensor": CHAVE})
-    checar("sensor com a chave certa registra leitura e gera alerta crítico", s == 200 and j["alerta"] and j["alerta"]["severidade"] == "critico", (s, j))
-    s, j, _ = chamar("POST", "leituras.php", {"sensor_id": 4, "valor": 160}, cabecalhos={"X-Chave-Sensor": CHAVE + "x"})
-    checar("chave errada → 401", s == 401, (s, j))
-    s, j, _ = chamar("POST", "alertas.php", {"acao": "criar", "sensor_id": 4, "severidade": "info", "mensagem": "Teste"}, cabecalhos={"X-Chave-Sensor": CHAVE})
-    checar("a chave do sensor NÃO dá acesso às demais rotas → 401", s == 401, (s, j))
-else:
-    print("== Sensor com chave: ignorado (defina AKRON_CHAVE_SENSORES no servidor e no teste)")
-    s, j, _ = chamar("POST", "leituras.php", {"sensor_id": 4, "valor": 160}, cabecalhos={"X-Chave-Sensor": "uma-chave-qualquer-123456"})
-    checar("sem chave configurada, qualquer X-Chave-Sensor → 401", s == 401, (s, j))
-
-print("== Logout")
-s, j, _ = chamar("POST", "logout.php", token=USR)
-checar("logout → 200", s == 200 and j["sucesso"], (s, j))
-s, j, _ = chamar("GET", "sensores.php", token=USR)
-checar("token após logout → 401", s == 401, (s, j))
-s, j, _ = chamar("GET", "dashboard.php", token=ADM)
-checar("outro token continua válido", s == 200, (s, j))
-s, j, _ = chamar("GET", "login.php")
-checar("GET em login.php → 405", s == 405, (s, j))
-
-falhas = [r for r in resultados if not r[1]]
-print(f"\n{len(resultados) - len(falhas)}/{len(resultados)} verificações passaram")
-sys.exit(1 if falhas else 0)
+        with urllib.request.urlopen(req,timeout=40) as r:status,buf,h=r.status,r.read(),r.headers
+    except urllib.error.HTTPError as e:status,buf,h=e.code,e.read(),e.headers
+    if raw:return status,buf,h
+    try:return status,json.loads(buf),h
+    except Exception:raise AssertionError((path,status,buf[:1000]))
+def ok(name,value,detail=''):
+    checks.append(bool(value));print(('PASS ' if value else 'FAIL ')+name+((' '+str(detail)) if not value else ''))
+    if not value:raise AssertionError(name)
+def success(path,body=None,token=None):
+    status,j,_=call(path,body,token);ok(path+' success',status==200 and j.get('sucesso'),j);return j
+ok('status/banco',call('status.php')[1].get('banco')=='ok')
+ok('anonymous denied',call('estoques.php')[0]==401)
+ok('wrong password',call('login.php',{'login':'admin','senha':'errada'})[0]==401)
+admin=success('login.php',{'login':os.getenv('AKRON_TEST_LOGIN','admin'),'senha':os.getenv('AKRON_TEST_PASS','Admin@123')})['token']
+e1=success('estoques.php',{'acao':'cadastrar','nome':PREFIX+' autorizado','localizacao':'Sala A'},admin)['id']
+e2=success('estoques.php',{'acao':'cadastrar','nome':PREFIX+' restrito','localizacao':'Sala B'},admin)['id']
+user_data={'acao':'cadastrar','nome':'Pessoa de teste','login':PREFIX,'senha':'Teste@12345','confirmar':'Teste@12345','tipo':'usuario','status':'ativo','estoque_ids':[e1]}
+uid=success('usuarios.php',user_data,admin)['id']
+usr=success('login.php',{'login':PREFIX,'senha':'Teste@12345'})['token']
+lista=success('estoques.php',token=usr)['estoques'];ok('only authorized warehouse',[e['id'] for e in lista]==[e1],lista)
+ok('warehouse by ID denied',call('estoques.php?id='+str(e2),token=usr)[0]==403)
+ok('ordinary user cannot write',call('estoques.php',{'acao':'cadastrar','nome':'Negado'},usr)[0]==403)
+sensor={'acao':'cadastrar','nome':PREFIX+' temperatura','tipo':'temperatura','localizacao':'Prateleira','status':'ativo','estoque_id':e1,'limite_atencao_min':10,'limite_atencao_max':30,'limite_critico_min':5,'limite_critico_max':35,'intervalo_comunicacao':2}
+ok('invalid bounds rejected',call('sensores.php',dict(sensor,limite_critico_min=40),admin)[0]==422)
+success('sensores.php',sensor,admin)
+sid=[s['id'] for s in success('sensores.php?estoque_id='+str(e1),token=admin)['sensores'] if s['nome']==sensor['nome']][0]
+success('sensores.php',dict(sensor,nome=PREFIX+' restrito',estoque_id=e2),admin)
+sid2=[s['id'] for s in success('sensores.php?estoque_id='+str(e2),token=admin)['sensores'] if s['nome']==PREFIX+' restrito'][0]
+ok('sensor scope',len(success('sensores.php',token=usr)['sensores'])==1)
+ok('sensor by ID denied',call('sensores.php?id='+str(sid2),token=usr)[0]==404)
+ok('reading unauthorized',call('leituras.php',{'sensor_id':sid,'valor':25},usr)[0]==403)
+ok('no device key denied',call('leituras.php',{'sensor_id':sid,'valor':25})[0]==401)
+ok('invalid reading rejected',call('leituras.php',{'sensor_id':sid,'valor':'abc'},admin)[0]==422)
+r=success('leituras.php',{'sensor_id':sid,'valor':25},admin);ok('normal reading no alert',r['situacao']=='normal' and r['alerta'] is None)
+r=success('leituras.php',{'sensor_id':sid,'valor':30},admin);ok('threshold equality normal',r['situacao']=='normal')
+r=success('leituras.php',{'sensor_id':sid,'valor':31},admin);aid=r['alerta']['id'];ok('attention alert',r['alerta']['novo'] and r['alerta']['limite_ultrapassado']==30)
+r=success('leituras.php',{'sensor_id':sid,'valor':38},admin);ok('continuous escalation same alert',r['alerta']['id']==aid and not r['alerta']['novo'] and r['situacao']=='critico')
+ok('user cannot acknowledge',call('alertas.php',{'acao':'reconhecer','alerta_id':aid},usr)[0]==403)
+success('alertas.php',{'acao':'reconhecer','alerta_id':aid},admin)
+a=success('alertas.php?sensor_id='+str(sid),token=admin)['alertas'][0];ok('recognition audit',a['status']=='reconhecido' and a['reconhecido_em'] and a['reconhecido_por'])
+ok('cannot transfer active irregularity',call('sensores.php',dict(sensor,acao='atualizar',sensor_id=sid,estoque_id=e2),admin)[0]==422)
+success('leituras.php',{'sensor_id':sid,'valor':24},admin)
+a=success('alertas.php?sensor_id='+str(sid),token=usr)['alertas'][0];ok('automatic normalization',a['status']=='normalizado' and a['normalizado_em'] and not a['resolvido'])
+success('alertas.php',{'acao':'resolver','alerta_id':aid,'observacoes':'Ventilação ajustada.'},admin)
+a=success('alertas.php?sensor_id='+str(sid),token=usr)['alertas'][0];ok('resolution audit',a['status']=='resolvido' and a['resolvido_em'] and a['resolvido_por'] and a['observacoes']=='Ventilação ajustada.')
+r=success('leituras.php',{'sensor_id':sid,'valor':2},admin);ok('new occurrence after normalization',r['alerta']['id']!=aid and r['situacao']=='critico')
+success('leituras.php',{'sensor_id':sid,'valor':20},admin)
+success('leituras.php',{'sensor_id':sid2,'valor':40},admin)
+ok('alerts leak protection',success('alertas.php?estoque_id='+str(e2),token=usr)['alertas']==[])
+ok('graph unauthorized rejected',call('leituras.php?estoque_id='+str(e2),token=usr)[0] in (403,422))
+ok('report unauthorized rejected',call('relatorio.php?estoque_id='+str(e2),token=usr)[0] in (403,422))
+key=os.getenv('AKRON_CHAVE_SENSORES')
+if key:ok('device authentication',call('leituras.php',{'sensor_id':sid,'valor':22},headers={'X-Chave-Sensor':key})[0]==200)
+# More than one UI page: CSV and PDF must not inherit the 200-row limit.
+for i in range(205):
+    st,j,_=call('leituras.php',{'sensor_id':sid,'valor':20+i/100},admin)
+    if st!=200 or not j.get('sucesso'):raise AssertionError(j)
+ok('205 additional readings',True)
+rep=success('relatorio.php?estoque_id='+str(e1),token=usr)
+ok('paginated report and whole-period stats',rep['total']>200 and len(rep['leituras'])==200,rep['total'])
+ok('report rows scoped',all(l['estoque_id']==e1 for l in rep['leituras']))
+st,buf,h=call('relatorio.php?estoque_id='+str(e1)+'&formato=csv',token=usr,raw=True)
+rows=list(csv.reader(io.StringIO(buf.decode('utf-8-sig')),delimiter=';'));ok('complete CSV',st==200 and len(rows)-1==rep['total'],len(rows)-1)
+st,buf,h=call('relatorio.php?estoque_id='+str(e1)+'&formato=pdf',token=usr,raw=True)
+ok('downloadable complete PDF',st==200 and buf.startswith(b'%PDF-') and b'%%EOF' in buf and str(rep['total']).encode() in buf)
+from pathlib import Path
+out=Path(os.getenv('AKRON_TEST_OUTPUT','/tmp/akron-test'));out.mkdir(exist_ok=True);(out/'relatorio.pdf').write_bytes(buf)
+time.sleep(3)
+s=success('sensores.php?id='+str(sid),token=usr)['sensor'];ok('communication stale detected',s['comunicacao']=='sem_comunicacao')
+# Moving a sensor must not move the old readings or their access rights.
+success('sensores.php',dict(sensor,acao='atualizar',sensor_id=sid,estoque_id=e2),admin)
+ok('current sensor no longer visible',call('sensores.php?id='+str(sid),token=usr)[0]==404)
+hist=success('relatorio.php?estoque_id='+str(e1)+'&sensor_id='+str(sid),token=usr)
+ok('historic data and permission preserved',hist['total']==rep['total'])
+success('leituras.php',{'sensor_id':sid,'valor':23},admin)
+ok('new warehouse reading hidden',success('relatorio.php',token=usr)['total']==rep['total'])
+update={'acao':'atualizar','id':uid,'nome':'Pessoa de teste','login':PREFIX,'tipo':'usuario','status':'ativo','estoque_ids':[]}
+success('usuarios.php',update,admin)
+ok('revocation immediate',success('estoques.php',token=usr)['estoques']==[] and success('relatorio.php',token=usr)['total']==0)
+success('usuarios.php',dict(update,status='inativo'),admin)
+ok('inactive user token rejected',call('estoques.php',token=usr)[0]==401)
+success('estoques.php',{'acao':'desativar','id':e2,'confirmacao':'desativar'},admin)
+ok('inactive warehouse blocks ingestion',call('leituras.php',{'sensor_id':sid,'valor':23},admin)[0]==422)
+ok('inactive warehouse blocks sensor activation',call('sensores.php',{'acao':'toggle_status','sensor_id':sid,'novo_status':'ativo'},admin)[0]==422)
+print(f'\n{len(checks)} verificações passaram; registros de teste: {PREFIX}.')
+(out/'context.json').write_text(json.dumps({'e1':e1,'e2':e2,'sid':sid,'sid2':sid2,'uid':uid,'prefix':PREFIX,'readings':rep['total']}))
