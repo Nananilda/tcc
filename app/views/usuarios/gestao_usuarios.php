@@ -1,48 +1,10 @@
 <?php
-/**
- * app/views/usuarios/gestao_usuarios.php — Gestão de Usuários.
- * Menu de acesso às ações de gestão de usuários (somente administradores):
- * cadastrar, editar e excluir.
- */
-
-require_once __DIR__ . '/../../../includes/auth.php';
-exigirAdmin();
-
-require_once __DIR__ . '/../partials/icones.php';
-
-// Ações do menu: [ícone, título, descrição, página]
-
-  $acoes = [
-    ['lista', 'Listar Usuário', 'Consultar todos os usuários cadastrados.', 'listar.php'],
-    ['cadastrar', 'Realizar Usuário', 'Criar um novo usuário no sistema.', 'cadastro.php'],
-    ['editar', 'Editar Usuário', 'Buscar e atualizar dados de um usuário existente.', 'editar.php'],
-    ['excluir', 'Excluir Usuário', 'Remover permanentemente um usuário.', 'excluir.php'],
-
-];
-
-$tituloPagina = 'Gestão de Usuários';
-$secaoTopbar = 'Usuários';
-$cssPagina = ['usuarios.css'];
-require __DIR__ . '/../partials/cabecalho.php';
+require_once __DIR__.'/../../../includes/auth.php';exigirAdmin();
+require_once __DIR__.'/../../controllers/UsuarioController.php';
+$usuarios=(new UsuarioController($pdo,true,(int)$_SESSION['usuario_id']))->listar();
+$estoques=$pdo->query('SELECT id,nome FROM estoques')->fetchAll(PDO::FETCH_KEY_PAIR);
+$tituloPagina='Usuários';require __DIR__.'/../partials/cabecalho.php';
 ?>
-
-<h1>Gestão de Usuários</h1>
-<p class="usuarios-dica">Escolha uma das ações abaixo.</p>
-
-<nav class="usuarios-menu-lista" aria-label="Ações de gestão de usuários">
-    <?php foreach ($acoes as [$icone, $titulo, $descricao, $pagina]): ?>
-        <a class="menu-item" href="<?php echo escapar($pagina); ?>">
-            <span class="icone"><?php echo iconeSvg($icone); ?></span>
-            <span>
-                <strong><?php echo escapar($titulo); ?></strong><br>
-                <span class="usuarios-dica"><?php echo escapar($descricao); ?></span>
-            </span>
-        </a>
-    <?php endforeach; ?>
-</nav>
-
-<div class="nav-rodape">
-    <a href="../dashboard/painel.php">← Voltar ao painel</a>
-</div>
-
-<?php require __DIR__ . '/../partials/rodape.php'; ?>
+<header class="page-header"><div><h1>Usuários</h1><p>Gerencie os perfis e o acesso aos estoques.</p></div><a class="btn-primario" href="cadastro.php">Cadastrar usuário</a></header>
+<div class="usuarios-grade"><?php foreach($usuarios as $u): ?><article class="usuario-card"><?= avatarUsuario($u) ?><h2><?= escapar($u['nome']) ?></h2><p><?= escapar($u['login']) ?> · <?= escapar(rotuloTipoUsuario($u['tipo'])) ?></p><span class="badge badge-<?= escapar($u['status']) ?>"><?= $u['status']==='ativo'?'Ativo':'Inativo' ?></span><p>Estoques: <?= $u['tipo']==='admin'?'Todos os estoques':escapar(implode(', ',array_map(fn($id)=>$estoques[$id]??'', $u['estoque_ids']))?:'Nenhum estoque') ?></p><?php if($u['administrador_principal']): ?><p class="texto-auxiliar">Administrador principal protegido.</p><?php if((int)$u['id']===(int)$_SESSION['usuario_id']): ?><a href="perfil.php">Minha conta</a><?php endif ?><?php else: ?><div class="acoes-card"><a href="editar.php?id=<?= (int)$u['id'] ?>">Editar</a><?php if($u['status']==='ativo'): ?><a href="excluir.php?id=<?= (int)$u['id'] ?>">Desativar</a><?php endif ?></div><?php endif ?></article><?php endforeach ?></div>
+<?php require __DIR__.'/../partials/rodape.php'; ?>

@@ -13,11 +13,11 @@
  */
 
 return [
-    'host' => '10.140.169.78',   // no laboratório, use o IP do servidor MySQL
+    'host' => '127.0.0.1',   // XAMPP local; no laboratório, use o IP do MySQL
     'porta' => '3306',
     'banco' => 'banco_tcc',
     'usuario' => 'root',
-    'senha' => '123456',
+    'senha' => '', // XAMPP padrão. Informe sua senha se configurada.
 
     // OPCIONAL — chave (mín. 16 caracteres) que os sensores enviam no cabeçalho
     // "X-Chave-Sensor" para registrar leituras em api/leituras.php. Sem ela,

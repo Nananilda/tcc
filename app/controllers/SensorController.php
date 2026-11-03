@@ -91,7 +91,7 @@ class SensorController
     private function validarCamposSensor(array $dados): array
     {
         $erros = [];
-
+        foreach (['nome','tipo','localizacao','status'] as $campo) if (isset($dados[$campo]) && !is_string($dados[$campo])) return [[],['Campo inválido: '.$campo]];
         $nome = trim($dados['nome'] ?? '');
         $tipo = trim($dados['tipo'] ?? '');
         $localizacao = trim($dados['localizacao'] ?? '');
@@ -114,15 +114,34 @@ class SensorController
             $erros[] = 'Localização muito longa (máx 150 caracteres).';
         }
 
-        return [
-            [
-                'nome' => $nome,
-                'tipo' => $tipo,
-                'localizacao' => $localizacao ?: null,
-                'status' => $status,
-            ],
-            $erros,
-        ];
+        $estoqueId = filter_var($dados['estoque_id'] ?? null, FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]);
+        $estoque = false;
+        if ($estoqueId) {
+            $stmt = $this->pdo->prepare('SELECT id,status FROM estoques WHERE id=?');
+            $stmt->execute([$estoqueId]);
+            $estoque = $stmt->fetch();
+        }
+        if (!$estoque) $erros[] = 'Selecione um estoque válido.';
+        elseif ($estoque['status'] !== 'ativo' && $status === 'ativo') $erros[] = 'Um sensor ativo deve pertencer a um estoque ativo.';
+        $intervalo = filter_var($dados['intervalo_comunicacao'] ?? 300, FILTER_VALIDATE_INT, ['options' => ['min_range' => 1, 'max_range' => 86400]]);
+        if ($intervalo === false) $erros[] = 'Intervalo de comunicação deve ser entre 1 e 86400 segundos.';
+        $campos = ['nome' => $nome, 'tipo' => $tipo, 'localizacao' => $localizacao ?: null,
+            'status' => $status, 'estoque_id' => $estoqueId, 'intervalo_comunicacao' => $intervalo];
+        foreach (['limite_critico_min','limite_atencao_min','limite_atencao_max','limite_critico_max'] as $campo) {
+            $bruto = $dados[$campo] ?? '';
+            $campos[$campo] = ($bruto === '' || $bruto === null) ? null : lerNumero($bruto);
+            if ($bruto !== '' && $bruto !== null && $campos[$campo] === null) $erros[] = 'Informe limites numéricos válidos.';
+        }
+        $anterior = null;
+        foreach (['limite_critico_min','limite_atencao_min','limite_atencao_max','limite_critico_max'] as $campo) {
+            if ($campos[$campo] === null) continue;
+            if ($anterior !== null && $campos[$campo] <= $anterior) {
+                $erros[] = 'Os limites devem seguir: crítico inferior < atenção inferior < atenção superior < crítico superior.';
+                break;
+            }
+            $anterior = $campos[$campo];
+        }
+        return [$campos, $erros];
     }
 
     // ── Ações ────────────────────────────────────────────────────────────────
@@ -146,7 +165,7 @@ class SensorController
         try {
             $id = $this->model->cadastrar($campos);
 
-            $this->registrarLog('SENSOR_CADASTRO', "Sensor ID $id: {$campos['nome']} ({$campos['tipo']})");
+            $this->registrarLog('SENSOR_CADASTRO', "Sensor ID $id: ".json_encode($campos,JSON_UNESCAPED_UNICODE));
             $mensagem = "Sensor \"{$campos['nome']}\" cadastrado com sucesso.";
         } catch (PDOException $e) {
             $erros[] = $this->erroDeBanco('salvar o sensor', $e);
@@ -166,7 +185,7 @@ class SensorController
             return [$mensagem, ['Acesso negado.']];
         }
 
-        $sensorId = (int) ($dados['sensor_id'] ?? 0);
+        $sensorId = filter_var($dados['sensor_id'] ?? null,FILTER_VALIDATE_INT,['options'=>['min_range'=>1]]) ?: 0;
         if ($sensorId <= 0) {
             return [$mensagem, ['ID de sensor inválido.']];
         }
@@ -177,12 +196,19 @@ class SensorController
         }
 
         try {
-            if (!$this->model->buscarPorId($sensorId)) {
-                return [$mensagem, ['Sensor não encontrado.']];
+            $atual = $this->model->buscarPorId($sensorId);
+            if (!$atual) return [$mensagem, ['Sensor não encontrado.']];
+            if ($atual['tipo'] !== $campos['tipo']) {
+                $consulta = $this->pdo->prepare('SELECT (SELECT COUNT(*) FROM leitura_sensor WHERE sensor_id=?) + (SELECT COUNT(*) FROM alertas WHERE sensor_id=?)');
+                $consulta->execute([$sensorId,$sensorId]);
+                if ((int) $consulta->fetchColumn() > 0) return [$mensagem, ['O tipo não pode ser alterado quando há leituras ou alertas. Cadastre outro sensor para preservar o histórico.']];
             }
-
+            if ((int)$atual['estoque_id'] !== (int)$campos['estoque_id']) {
+                $q=$this->pdo->prepare('SELECT COUNT(*) FROM alertas WHERE sensor_id=? AND automatico=1 AND normalizado_em IS NULL');$q->execute([$sensorId]);
+                if ($q->fetchColumn()) return [$mensagem,['Normalize a condição ambiental antes de transferir o sensor para outro estoque.']];
+            }
             $this->model->atualizar($sensorId, $campos);
-            $this->registrarLog('SENSOR_EDICAO', "Sensor ID $sensorId: {$campos['nome']} ({$campos['tipo']}, {$campos['status']})");
+            $this->registrarLog('SENSOR_EDICAO', "Sensor ID $sensorId: ".json_encode($campos,JSON_UNESCAPED_UNICODE));
             $mensagem = "Sensor \"{$campos['nome']}\" atualizado com sucesso.";
         } catch (PDOException $e) {
             $erros[] = $this->erroDeBanco('atualizar o sensor', $e);
@@ -202,15 +228,15 @@ class SensorController
             return [$mensagem, ['Acesso negado.']];
         }
 
-        $sensorId = (int) ($dados['sensor_id'] ?? 0);
+        $sensorId = filter_var($dados['sensor_id'] ?? null,FILTER_VALIDATE_INT,['options'=>['min_range'=>1]]) ?: 0;
         if ($sensorId <= 0) {
             return [$mensagem, ['ID de sensor inválido.']];
         }
 
         $confirmacao = trim($dados['confirmacao'] ?? '');
         $confirmacao = function_exists('mb_strtolower') ? mb_strtolower($confirmacao, 'UTF-8') : strtolower($confirmacao);
-        if ($confirmacao !== 'excluir') {
-            return [$mensagem, ['Para excluir, digite a palavra "excluir" no campo de confirmação.']];
+        if (!in_array($confirmacao,['excluir','desativar'],true)) {
+            return [$mensagem, ['Para desativar, digite a palavra "excluir" no campo de confirmação.']];
         }
 
         try {
@@ -220,8 +246,8 @@ class SensorController
             }
 
             $this->model->excluir($sensorId);
-            $this->registrarLog('SENSOR_EXCLUSAO', "Sensor ID $sensorId: {$sensor['nome']}");
-            $mensagem = "Sensor \"{$sensor['nome']}\" excluído com sucesso.";
+            $this->registrarLog('SENSOR_DESATIVACAO', "Sensor ID $sensorId: {$sensor['nome']}");
+            $mensagem = "Sensor \"{$sensor['nome']}\" desativado com sucesso. Histórico preservado.";
         } catch (PDOException $e) {
             // 23000 = violação de integridade (ex.: sensor com leituras vinculadas)
             if ($e->getCode() === '23000') {
@@ -246,7 +272,7 @@ class SensorController
             return [$mensagem, ['Acesso negado.']];
         }
 
-        $sensorId = (int) ($dados['sensor_id'] ?? 0);
+        $sensorId = filter_var($dados['sensor_id'] ?? null,FILTER_VALIDATE_INT,['options'=>['min_range'=>1]]) ?: 0;
         $novoStatus = $dados['novo_status'] ?? '';
 
         if ($sensorId <= 0) {
@@ -263,6 +289,10 @@ class SensorController
                 return [$mensagem, ['Sensor não encontrado.']];
             }
 
+            if ($novoStatus === 'ativo') {
+                $sensor = $this->model->buscarPorId($sensorId);
+                if ($sensor['estoque_status'] !== 'ativo') return [$mensagem, ['Ative o estoque antes de ativar o sensor.']];
+            }
             $this->model->atualizarStatus($sensorId, $novoStatus);
             $this->registrarLog('SENSOR_STATUS', "Sensor ID $sensorId → $novoStatus");
             $mensagem = "Status do sensor atualizado para \"$novoStatus\".";
@@ -279,10 +309,10 @@ class SensorController
      * Retorna todos os sensores para exibição.
      * Em caso de erro devolve array vazio e acrescenta uma mensagem em $erros.
      */
-    public function listarSensores(array &$erros = []): array
+    public function listarSensores(array &$erros = [], array $filtros = []): array
     {
         try {
-            return $this->model->listarTodos();
+            return $this->model->listarTodos($filtros);
         } catch (PDOException $e) {
             $erros[] = $this->erroDeBanco('consultar os sensores', $e);
             return [];

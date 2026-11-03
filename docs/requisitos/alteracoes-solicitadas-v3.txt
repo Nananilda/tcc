@@ -1,0 +1,375 @@
+1. Padronização geral do sistema
+
+Identidade visual e organização
+Manter a identidade visual atual do ÁKRON, preservando a paleta de cores e o estilo já utilizado.
+Padronizar a tipografia, os tamanhos dos títulos, subtítulos e textos.
+Manter logos, títulos, textos, descrições e demais elementos textuais alinhados à esquerda, evitando centralizações desnecessárias.
+Padronizar espaçamentos, margens, bordas, arredondamentos e sombras.
+Manter o mesmo padrão visual de botões, campos, tabelas, cartões, ícones e mensagens em todas as páginas.
+Utilizar cores consistentes para os estados Normal, Atenção e Crítico, sempre acompanhadas de identificação textual.
+Padronizar as nomenclaturas utilizadas nos menus, títulos, botões e mensagens.
+Padronizar datas no formato brasileiro (DD/MM/AAAA) e horários no formato de 24 horas.
+Substituir campos de seleção que apresentam apenas "---" por orientações claras, como "Selecione um estoque" ou "Selecione um sensor".
+Revisar os textos do sistema para manter uma linguagem objetiva e profissional.
+Tema claro e escuro
+Manter os dois temas disponíveis.
+Garantir que todos os componentes tenham versões adequadas para ambos os temas.
+Revisar contraste de textos, bordas, ícones, gráficos, indicadores e botões.
+Salvar a preferência de tema individualmente para cada usuário.
+Disponibilizar a opção de acompanhar o tema do dispositivo.
+Comportamento dos componentes
+Padronizar os efeitos de hover, transições, menus e janelas modais.
+Criar mensagens consistentes para operações realizadas, erros, avisos e confirmações.
+Apresentar indicadores de carregamento quando houver processamento.
+Criar estados visuais para páginas sem registros, sem conexão ou sem permissão de acesso.
+Evitar páginas vazias ou componentes que aparentem estar quebrados quando não houver informações cadastradas.
+
+
+2. Tela inicial e acesso à explicação do sistema
+
+Retirar o texto explicativo que atualmente aparece na tela de login.
+Adicionar um botão com ícone de interrogação (?) próximo à identificação do ÁKRON.
+Ao clicar no botão, abrir uma janela ou pop-up com a explicação sobre o sistema.
+A janela deve apresentar uma descrição breve sobre o monitoramento ambiental de estoques e as funcionalidades disponíveis.
+Manter a tela de login simples, limpa e concentrada no formulário de acesso.
+
+
+3. Barra lateral e configurações da conta
+
+Navegação
+Adicionar uma opção chamada "Minha conta" ou "Configurações da conta" na barra lateral.
+Organizar os itens do menu para manter uma navegação intuitiva e evitar opções duplicadas.
+Revisar os acessos relacionados à consulta e configuração de sensores.
+Configurações pessoais
+Criar uma área na qual cada usuário possa:
+Visualizar e alterar seu nome e demais informações pessoais permitidas.
+Alterar sua senha.
+Adicionar, substituir ou remover sua foto de perfil.
+Selecionar o tema claro, escuro ou automático.
+Visualizar informações básicas da própria conta.
+Fotos de perfil
+Permitir que cada usuário tenha uma foto individual.
+Apresentar a imagem na área da conta e nos locais de identificação do usuário.
+Disponibilizar um avatar padrão quando não houver foto.
+Permitir substituir ou remover a imagem.
+As alterações pessoais não devem permitir que um usuário comum modifique seu tipo de conta ou suas permissões administrativas.
+
+
+4. Painel
+
+Indicadores e condições atuais
+Melhorar a distribuição dos indicadores e dos blocos de condições ambientais.
+Organizar os sensores em uma grade adaptável à quantidade de informações disponíveis.
+Manter os blocos com dimensões e espaçamentos consistentes.
+Evitar que o último bloco fique isolado ou desalinhado quando houver uma quantidade ímpar de sensores.
+Apresentar claramente o valor atual, a unidade de medida, o estado ambiental e a identificação do sensor.
+Gráficos
+Retirar os horários dos rótulos do eixo horizontal, apresentando somente as datas.
+Ao passar o mouse sobre um ponto do gráfico, exibir uma pequena caixa com o valor, a data e o horário exato da leitura.
+Manter o horário completo registrado nos dados, alterando somente sua apresentação visual.
+Melhorar a distribuição das legendas e dos rótulos dos gráficos.
+Evitar textos inclinados excessivamente e informações sobrepostas.
+Última atualização
+Apresentar a data e o horário reais da última leitura recebida.
+Não utilizar o horário de carregamento da página como se fosse o horário da última medição.
+Alertas recentes
+Manter apenas os alertas mais relevantes no painel.
+Disponibilizar acesso à página completa de alertas.
+
+
+5. Página de estoques
+
+Alteração da apresentação
+Substituir a tabela atual por blocos individuais para cada estoque.
+Organizar os blocos em três colunas por linha em telas maiores.
+Adaptar para duas colunas em telas intermediárias e uma coluna em celulares.
+Manter espaçamentos e dimensões consistentes.
+Informações de cada bloco
+Apresentar:
+Nome do estoque.
+Localização.
+Quantidade de sensores cadastrados.
+Quantidade de sensores em funcionamento.
+Condição ambiental geral.
+Quantidade de alertas ativos.
+Situação do estoque.
+Acesso aos detalhes e à edição.
+Comportamento
+Destacar visualmente a condição ambiental do estoque.
+Apresentar uma mensagem quando o estoque ainda não possuir sensores cadastrados.
+Permitir acessar diretamente os detalhes do estoque ao selecionar seu bloco.
+Manter as opções administrativas disponíveis conforme as permissões do usuário.
+
+
+6. Página de detalhes do estoque
+
+Organização
+Apresentar o estado geral do estoque em destaque no início da página.
+Organizar as informações em seções bem definidas.
+Manter os sensores vinculados, os valores atuais, o histórico ambiental, as leituras e os alertas.
+Alertas
+Apresentar inicialmente apenas os cinco alertas mais recentes.
+Adicionar um botão "Mostrar mais", carregando dez alertas adicionais a cada clique.
+Permitir expandir os detalhes de cada alerta.
+Exibir informações complementares somente quando solicitadas, evitando blocos excessivamente extensos.
+Leituras e histórico
+Evitar tabelas muito longas.
+Apresentar uma quantidade inicial de registros e permitir carregar os demais.
+Manter filtros de período e de sensor quando aplicáveis.
+Garantir que os dados históricos sejam apresentados corretamente.
+Exportação
+Adicionar uma opção para baixar as informações do estoque, incluindo:
+Identificação do estoque.
+Sensores vinculados.
+Histórico de leituras.
+Alertas relacionados.
+Resumo das condições ambientais.
+
+
+7. Página de sensores
+
+Listagem
+Posicionar o botão de cadastro ao lado do campo de seleção ou dos filtros, e não abaixo deles.
+Melhorar o alinhamento dos campos e botões.
+Padronizar a apresentação das informações dos sensores.
+Detalhes do sensor
+Reorganizar a seção "Identificação e comunicação".
+Distribuir as informações em grupos visuais menores.
+Apresentar nome, tipo, localização, estoque vinculado e situação cadastral.
+Destacar os limites de atenção e criticidade.
+Diferenciar visualmente o estado administrativo do sensor e sua situação de comunicação.
+Comunicação
+Diferenciar claramente:
+Ativo: sensor habilitado no sistema.
+Inativo: sensor desativado administrativamente.
+Online: sensor enviando informações normalmente.
+Sem comunicação: sensor sem recebimento recente de dados.
+Histórico e alertas
+Manter o gráfico de histórico de leituras.
+Melhorar a apresentação das datas, horários e valores.
+Apresentar inicialmente os alertas mais recentes, com opção de expandir.
+Exportação
+Disponibilizar o download das informações do sensor, incluindo:
+Identificação e configuração.
+Estoque vinculado.
+Limites ambientais.
+Histórico de leituras.
+Alertas relacionados.
+
+
+8. Página de monitoramento
+
+Valores atuais
+Melhorar a apresentação dos valores atuais.
+Disponibilizar essa visualização para todos os tipos de sensores efetivamente suportados pelo sistema.
+Apresentar os sensores correspondentes aos filtros selecionados.
+Não limitar a visualização a apenas um tipo de medição.
+Informações dos valores
+Cada apresentação deve conter:
+Nome do sensor.
+Tipo de medição.
+Estoque ao qual pertence.
+Valor registrado.
+Unidade de medida.
+Estado ambiental.
+Situação da comunicação.
+Data e horário da última leitura.
+Gráficos
+Manter gráficos separados para cada tipo de medição.
+Apresentar os limites de atenção e criticidade.
+Permitir consultar valores históricos.
+Evitar misturar variáveis com unidades diferentes no mesmo eixo.
+Filtros
+Melhorar a organização dos campos de seleção.
+Substituir opções genéricas por orientações claras.
+Permitir selecionar estoque, sensor, tipo de medição e período, conforme a finalidade da consulta.
+Identificação das leituras
+Diferenciar visualmente:
+Leitura atual: último valor recebido.
+Média: valor médio de determinado período.
+Histórico: conjunto de medições registradas.
+Sem leitura: sensor ainda sem registros.
+Sem comunicação: sensor sem envio recente de informações.
+
+
+9. Página de alertas
+
+Apresentação do histórico
+Substituir a apresentação atual do histórico por blocos individuais para cada alerta.
+Melhorar a distribuição das informações e facilitar a identificação dos alertas mais importantes.
+Utilizar cores discretas para diferenciar a gravidade.
+Informações dos blocos
+Cada alerta deve apresentar:
+Gravidade.
+Mensagem.
+Estoque relacionado.
+Sensor responsável.
+Valor registrado.
+Limite ultrapassado.
+Data e horário.
+Situação atual.
+Detalhes
+Permitir expandir cada bloco para visualizar informações adicionais.
+Apresentar reconhecimento, normalização e resolução quando disponíveis.
+Não exigir obrigatoriamente o preenchimento de providências tomadas.
+Permitir registrar observações quando necessário.
+Filtros
+Permitir selecionar um estoque.
+Permitir selecionar um sensor pertencente ao estoque escolhido.
+Manter filtros por gravidade, situação e período.
+Garantir que os filtros funcionem em conjunto.
+Situações dos alertas
+Diferenciar:
+Pendente.
+Reconhecido.
+Normalizado.
+Resolvido.
+Exportação
+Adicionar opção para baixar os alertas.
+Respeitar os filtros selecionados.
+Incluir as informações relevantes de cada ocorrência.
+Disponibilizar exportação em formato adequado, como CSV e PDF.
+
+
+10. Página de relatórios
+
+Organização visual
+Melhorar a distribuição dos filtros, indicadores, gráficos e tabelas.
+Evitar que os elementos fiquem excessivamente próximos ou que a página se torne muito extensa.
+Organizar os gráficos em uma grade adaptável.
+Gráficos
+Ampliar os gráficos para todos os tipos de sensores suportados que possuam registros.
+Manter um gráfico separado para cada variável.
+Apresentar unidades, legendas, datas e limites ambientais.
+Evitar gráficos sem dados ou com informações incompatíveis.
+Indicadores estatísticos
+Apresentar, quando aplicável:
+Quantidade de leituras.
+Média.
+Valor mínimo.
+Valor máximo.
+Quantidade de alertas relacionados.
+Períodos fora dos limites ambientais, quando houver dados suficientes para calcular.
+Filtros
+Permitir filtrar por:
+Estoque.
+Sensor.
+Tipo de medição.
+Período.
+Histórico e exportação
+Melhorar a visualização das tabelas.
+Permitir consultar todos os registros do período.
+Garantir que a exportação contenha todos os dados filtrados, e não somente os registros carregados inicialmente na página.
+Manter exportação em PDF e CSV.
+
+
+11. Página de usuários
+
+Gerenciamento
+Impedir que a conta principal de administrador seja editada ou excluída pela área de gerenciamento de usuários.
+Manter as configurações pessoais do administrador disponíveis na própria área de conta.
+Apresentar os usuários com foto, nome, tipo de perfil, situação e estoques autorizados.
+Cadastro e edição
+Substituir o campo de seleção textual de estoques por blocos selecionáveis.
+Cada bloco deve apresentar nome, localização e descrição do estoque.
+Permitir selecionar um ou mais estoques.
+Destacar visualmente os blocos selecionados.
+Permitir alterar as associações durante a edição do usuário.
+Apresentar a foto de perfil ou um avatar padrão.
+Permissões
+Garantir que usuários comuns visualizem somente os estoques aos quais possuem acesso.
+Aplicar as permissões também no servidor e nas APIs, não somente na interface.
+
+
+12. Confirmação de exclusão e desativação
+
+Comportamento dos botões
+Evitar que ações de exclusão ou desativação sejam realizadas com um único clique acidental.
+No primeiro clique, alterar o botão para vermelho, com bordas vermelhas, e apresentar uma mensagem de confirmação.
+No segundo clique, confirmar a operação.
+Disponibilizar uma opção de cancelamento que restaure o botão ao estado original.
+Mensagens
+Informar claramente qual registro será afetado.
+Explicar as consequências da operação.
+Alertar quando a ação for permanente.
+Preservação do histórico
+A desativação de estoques, sensores e usuários não deve apagar automaticamente seus históricos.
+Preservar leituras e alertas antigos para consulta e relatórios.
+Tratar a exclusão definitiva como uma operação diferente da desativação.
+Impedir exclusões que comprometam registros históricos ou relacionamentos necessários.
+Quando uma exclusão definitiva for permitida, exigir confirmação explícita e informar exatamente quais dados serão removidos.
+
+
+13. Responsividade e versão para celular
+
+Tabelas
+Corrigir tabelas que ultrapassam a largura da tela.
+Evitar depender exclusivamente de rolagem horizontal.
+Transformar tabelas extensas em blocos ou cartões quando isso melhorar a leitura.
+Manter as informações essenciais visíveis sem cortes.
+Demais componentes
+Adaptar formulários para uma coluna.
+Organizar filtros para ocupar a largura disponível.
+Ajustar os gráficos, legendas e rótulos.
+Adaptar os blocos de estoques para uma coluna.
+Melhorar a apresentação de alertas e usuários.
+Garantir que botões e campos tenham dimensões adequadas para interação por toque.
+Adaptar a barra lateral para navegação em dispositivos móveis.
+
+
+14. Formulários e interações
+
+Identificar visualmente os campos obrigatórios.
+Apresentar mensagens de validação próximas aos campos correspondentes.
+Manter os dados preenchidos quando ocorrer um erro de validação.
+Agrupar campos relacionados.
+Padronizar a posição dos botões Salvar, Cancelar e Voltar.
+Solicitar confirmação ao sair de formulários com alterações não salvas.
+Apresentar mensagens claras de sucesso ou falha após cada operação.
+
+
+15. Histórico, desempenho e confiabilidade
+
+Implementar paginação ou carregamento progressivo em históricos extensos.
+Permitir selecionar a quantidade de registros por página quando apropriado.
+Preservar os filtros durante a navegação entre páginas.
+Evitar carregar grandes quantidades de registros desnecessariamente.
+Garantir que gráficos, tabelas, indicadores e relatórios utilizem os mesmos dados.
+Identificar leituras desatualizadas.
+Não apresentar dados simulados como leituras reais.
+Registrar corretamente a data e o horário das medições.
+Otimizar consultas ao banco de dados e carregamento dos gráficos.
+Preservar o histórico ambiental necessário para análises.
+
+
+16. Organização técnica do projeto
+
+Padronizar nomes de arquivos, pastas, classes, métodos e variáveis.
+Utilizar convenções consistentes entre PHP, JavaScript, CSS, SQL e Dart.
+Centralizar cores, fontes, espaçamentos e demais propriedades visuais.
+Criar componentes reutilizáveis para cartões, tabelas, botões, formulários, mensagens e modais.
+Evitar repetição de código e estilos CSS duplicados.
+Remover arquivos, funções e estilos antigos somente após verificar suas dependências.
+Manter a comunicação entre site, aplicativo, banco de dados e APIs consistente.
+Garantir que as permissões sejam verificadas também no backend.
+
+
+17. Testes finais
+
+Antes de finalizar as alterações, verificar:
+Funcionamento dos temas claro e escuro.
+Consistência visual entre todas as páginas.
+Funcionamento das configurações pessoais e fotos de perfil.
+Cadastro, edição e desativação de estoques.
+Cadastro e associação de sensores.
+Cadastro de usuários e seleção de estoques.
+Restrições de acesso por usuário.
+Atualização dos valores e gráficos.
+Exibição correta das datas e horários.
+Geração e atualização dos alertas.
+Reconhecimento, normalização e resolução dos alertas.
+Funcionamento dos filtros.
+Exportação completa de informações e relatórios.
+Funcionamento das confirmações de exclusão e desativação.
+Adaptação de todas as páginas para computadores, tablets e celulares.
+Preservação do histórico de leituras e alertas.

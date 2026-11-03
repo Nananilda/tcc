@@ -9,6 +9,7 @@
  */
 
 require_once __DIR__ . '/_bootstrap.php';
+if($_SERVER['REQUEST_METHOD']!=='GET') jsonResponse(['sucesso'=>false,'mensagem'=>'Método não permitido.'],405);
 
 // Consulta mínima só para confirmar que o banco responde de verdade
 $pdo->query('SELECT 1');

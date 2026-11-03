@@ -1,0 +1,4 @@
+<div class="estoques-selecao">
+<?php if(!$estoques): ?><p class="estado-vazio">Nenhum estoque cadastrado. Cadastre um estoque antes de associar usuários.</p><?php endif ?>
+<?php foreach($estoques as $estoque): ?><label class="estoque-opcao"><input type="checkbox" name="estoque_ids[]" value="<?= (int)$estoque['id'] ?>" <?= in_array((int)$estoque['id'],array_map('intval',$selecionados),true)?'checked':'' ?>><span><strong><?= escapar($estoque['nome']) ?></strong><small><?= escapar($estoque['localizacao']?:'Localização não informada') ?></small><small><?= escapar($estoque['descricao']?:'Sem descrição') ?></small><small><?= $estoque['status']==='ativo'?'Ativo':'Inativo' ?></small></span></label><?php endforeach ?>
+</div>

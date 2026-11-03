@@ -40,6 +40,7 @@ switch ($dados['acao'] ?? '') {
     case 'atualizar':
         respostaDoControlador($controller->atualizar($dados));
 
+    case 'desativar':
     case 'excluir':
         respostaDoControlador($controller->excluir((int) ($dados['id'] ?? 0)));
 

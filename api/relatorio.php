@@ -1,41 +1,11 @@
 <?php
-/**
- * GET api/relatorio.php?sensor=&data_ini=YYYY-MM-DD&data_fim=YYYY-MM-DD&val_min=&val_max=
- * Retorna: { sucesso, filtros, leituras: [...], resumo: [...] }
- *   leituras → até 200 leituras (mais recentes primeiro)
- *   resumo   → total/média/mínimo/máximo por tipo de sensor (sobre TODAS as leituras do filtro)
- */
-
-require_once __DIR__ . '/_bootstrap.php';
+require_once __DIR__.'/_bootstrap.php';
 exigirLoginApi();
-
-require_once __DIR__ . '/../app/controllers/RelatorioController.php';
-
-$resultado = (new RelatorioController($pdo))->consultar($_GET);
-
-if ($resultado['erro'] !== '') {
-    jsonResponse(['sucesso' => false, 'mensagem' => $resultado['erro']], 500);
-}
-
-// Tipos corretos no JSON (valores numéricos como número)
-$leituras = array_map(fn($l) => [
-    'sensor_tipo' => $l['sensor_tipo'],
-    'sensor_nome' => $l['sensor_nome'],
-    'valor' => (float) $l['valor'],
-    'lido_em' => $l['lido_em'],
-], $resultado['leituras']);
-
-$resumo = array_map(fn($r) => [
-    'sensor_tipo' => $r['sensor_tipo'],
-    'total' => (int) $r['total'],
-    'media' => (float) $r['media'],
-    'minimo' => (float) $r['minimo'],
-    'maximo' => (float) $r['maximo'],
-], $resultado['resumo']);
-
-jsonResponse([
-    'sucesso' => true,
-    'filtros' => $resultado['filtros'],
-    'leituras' => $leituras,
-    'resumo' => $resumo,
-]);
+if ($_SERVER['REQUEST_METHOD']!=='GET') jsonResponse(['sucesso'=>false,'mensagem'=>'Método não permitido.'],405);
+require_once __DIR__.'/../app/controllers/RelatorioController.php';
+$formato=$_GET['formato']??'';
+if (!is_string($formato)||!in_array($formato,['','csv','pdf'],true)) jsonResponse(['sucesso'=>false,'mensagem'=>'Formato inválido.'],422);
+$r=(new RelatorioController($pdo))->consultar($_GET,$formato!=='');
+if ($r['erro']!=='') jsonResponse(['sucesso'=>false,'mensagem'=>$r['erro']],422);
+if ($formato!=='') { require_once __DIR__.'/../app/services/ExportacaoRelatorio.php'; exportarRelatorio($r,$formato); }
+jsonResponse(['sucesso'=>true]+$r);

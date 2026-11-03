@@ -96,8 +96,10 @@
     --cor-texto-fraco: #566a7f;
 
     /* Marca (derivada da logo, #607487) */
-    --cor-marca: #607487;              /* cor da logo (símbolo e nome) */
-    --cor-primaria: #4f6b85;           /* botões e destaques sólidos */
+    --cor-marca: #607487;
+    /* cor da logo (símbolo e nome) */
+    --cor-primaria: #4f6b85;
+    /* botões e destaques sólidos */
     --cor-primaria-hover: #3e5973;
     --cor-texto-sobre-primaria: #ffffff;
     --cor-link: #3e5973;
@@ -112,7 +114,8 @@
     --cor-erro-fundo: rgba(179, 42, 56, 0.09);
     --cor-erro-borda: rgba(179, 42, 56, 0.30);
     --cor-erro-hover: #8f2230;
-    --cor-texto-sobre-erro: #ffffff;   /* texto de botões de perigo */
+    --cor-texto-sobre-erro: #ffffff;
+    /* texto de botões de perigo */
     --cor-alerta: #7d5200;
     --cor-alerta-fundo: rgba(224, 168, 63, 0.20);
     --cor-alerta-borda: rgba(125, 82, 0, 0.30);
@@ -196,6 +199,33 @@
 /* ═══ 3. RESET E BASE ═════════════════════════════════════════════════════════ */
 * {
     box-sizing: border-box;
+}
+
+/* ==================================================
+   CORES DA BARRA DE ROLAGEM E SELEÇÃO DE TEXTO
+================================================== */
+
+::-webkit-scrollbar {
+    width: 10px;
+    /* largura da barra */
+}
+
+::-webkit-scrollbar-track {
+    background: var(--cor-fundo)
+    /* cor do fundo/pista */
+}
+
+::-webkit-scrollbar-thumb {
+    background: var(--cor-foco);
+    /* cor da barra de rolagem (polegar) */
+    border-radius: 5px;
+    transition: 0.5s ease;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: var(--cor-primaria-hover);
+    /* cor da barra ao passar o mouse */
+    transition: 0.5s ease;
 }
 
 body {
@@ -459,6 +489,7 @@ button,
     color: var(--cor-texto-sobre-primaria);
     border: 1px solid transparent;
     border-radius: 8px;
+    margin-top: 10px;
     padding: 10px 18px;
     font-weight: 600;
     font-size: 0.95rem;
@@ -614,8 +645,8 @@ tr:last-child td {
 }
 
 /* Título que vem logo depois de uma tabela ganha respiro */
-.tabela-rolagem + h2,
-.relatorio-tabela-detalhe + h2 {
+.tabela-rolagem+h2,
+.relatorio-tabela-detalhe+h2 {
     margin-top: 28px;
 }
 

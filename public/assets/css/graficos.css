@@ -75,9 +75,9 @@
     margin-bottom: 0;
 }
 
-.alertas-topo + .alertas-cards,
-.alertas-topo + .msg-sucesso,
-.alertas-topo + .msg-erro {
+.alertas-topo+.alertas-cards,
+.alertas-topo+.msg-sucesso,
+.alertas-topo+.msg-erro {
     margin-top: 18px;
 }
 
@@ -99,7 +99,7 @@
     margin: 0 0 14px;
 }
 
-.tabela-rolagem + .alertas-dica {
+.tabela-rolagem+.alertas-dica {
     margin: 12px 0 0;
 }
 
@@ -142,6 +142,7 @@ label .alertas-dica {
     font-family: var(--fonte-titulo);
     font-size: 1.6rem;
     font-weight: 700;
+    margin-right: 10px;
 }
 
 /* ── Alertas: histórico ──────────────────────────────────────────────────── */

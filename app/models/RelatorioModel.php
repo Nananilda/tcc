@@ -1,188 +1,91 @@
 <?php
-/**
- * app/models/RelatorioModel.php
- * Model: RelatorioModel
- * Consultas do "Relatório de Qualidade Ambiental": leituras detalhadas e
- * resumo estatístico (média, mínimo, máximo) por tipo de sensor, com filtros
- * de período, sensor e faixa de valores.
- *
- * Usado pela tela web (RelatorioController) e pela API (api/relatorio.php).
- * O tipo do sensor vem do JOIN entre `leitura_sensor` e `sensores`.
- */
-
-require_once __DIR__ . '/SensorModel.php'; // catálogo de tipos de sensor
-
+require_once __DIR__.'/SensorModel.php';
+require_once __DIR__.'/../../includes/estoques.php';
 class RelatorioModel
 {
-    /** Máximo de leituras detalhadas devolvidas. */
-    public const LIMITE_LEITURAS = 200;
-
+    public const LIMITE_LEITURAS=200;
     private PDO $pdo;
-
-    public function __construct(PDO $pdo)
-    {
-        $this->pdo = $pdo;
-    }
-
-    // ── Metadados para as telas ──────────────────────────────────────────────
-
-    /** Chaves dos tipos de sensor disponíveis no filtro. */
-    public function getSensorTipos(): array
-    {
-        return array_keys(SensorModel::TIPOS);
-    }
-
-    /** Rótulos com unidade, indexados pelo tipo (ex.: 'ruido' => 'Ruído (dB)'). */
-    public function getLabels(): array
-    {
-        $labels = [];
-        foreach (array_keys(SensorModel::TIPOS) as $tipo) {
-            $labels[$tipo] = SensorModel::rotuloComUnidade($tipo);
-        }
-        return $labels;
-    }
-
-    public function getLabelPorTipo(string $tipo): string
-    {
-        return SensorModel::tipoValido($tipo) ? SensorModel::rotuloComUnidade($tipo) : $tipo;
-    }
-
-    // ── Filtros ──────────────────────────────────────────────────────────────
-
-    /**
-     * Lê e sanitiza os filtros vindos da requisição (normalmente $_GET).
-     * Datas inválidas voltam ao padrão (últimos 7 dias) e, se vierem
-     * invertidas, são trocadas de posição.
-     *
-     * @return array{sensor:string,data_ini:string,data_fim:string,val_min:string,val_max:string}
-     */
+    public function __construct(PDO $pdo){$this->pdo=$pdo;}
+    public function getSensorTipos(): array{return array_keys(SensorModel::TIPOS);}
+    public function getLabels(): array{return array_map(fn($v)=>$v['label'].' ('.$v['unidade'].')',SensorModel::TIPOS);}
+    public function getLabelPorTipo(string $tipo): string{return SensorModel::rotuloComUnidade($tipo);}
     public function filtrosDaRequisicao(array $entrada): array
     {
-        $dataIni = $this->dataValida($entrada['data_ini'] ?? '') ?? date('Y-m-d', strtotime('-7 days'));
-        $dataFim = $this->dataValida($entrada['data_fim'] ?? '') ?? date('Y-m-d');
-        if ($dataIni > $dataFim) {
-            [$dataIni, $dataFim] = [$dataFim, $dataIni];
+        $f=['sensor'=>'','data_ini'=>date('Y-m-d',strtotime('-7 days')),'data_fim'=>date('Y-m-d'),'val_min'=>'','val_max'=>'','estoque_id'=>0,'sensor_id'=>0,'pagina'=>1,'por_pagina'=>200,'horas'=>0];
+        foreach(['data_ini','data_fim'] as $key) if(isset($entrada[$key]) && $entrada[$key]!==''){
+            if(!is_string($entrada[$key]))throw new InvalidArgumentException('Data inválida.');
+            $d=DateTime::createFromFormat('!Y-m-d',$entrada[$key]);
+            if(!$d||$d->format('Y-m-d')!==$entrada[$key])throw new InvalidArgumentException('Data inválida.');
+            $f[$key]=$entrada[$key];
         }
-
-        $sensor = (string) ($entrada['sensor'] ?? '');
-
-        return [
-            'sensor' => SensorModel::tipoValido($sensor) ? $sensor : '',
-            'data_ini' => $dataIni,
-            'data_fim' => $dataFim,
-            'val_min' => $this->numeroOuVazio($entrada['val_min'] ?? ''),
-            'val_max' => $this->numeroOuVazio($entrada['val_max'] ?? ''),
-        ];
-    }
-
-    /** Devolve a data (Y-m-d) se for real, ou null. */
-    private function dataValida($valor): ?string
-    {
-        $valor = (string) $valor;
-        $data = DateTime::createFromFormat('Y-m-d', $valor);
-        return ($data && $data->format('Y-m-d') === $valor) ? $valor : null;
-    }
-
-    /** Mantém o valor apenas se for numérico; senão, string vazia. */
-    private function numeroOuVazio($valor): string
-    {
-        $valor = trim((string) $valor);
-        return ($valor !== '' && is_numeric($valor)) ? $valor : '';
-    }
-
-    /**
-     * Recebe os filtros já sanitizados e devolve
-     * ['where' => string, 'params' => array] para as consultas abaixo.
-     */
-    public function montarFiltros(
-        string $dataIni,
-        string $dataFim,
-        string $sensor = '',
-        string $valMin = '',
-        string $valMax = ''
-    ): array {
-        $params = [
-            ':ini' => $dataIni . ' 00:00:00',
-            ':fim' => $dataFim . ' 23:59:59',
-        ];
-        $where = "WHERE l.lido_em BETWEEN :ini AND :fim";
-
-        if ($sensor !== '' && SensorModel::tipoValido($sensor)) {
-            $where .= " AND s.tipo = :tipo";
-            $params[':tipo'] = $sensor;
+        if(empty($entrada['data_ini'])&&empty($entrada['data_fim'])&&in_array((int)($entrada['horas']??0),[6,12,24,48,168],true)) { $f['horas']=(int)$entrada['horas'];$f['data_ini']='';$f['data_fim']=''; }
+        if($f['data_ini']>$f['data_fim'])throw new InvalidArgumentException('A data inicial deve ser anterior à data final.');
+        $tipo=$entrada['sensor']??$entrada['tipo']??'';
+        if(!is_string($tipo)||($tipo!==''&&!SensorModel::tipoValido($tipo)))throw new InvalidArgumentException('Tipo de medição inválido.');
+        $f['sensor']=$tipo;
+        foreach(['estoque_id','sensor_id','pagina'] as $key)if(isset($entrada[$key])&&$entrada[$key]!==''){
+            if(filter_var($entrada[$key],FILTER_VALIDATE_INT)===false||(int)$entrada[$key]<0)throw new InvalidArgumentException('Identificador inválido.');
+            $f[$key]=(int)$entrada[$key];
         }
-        if ($valMin !== '' && is_numeric($valMin)) {
-            $where .= " AND l.valor >= :vmin";
-            $params[':vmin'] = (float) $valMin;
+        $f['por_pagina']=in_array((int)($entrada['por_pagina']??200),[25,50,100,200],true)?(int)($entrada['por_pagina']??200):200;
+        $f['pagina']=max(1,min(100000,$f['pagina']));
+        if($f['estoque_id']&&!podeAcessarEstoque($this->pdo,$f['estoque_id']))throw new InvalidArgumentException('Estoque indisponível ou sem permissão.');
+        if($f['sensor_id']){
+            $st=$this->pdo->prepare('SELECT s.id FROM sensores s WHERE s.id=? AND ('.escopoEstoque('s.estoque_id').' OR EXISTS (SELECT 1 FROM leitura_sensor lh WHERE lh.sensor_id=s.id AND '.escopoEstoque('lh.estoque_id').'))');$st->execute([$f['sensor_id']]);
+            if(!$st->fetchColumn())throw new InvalidArgumentException('Sensor indisponível ou sem permissão.');
         }
-        if ($valMax !== '' && is_numeric($valMax)) {
-            $where .= " AND l.valor <= :vmax";
-            $params[':vmax'] = (float) $valMax;
+        foreach(['val_min','val_max'] as $key)if(isset($entrada[$key])&&$entrada[$key]!==''){
+            $v=lerNumero($entrada[$key]);if($v===null)throw new InvalidArgumentException('Faixa de valores inválida.');$f[$key]=(string)$v;
         }
-
-        return ['where' => $where, 'params' => $params];
+        if($f['val_min']!==''&&$f['val_max']!==''&&(float)$f['val_min']>(float)$f['val_max'])throw new InvalidArgumentException('O valor mínimo deve ser menor ou igual ao máximo.');
+        return $f;
     }
-
-    // ── Consultas ────────────────────────────────────────────────────────────
-
-    /**
-     * Retorna até LIMITE_LEITURAS leituras detalhadas (mais recentes primeiro).
-     */
-    public function buscarLeituras(string $where, array $params): array
+    public function montarFiltros(string $dataIni,string $dataFim,string $sensor='',string $valMin='',string $valMax='',int $estoqueId=0,int $sensorId=0,int $horas=0): array
     {
-        $limite = self::LIMITE_LEITURAS;
-        $stmt = $this->pdo->prepare("
-            SELECT s.tipo AS sensor_tipo, s.nome AS sensor_nome, l.valor, l.lido_em
-            FROM leitura_sensor l
-            JOIN sensores s ON s.id = l.sensor_id
-            $where
-            ORDER BY l.lido_em DESC
-            LIMIT $limite
-        ");
-        $stmt->execute($params);
-        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        $where='WHERE l.lido_em BETWEEN :ini AND :fim AND '.escopoEstoque('l.estoque_id');
+        $params=[':ini'=>$dataIni.' 00:00:00',':fim'=>$dataFim.' 23:59:59'];
+        if($horas>0){$where='WHERE l.lido_em >= DATE_SUB(NOW(), INTERVAL '.(int)$horas.' HOUR) AND '.escopoEstoque('l.estoque_id');$params=[];}
+        foreach(['s.tipo'=>['tipo',$sensor],'l.estoque_id'=>['estoque',$estoqueId],'l.sensor_id'=>['sensor_id',$sensorId]] as $column=>[$key,$value])if($value!==''&&$value!==0){$where.=" AND $column=:$key";$params[":$key"]=$value;}
+        if($valMin!==''){$where.=' AND l.valor>=:min';$params[':min']=(float)$valMin;}
+        if($valMax!==''){$where.=' AND l.valor<=:max';$params[':max']=(float)$valMax;}
+        return compact('where','params');
     }
-
-    /**
-     * Retorna o resumo estatístico agrupado por tipo de sensor, considerando
-     * TODAS as leituras do filtro (não apenas as 200 exibidas no detalhe).
-     */
-    public function buscarResumo(string $where, array $params): array
+    public function buscarLeituras(string $where,array $params,bool $todas=false,int $pagina=1,int $limite=200): array
     {
-        $stmt = $this->pdo->prepare("
-            SELECT s.tipo               AS sensor_tipo,
-                   COUNT(*)             AS total,
-                   ROUND(AVG(l.valor), 2) AS media,
-                   ROUND(MIN(l.valor), 2) AS minimo,
-                   ROUND(MAX(l.valor), 2) AS maximo
-            FROM leitura_sensor l
-            JOIN sensores s ON s.id = l.sensor_id
-            $where
-            GROUP BY s.tipo
-            ORDER BY s.tipo
-        ");
-        $stmt->execute($params);
-        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        $sql="SELECT l.*,s.nome AS sensor_nome,s.tipo AS sensor_tipo,s.intervalo_comunicacao,e.nome AS estoque_nome FROM leitura_sensor l JOIN sensores s ON s.id=l.sensor_id JOIN estoques e ON e.id=l.estoque_id $where ORDER BY l.lido_em DESC,l.id DESC";
+        if(!$todas)$sql.=' LIMIT '.(int)$limite.' OFFSET '.((max(1,$pagina)-1)*$limite);
+        $st=$this->pdo->prepare($sql);$st->execute($params);$rows=$st->fetchAll();
+        foreach($rows as &$r){$r['valor']=(float)$r['valor'];$r['unidade']=SensorModel::unidade($r['sensor_tipo']);}
+        return $rows;
     }
-
-    /**
-     * Atalho: aplica os filtros e devolve ['leituras' => [...], 'resumo' => [...]].
-     *
-     * @param array $filtros resultado de filtrosDaRequisicao()
-     */
-    public function consultar(array $filtros): array
+    public function buscarResumo(string $where,array $params): array
     {
-        $montado = $this->montarFiltros(
-            $filtros['data_ini'],
-            $filtros['data_fim'],
-            $filtros['sensor'],
-            $filtros['val_min'],
-            $filtros['val_max']
-        );
-
-        return [
-            'leituras' => $this->buscarLeituras($montado['where'], $montado['params']),
-            'resumo' => $this->buscarResumo($montado['where'], $montado['params']),
-        ];
+        $st=$this->pdo->prepare("SELECT s.tipo AS sensor_tipo,COUNT(*) AS total,ROUND(AVG(l.valor),2) AS media,MIN(l.valor) AS minimo,MAX(l.valor) AS maximo,SUM(l.situacao<>'normal') AS fora_limites FROM leitura_sensor l JOIN sensores s ON s.id=l.sensor_id $where GROUP BY s.tipo ORDER BY s.tipo");$st->execute($params);$rows=$st->fetchAll();foreach($rows as &$row){foreach(['total','fora_limites'] as $k)$row[$k]=(int)$row[$k];foreach(['media','minimo','maximo'] as $k)$row[$k]=(float)$row[$k];}return $rows;
+    }
+    public function consultar(array $f,bool $todas=false): array
+    {
+        $m=$this->montarFiltros($f['data_ini'],$f['data_fim'],$f['sensor'],$f['val_min'],$f['val_max'],$f['estoque_id'],$f['sensor_id'],$f['horas']??0);
+        $leituras=$this->buscarLeituras($m['where'],$m['params'],$todas,$f['pagina'],$f['por_pagina']??200);
+        $resumo=$this->buscarResumo($m['where'],$m['params']);
+        $where=str_replace(['l.lido_em','l.estoque_id','l.sensor_id','l.valor'],['a.criado_em','a.estoque_id','a.sensor_id','a.valor'],$m['where']);
+        $st=$this->pdo->prepare("SELECT a.*,s.tipo AS sensor_tipo,s.nome AS sensor_nome,e.nome AS estoque_nome FROM alertas a JOIN sensores s ON s.id=a.sensor_id JOIN estoques e ON e.id=a.estoque_id $where ORDER BY a.criado_em DESC,a.id DESC".($todas?'':' LIMIT 25'));$st->execute($m['params']);$alertas=$st->fetchAll();
+        $st=$this->pdo->prepare("SELECT COUNT(*) FROM alertas a JOIN sensores s ON s.id=a.sensor_id $where");$st->execute($m['params']);$totalAlertas=(int)$st->fetchColumn();
+        // Somente intervalos com duas amostras consecutivas e sem lacuna de comunicação
+        // sustentam uma estimativa de tempo fora dos limites. Nunca inferir além da última leitura.
+        $periodos=[];$anterior=[];
+        $wherePeriodo=$m['where'];$paramsPeriodo=$m['params'];$segundosFora=0;$this->pdo->setAttribute(PDO::MYSQL_ATTR_USE_BUFFERED_QUERY,false);
+        $st=$this->pdo->prepare("SELECT l.id,l.sensor_id,l.estoque_id,l.lido_em,l.situacao,s.nome AS sensor_nome,s.intervalo_comunicacao FROM leitura_sensor l JOIN sensores s ON s.id=l.sensor_id $wherePeriodo ORDER BY l.sensor_id,l.estoque_id,l.lido_em,l.id");$st->execute($paramsPeriodo);
+        while($l=$st->fetch()){
+            $key=$l['sensor_id'].':'.$l['estoque_id'];$prev=$anterior[$key]??null;
+            if($prev && $prev['situacao']!=='normal'){
+                $delta=strtotime($l['lido_em'])-strtotime($prev['lido_em']);
+                if($delta>0&&$delta<=(int)$l['intervalo_comunicacao']){ $segundosFora+=$delta;if($todas||defined('API_CONTEXT'))$periodos[]=['sensor_id'=>$l['sensor_id'],'sensor_nome'=>$l['sensor_nome'],'inicio'=>$prev['lido_em'],'fim'=>$l['lido_em'],'segundos'=>$delta,'situacao'=>$prev['situacao']]; }
+            }
+            $anterior[$key]=$l;
+        }
+        $st->closeCursor();$this->pdo->setAttribute(PDO::MYSQL_ATTR_USE_BUFFERED_QUERY,true);
+        // Com filtro por valor, amostras intermediárias podem ter sido excluídas: não estimar duração.
+        if($f['val_min']!==''||$f['val_max']!==''){$periodos=[];$segundosFora=0;}
+        return compact('leituras','resumo','alertas','periodos')+['total_alertas'=>$totalAlertas,'total'=>(int)array_sum(array_column($resumo,'total')),'segundos_fora_limites'=>$segundosFora];
     }
 }

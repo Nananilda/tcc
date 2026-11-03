@@ -19,6 +19,8 @@
 function iconeSvg(string $nome): string
 {
     static $icones = [
+        'painel' => '<rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/>',
+        'estoque' => '<path d="M3 10 12 4l9 6v11H3V10z"/><path d="M8 21v-8h8v8M8 17h8"/>',
         // Gráficos de Sensores: eixos + linha de tendência
         'grafico' => '<path d="M3 3v18h18"/><path d="M7 15l4-4 3 3 5-6"/>',
         // Alertas: triângulo de atenção

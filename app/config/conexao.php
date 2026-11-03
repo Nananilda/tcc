@@ -142,3 +142,26 @@ try {
 
 // Não deixa a senha acessível no escopo global das páginas
 unset($config);
+
+// Interrompe consultas novas antes de atingir tabelas de uma instalação antiga.
+// O login e a atualização acessam somente a estrutura original de autenticação.
+if (PHP_SAPI !== 'cli' && !defined('AKRON_ACESSO_BANCO_LEGADO')) {
+    require_once __DIR__ . '/../services/MigracaoBanco.php';
+    try {
+        $atualizacaoPendente = MigracaoBanco::pendente($pdo);
+    } catch (PDOException $e) {
+        error_log('[' . APP_NOME . '] Falha ao verificar estrutura: ' . $e->getMessage());
+        falhaDeConexao();
+    }
+    if ($atualizacaoPendente) {
+        if (defined('API_CONTEXT')) {
+            http_response_code(503);
+            header('Content-Type: application/json; charset=utf-8');
+            echo json_encode(['sucesso' => false, 'codigo' => 'BANCO_DESATUALIZADO',
+                'mensagem' => 'O banco precisa ser atualizado por um administrador na página atualizar-banco.php.'], JSON_UNESCAPED_UNICODE);
+        } else {
+            header('Location: ' . urlApp('atualizar-banco.php'), true, 303);
+        }
+        exit;
+    }
+}

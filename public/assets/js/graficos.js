@@ -85,12 +85,8 @@ document.addEventListener('akron:tema', recolorirGraficos);
 // ── Formatação ───────────────────────────────────────────────────────────────
 
 /** '2026-10-09 14:30:00' → '09/10 14:30' (rótulo curto do eixo X). */
-function formatarRotulo(dataSql) {
-    var d = new Date(String(dataSql).replace(' ', 'T'));
-    if (isNaN(d.getTime())) return dataSql;
-    var dois = function (n) { return (n < 10 ? '0' : '') + n; };
-    return dois(d.getDate()) + '/' + dois(d.getMonth() + 1) + ' ' + dois(d.getHours()) + ':' + dois(d.getMinutes());
-}
+function dataBr(valor,hora=true){if(!valor)return 'Sem leitura';const m=String(valor).match(/^(\d{4})-(\d{2})-(\d{2})(?:[ T](\d{2}:\d{2}(?::\d{2})?))?/);return m?`${m[3]}/${m[2]}/${m[1]}${hora&&m[4]?' '+m[4]:''}`:valor;}
+function formatarRotulo(valor){return dataBr(valor,false);}
 
 // ── Criação dos gráficos ─────────────────────────────────────────────────────
 

@@ -6,7 +6,7 @@
  *   1) MANUAL: o administrador escolhe o sensor, a severidade e escreve a
  *      mensagem (manutenção programada, aviso da equipe, ocorrência observada...);
  *   2) AUTOMÁTICA: ao registrar uma leitura, o valor é comparado com os limites
- *      de cada tipo de sensor (AlertaModel::LIMITES) e, se passar, o alerta é
+ *      configurados no sensor e, se passar, o alerta é
  *      criado sozinho. O formulário "Registrar leitura" simula o envio de um
  *      sensor — útil para testar e para demonstrar o recurso.
  * A tabela do final mostra os limites em vigor. Todos os formulários são POST
@@ -65,30 +65,27 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
-/** Texto da faixa de um limite (ex.: "acima de 30 °C" ou "abaixo de 35% / acima de 80%"). */
-function textoDoLimite(string $tipo, string $severidade): string
+/** Faixa configurada individualmente no sensor. */
+function textoDoLimite(array $sensor, string $severidade): string
 {
-    $regras = AlertaModel::LIMITES[$tipo] ?? [];
-    $unidade = SensorModel::unidade($tipo);
+    $unidade = SensorModel::unidade($sensor['tipo']);
     $partes = [];
-    if (isset($regras['min'][$severidade])) {
-        $partes[] = 'abaixo de ' . AlertaModel::formatarLimite($regras['min'][$severidade], $unidade);
+    foreach (['min'=>'abaixo de ', 'max'=>'acima de '] as $lado=>$texto) {
+        $limite=$sensor["limite_{$severidade}_{$lado}"] ?? null;
+        if ($limite !== null) $partes[]=$texto.AlertaModel::formatarLimite($limite,$unidade);
     }
-    if (isset($regras['max'][$severidade])) {
-        $partes[] = 'acima de ' . AlertaModel::formatarLimite($regras['max'][$severidade], $unidade);
-    }
-    return $partes ? implode(' ou ', $partes) : '—';
+    return $partes ? implode(' ou ',$partes) : 'Não configurado';
 }
 
 $csrf_token = gerarCSRF();
 
-$tituloPagina = 'Novo Alerta';
+$tituloPagina = 'Novo alerta';
 $secaoTopbar = 'Alertas';
 $cssPagina = ['graficos.css'];
 require __DIR__ . '/../partials/cabecalho.php';
 ?>
 
-<h1>Novo Alerta</h1>
+<h1>Novo alerta</h1>
 <p class="alertas-dica">
     Crie um alerta manualmente ou registre uma leitura para ver os alertas automáticos em ação.
 </p>
@@ -127,14 +124,14 @@ require __DIR__ . '/../partials/cabecalho.php';
                     <option value="<?php echo (int) $sensor['id']; ?>"
                         <?php echo (string) $sensor['id'] === $formAlerta['sensor_id'] ? 'selected' : ''; ?>>
                         <?php echo escapar($sensor['nome'] . ' — ' . SensorModel::rotulo($sensor['tipo'])
-                            . ($sensor['status'] === 'ativo' ? '' : ' (inativo)')); ?>
+                            . ' · ' . ($sensor['estoque_nome'] ?? '') . ($sensor['status'] === 'ativo' ? '' : ' (inativo)')); ?>
                     </option>
                 <?php endforeach; ?>
             </select>
         </div>
 
         <div>
-            <label for="alerta_severidade">Severidade *</label>
+            <label for="alerta_severidade">Gravidade *</label>
             <select id="alerta_severidade" name="severidade" required>
                 <?php foreach (AlertaModel::SEVERIDADES as $chave => $rotulo): ?>
                     <option value="<?php echo escapar($chave); ?>"
@@ -153,12 +150,12 @@ require __DIR__ . '/../partials/cabecalho.php';
         <div class="campo-full">
             <label for="alerta_mensagem">Mensagem * <span class="alertas-dica">(3 a 200 caracteres)</span></label>
             <input type="text" id="alerta_mensagem" name="mensagem" maxlength="200" required
-                placeholder="Ex: Manutenção programada da prensa 02 amanhã às 8h"
+                placeholder="Ex: Verificar a vedação da porta do estoque"
                 value="<?php echo escapar($formAlerta['mensagem']); ?>">
         </div>
 
         <div class="campo-full">
-            <button type="submit">Criar alerta</button>
+            <button type="submit">Criar alerta</button> <a class="btn-secundario" href="alerta.php">Cancelar</a>
         </div>
     </form>
 </div>
@@ -168,7 +165,7 @@ require __DIR__ . '/../partials/cabecalho.php';
     <h2>Alertas automáticos — registrar leitura</h2>
     <p class="alertas-dica">
         Cada leitura enviada por um sensor é comparada com os limites abaixo. Se passar de algum,
-        o alerta é criado sozinho (sem repetir um alerta igual que ainda esteja pendente). Este
+        o alerta é criado sozinho (mantendo uma ocorrência por irregularidade contínua). Este
         formulário simula o envio de uma leitura, para testar os limites.
     </p>
     <form method="POST" class="alertas-form" autocomplete="off">
@@ -180,7 +177,7 @@ require __DIR__ . '/../partials/cabecalho.php';
             <select id="leitura_sensor" name="sensor_id" required>
                 <option value="">— selecione —</option>
                 <?php foreach ($sensores as $sensor): ?>
-                    <?php if ($sensor['status'] !== 'ativo') { continue; } ?>
+                    <?php if ($sensor['status'] !== 'ativo' || $sensor['estoque_status'] !== 'ativo') { continue; } ?>
                     <option value="<?php echo (int) $sensor['id']; ?>"
                         <?php echo (string) $sensor['id'] === $formLeitura['sensor_id'] ? 'selected' : ''; ?>>
                         <?php echo escapar($sensor['nome'] . ' — ' . SensorModel::rotuloComUnidade($sensor['tipo'])); ?>
@@ -208,23 +205,23 @@ require __DIR__ . '/../partials/cabecalho.php';
         <table>
             <thead>
                 <tr>
-                    <th>Tipo de sensor</th>
+                    <th>Sensor / estoque</th>
                     <th>Atenção</th>
                     <th>Crítico</th>
                 </tr>
             </thead>
             <tbody>
-                <?php foreach (SensorModel::TIPOS as $tipo => $meta): ?>
+                <?php foreach ($sensores as $sensor): ?>
                     <tr>
-                        <td><?php echo escapar($meta['label']); ?></td>
-                        <td><?php echo escapar(textoDoLimite($tipo, 'atencao')); ?></td>
-                        <td><?php echo escapar(textoDoLimite($tipo, 'critico')); ?></td>
+                        <td><?php echo escapar($sensor['nome'] . ' · ' . ($sensor['estoque_nome'] ?? '')); ?></td>
+                        <td><?php echo escapar(textoDoLimite($sensor, 'atencao')); ?></td>
+                        <td><?php echo escapar(textoDoLimite($sensor, 'critico')); ?></td>
                     </tr>
                 <?php endforeach; ?>
             </tbody>
         </table>
     </div>
-    <p class="alertas-dica">Para mudar um limite, edite <code>AlertaModel::LIMITES</code> em <code>app/models/AlertaModel.php</code>.</p>
+    <p class="alertas-dica">Para ajustar os limites, acesse a edição do sensor em Estoques → Sensores.</p>
 </div>
 
 <div class="nav-rodape">

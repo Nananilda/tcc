@@ -1,128 +1,65 @@
 <?php
-/**
- * app/controllers/LeituraController.php
- * Controller: LeituraController
- * Recebe uma nova leitura de sensor, grava no banco e, se o valor ultrapassou
- * algum limite (AlertaModel::LIMITES), cria o ALERTA AUTOMÁTICO correspondente.
- *
- * É a "porta de entrada" dos dados dos sensores e tem dois usos:
- *   - api/leituras.php (POST): sensores/gateways (com a chave X-Chave-Sensor)
- *     ou um administrador logado enviam {sensor_id, valor};
- *   - tela web "Novo alerta" (app/views/graficos/novo_alerta.php): o administrador
- *     simula uma leitura para testar os limites durante a apresentação.
- *
- * A consulta das leituras para os gráficos fica no GraficoController /
- * LeituraModel::serie().
- */
-
-require_once __DIR__ . '/../models/LeituraModel.php';
-require_once __DIR__ . '/../models/SensorModel.php';
 require_once __DIR__ . '/../models/AlertaModel.php';
 
+/** Entrada única de leituras: validação, instantâneo histórico e alertas na mesma transação. */
 class LeituraController
 {
-    private LeituraModel $leituras;
-    private SensorModel $sensores;
-    private AlertaModel $alertas;
     private PDO $pdo;
+    public function __construct(PDO $pdo) { $this->pdo = $pdo; }
 
-    public function __construct(PDO $pdo)
-    {
-        $this->pdo = $pdo;
-        $this->leituras = new LeituraModel($pdo);
-        $this->sensores = new SensorModel($pdo);
-        $this->alertas = new AlertaModel($pdo);
-    }
-
-    /**
-     * Registra uma leitura e gera o alerta automático, se for o caso.
-     *
-     * @param array    $dados     sensor_id e valor (aceita vírgula decimal)
-     * @param int|null $usuarioId quem enviou (null = sensor/gateway), só para o log
-     * @return array{mensagem:string,erros:string[],leitura_id?:int,alerta?:?array}
-     *         `alerta` é null quando o valor está dentro dos limites; senão
-     *         {id, severidade, mensagem, novo} — `novo` é false quando já havia
-     *         um alerta pendente igual (nenhum duplicado é criado).
-     */
     public function registrar(array $dados, ?int $usuarioId = null): array
     {
-        $sensorId = (int) ($dados['sensor_id'] ?? 0);
+        $sensorId = filter_var($dados['sensor_id'] ?? null, FILTER_VALIDATE_INT, ['options'=>['min_range'=>1]]);
         $valor = lerNumero($dados['valor'] ?? null);
-
-        $erros = [];
-        if ($sensorId <= 0) {
-            $erros[] = 'Selecione o sensor da leitura.';
-        }
-        if ($valor === null) {
-            $erros[] = 'Informe o valor da leitura como um número (ex.: 36,5).';
-        }
-        if (!empty($erros)) {
-            return ['mensagem' => '', 'erros' => $erros];
-        }
-
+        if ($sensorId === false || $valor === null) return ['mensagem'=>'','erros'=>['Informe um sensor válido e um valor numérico (ex.: 36,5).']];
         try {
-            $sensor = $this->sensores->buscarPorId($sensorId);
-            if (!$sensor) {
-                return ['mensagem' => '', 'erros' => ['Sensor não encontrado.']];
-            }
-            if ($sensor['status'] !== 'ativo') {
-                return ['mensagem' => '', 'erros' => ["O sensor \"{$sensor['nome']}\" está inativo e não pode enviar leituras."]];
-            }
-
-            // Leitura e alerta andam juntos: ou gravam os dois, ou nenhum
             $this->pdo->beginTransaction();
-            $leituraId = $this->leituras->registrar($sensorId, $valor);
-            $alerta = $this->gerarAlertaAutomatico($sensor, $valor);
-            $this->pdo->commit();
-        } catch (PDOException $e) {
-            if ($this->pdo->inTransaction()) {
+            // O lock serializa ingestões deste sensor. Permissões da porta de entrada já foram verificadas.
+            $q=$this->pdo->prepare('SELECT s.*,e.status AS estoque_status FROM sensores s JOIN estoques e ON e.id=s.estoque_id WHERE s.id=:id FOR UPDATE');
+            $q->execute([':id'=>$sensorId]); $sensor=$q->fetch();
+            if (!$sensor || $sensor['status'] !== 'ativo' || $sensor['estoque_status'] !== 'ativo') {
                 $this->pdo->rollBack();
+                return ['mensagem'=>'','erros'=>['Sensor não encontrado ou sensor/estoque inativo.']];
             }
-            error_log('[' . APP_NOME . '] Erro ao registrar leitura: ' . $e->getMessage());
-            return ['mensagem' => '', 'erros' => ['Não foi possível registrar a leitura. Tente novamente.']];
+            $violacao=AlertaModel::avaliarLimite($sensor,$valor);
+            $params=[':sensor'=>$sensorId,':estoque'=>$sensor['estoque_id'],':valor'=>$valor,':situacao'=>$violacao['severidade'] ?? 'normal'];
+            foreach (['atencao_min','atencao_max','critico_min','critico_max'] as $campo) $params[':'.$campo]=$sensor['limite_'.$campo] ?? null;
+            $q=$this->pdo->prepare('INSERT INTO leitura_sensor(sensor_id,estoque_id,valor,lido_em,situacao,limite_atencao_min,limite_atencao_max,limite_critico_min,limite_critico_max) VALUES(:sensor,:estoque,:valor,NOW(),:situacao,:atencao_min,:atencao_max,:critico_min,:critico_max)');
+            $q->execute($params); $leituraId=(int)$this->pdo->lastInsertId();
+            $q=$this->pdo->prepare('UPDATE sensores SET ultima_comunicacao=NOW() WHERE id=:id'); $q->execute([':id'=>$sensorId]);
+            $alerta=$this->atualizarOcorrencia($sensor,$valor,$violacao);
+            $this->pdo->commit();
+        } catch (Throwable $e) {
+            if ($this->pdo->inTransaction()) $this->pdo->rollBack();
+            error_log('['.APP_NOME.'] Erro ao registrar leitura: '.$e->getMessage());
+            return ['mensagem'=>'','erros'=>['Não foi possível registrar a leitura. Tente novamente.']];
         }
-
-        $this->registrarLog($usuarioId, 'LEITURA_REGISTRADA', "Sensor ID $sensorId: $valor");
-
-        $mensagem = 'Leitura registrada.';
-        if ($alerta !== null) {
-            $grau = ['critico' => 'crítico', 'atencao' => 'de atenção', 'info' => 'informativo'][$alerta['severidade']];
-            $mensagem .= $alerta['novo']
-                ? " Alerta $grau gerado automaticamente: {$alerta['mensagem']}."
-                : " Já existe um alerta $grau pendente para este limite: {$alerta['mensagem']}.";
-        }
-
-        return ['mensagem' => $mensagem, 'erros' => [], 'leitura_id' => $leituraId, 'alerta' => $alerta];
+        if ($usuarioId !== null && function_exists('registrarLog')) registrarLog($this->pdo,$usuarioId,'LEITURA_MANUAL',"Sensor $sensorId, leitura $leituraId");
+        return ['mensagem'=>$alerta === null ? 'Leitura registrada. Condição ambiental normal.' : ($alerta['novo'] ? 'Leitura registrada e alerta gerado.' : 'Leitura registrada e ocorrência contínua atualizada.'),
+            'erros'=>[],'leitura_id'=>$leituraId,'estoque_id'=>(int)$sensor['estoque_id'],'situacao'=>$violacao['severidade'] ?? 'normal','alerta'=>$alerta];
     }
 
-    /**
-     * Aplica os limites do tipo do sensor e cria o alerta, evitando duplicar
-     * um alerta igual que ainda esteja pendente.
-     *
-     * @return array{id:int,severidade:string,mensagem:string,novo:bool}|null
-     */
-    private function gerarAlertaAutomatico(array $sensor, float $valor): ?array
+    private function atualizarOcorrencia(array $sensor,float $valor,?array $violacao): ?array
     {
-        $violacao = AlertaModel::avaliarLimite($sensor['tipo'], $valor);
+        $id=(int)$sensor['id'];
         if ($violacao === null) {
-            return null;
+            // Normalizar não encerra atendimento: os dois momentos ficam registrados separadamente.
+            $q=$this->pdo->prepare("UPDATE alertas SET normalizado_em=NOW(),status=IF(resolvido=1,'resolvido','normalizado') WHERE sensor_id=:sensor AND estoque_id=:estoque AND automatico=1 AND normalizado_em IS NULL");
+            $q->execute([':sensor'=>$id,':estoque'=>$sensor['estoque_id']]); return null;
         }
-
-        $sensorId = (int) $sensor['id'];
-        $existente = $this->alertas->buscarPendenteIgual($sensorId, $violacao['severidade'], $violacao['mensagem']);
-        if ($existente !== null) {
-            return $violacao + ['id' => $existente, 'novo' => false];
+        // Mesmo após resolução administrativa, não repetir a ocorrência até haver normalização real.
+        $q=$this->pdo->prepare('SELECT id,severidade FROM alertas WHERE sensor_id=:sensor AND estoque_id=:estoque AND automatico=1 AND normalizado_em IS NULL ORDER BY id DESC LIMIT 1');
+        $q->execute([':sensor'=>$id,':estoque'=>$sensor['estoque_id']]); $existente=$q->fetch();
+        if ($existente) {
+            // Mantém o maior grau observado durante a ocorrência e o respectivo valor/limite.
+            if ($existente['severidade'] !== 'critico' || $violacao['severidade'] === 'critico') {
+                $q=$this->pdo->prepare('UPDATE alertas SET severidade=:grau,mensagem=:mensagem,valor=:valor,limite_ultrapassado=:limite WHERE id=:id');
+                $q->execute([':grau'=>$violacao['severidade'],':mensagem'=>$violacao['mensagem'],':valor'=>$valor,':limite'=>$violacao['limite_ultrapassado'],':id'=>$existente['id']]);
+            }
+            return $violacao+['id'=>(int)$existente['id'],'novo'=>false];
         }
-
-        $id = $this->alertas->criar($sensorId, $violacao['severidade'], $violacao['mensagem'], $valor);
-        $this->registrarLog(null, 'ALERTA_AUTOMATICO', "Alerta ID $id ({$violacao['severidade']}): sensor $sensorId, valor $valor");
-        return $violacao + ['id' => $id, 'novo' => true];
-    }
-
-    private function registrarLog(?int $usuarioId, string $acao, string $detalhe): void
-    {
-        if (function_exists('registrarLog')) {
-            registrarLog($this->pdo, $usuarioId, $acao, $detalhe);
-        }
+        $q=$this->pdo->prepare('INSERT INTO alertas(sensor_id,estoque_id,severidade,mensagem,valor,limite_ultrapassado,automatico) VALUES(:sensor,:estoque,:grau,:mensagem,:valor,:limite,1)');
+        $q->execute([':sensor'=>$id,':estoque'=>$sensor['estoque_id'],':grau'=>$violacao['severidade'],':mensagem'=>$violacao['mensagem'],':valor'=>$valor,':limite'=>$violacao['limite_ultrapassado']]);
+        return $violacao+['id'=>(int)$this->pdo->lastInsertId(),'novo'=>true];
     }
 }
