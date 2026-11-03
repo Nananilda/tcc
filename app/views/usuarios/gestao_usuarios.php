@@ -11,10 +11,13 @@ exigirAdmin();
 require_once __DIR__ . '/../partials/icones.php';
 
 // Ações do menu: [ícone, título, descrição, página]
-$acoes = [
-    ['cadastrar', 'Realizar Cadastro', 'Criar um novo usuário no sistema.', 'cadastro.php'],
+
+  $acoes = [
+    ['lista', 'Listar Usuário', 'Consultar todos os usuários cadastrados.', 'listar.php'],
+    ['cadastrar', 'Realizar Usuário', 'Criar um novo usuário no sistema.', 'cadastro.php'],
     ['editar', 'Editar Usuário', 'Buscar e atualizar dados de um usuário existente.', 'editar.php'],
-    ['excluir', 'Excluir Cadastro', 'Remover permanentemente um usuário.', 'excluir.php'],
+    ['excluir', 'Excluir Usuário', 'Remover permanentemente um usuário.', 'excluir.php'],
+
 ];
 
 $tituloPagina = 'Gestão de Usuários';

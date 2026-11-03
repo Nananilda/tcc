@@ -16,8 +16,8 @@ $ehAdmin = ehAdmin();
 $acoes = [
    ['lista', 'Listar Sensores', 'Consultar todos os sensores cadastrados (somente leitura).', 'listar_sensores.php'],
 ];
-
 if ($ehAdmin) {
+   $acoes[] = ['cadastrar_sensor', 'Cadastrar Sensor', 'Cadastrar sensores.', 'criar_sensor.php'];
     $acoes[] = ['editar', 'Editar Sensores', 'Editar sensores.', 'editar_sensores.php'];
     $acoes[] = ['excluir', 'Excluir Sensores', 'Excluir sensores.', 'excluir_sensores.php'];
 }
