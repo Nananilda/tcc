@@ -34,7 +34,7 @@ app/views/           Páginas PHP e componentes compartilhados
 includes/            Sessão, CSRF, permissões e auditoria
 public/assets/       CSS, JavaScript, fontes, ícones e Chart.js local
 routes/              Atualização periódica para a sessão web
-sql/                 SQL da estrutura e demonstração opcional
+sql/                 SQL da estrutura, migração e gerador de demonstração (demonstracao.php)
 tests/               Testes de integração da API
 docs/                Documentação e capturas
 ```
@@ -53,3 +53,12 @@ O código Flutter não estava no material anexado; esta entrega contém o sistem
 ## Licenças
 
 Mantidas as licenças de Chart.js, Inter e Montserrat nos respectivos diretórios de `public/assets`. A marca e os arquivos de identidade visual originais foram preservados. As capturas em `docs/capturas` pertencem à versão anterior recebida; as capturas anteriores estão em `docs/capturas-v2` e as da revisão atual em `docs/capturas-v3`.
+
+
+## Revisão 3.1 — o que mudou e como aplicar
+
+- Após atualizar os arquivos, execute `php sql/migrar.php` (ou abra `atualizar-banco.php` como administrador). Faça backup antes.
+- Dados de demonstração: `php sql/demonstracao.php instalar | atualizar | remover` (marcados e separados dos dados reais; valores **simulados**).
+- Proteção de diretórios: veja `docs/SEGURANCA-SERVIDOR.md`. Em nginx é necessário configurar manualmente.
+- Limites ambientais, tipos de sensor e integração física: `docs/LIMITES-AMBIENTAIS.md` e `docs/SENSORES-E-INTEGRACAO.md`. Os valores genéricos **não são recomendações técnicas** e a integração com sensores físicos **não foi validada** neste repositório.
+- Aplicativo Flutter: `docs/INTEGRACAO-FLUTTER.md`.

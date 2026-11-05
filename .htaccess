@@ -1,0 +1,31 @@
+# ÁKRON — regras do Apache para a raiz do projeto (XAMPP, WAMP, cPanel/LiteSpeed).
+# Mantém públicos só as páginas (index.php, atualizar-banco.php, app/views/*, api/*, routes/*)
+# e public/assets. Pastas internas têm um .htaccess próprio negando o acesso:
+#   sql/ tests/ docs/ includes/ app/config/ app/models/ app/controllers/ app/services/ app/views/partials/
+# Em servidores sem suporte a .htaccess (nginx, php -S) veja docs/SEGURANCA-SERVIDOR.md.
+
+Options -Indexes
+
+# Arquivos ocultos, documentação, scripts e cópias de segurança na raiz.
+<FilesMatch "(^\.|\.(md|sql|py|cjs|sh|log|bak|dist|orig|swp|lock)$|^composer\.(json|lock)$)">
+    <IfModule mod_authz_core.c>
+        Require all denied
+    </IfModule>
+    <IfModule !mod_authz_core.c>
+        Order allow,deny
+        Deny from all
+    </IfModule>
+</FilesMatch>
+
+# .htaccess em si nunca é servido.
+<Files ".htaccess">
+    <IfModule mod_authz_core.c>
+        Require all denied
+    </IfModule>
+</Files>
+
+<IfModule mod_headers.c>
+    Header always set X-Content-Type-Options "nosniff"
+    Header always set X-Frame-Options "SAMEORIGIN"
+    Header always set Referrer-Policy "same-origin"
+</IfModule>

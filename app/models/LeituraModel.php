@@ -8,6 +8,9 @@ class LeituraModel
     public const ROTULOS_PERIODO = [6=>'6 h',12=>'12 h',24=>'24 h',48=>'48 h',168=>'7 dias'];
     private PDO $pdo;
     public function __construct(PDO $pdo) { $this->pdo = $pdo; }
+    /** Origem de cada leitura. Leituras anteriores à revisão 3.1 ficam 'nao_informada'. */
+    public const ORIGENS = ['sensor' => 'Sensor/gateway', 'manual' => 'Registro manual', 'demonstracao' => 'Demonstração', 'nao_informada' => 'Origem não informada'];
+    public static function rotuloOrigem(?string $origem): string { return self::ORIGENS[$origem ?? 'nao_informada'] ?? self::ORIGENS['nao_informada']; }
     public static function rotuloJanela(int $horas): string { return $horas === 168 ? 'últimos 7 dias' : "últimas $horas h"; }
     public static function normalizarSensor(?string $tipo): string { return SensorModel::tipoValido($tipo ?? '') ? $tipo : 'temperatura'; }
     public static function normalizarHoras($horas): int { return in_array((int)$horas,self::HORAS_VALIDAS,true) ? (int)$horas : 24; }
@@ -33,23 +36,62 @@ class LeituraModel
         $segundos=max(1,strtotime($faixa['fim'])-strtotime($faixa['inicio']));
         $passo=max(1,(int)ceil($segundos/240));
         $sql="SELECT l.sensor_id, s.nome AS sensor_nome, s.tipo AS sensor_tipo, l.estoque_id,
-            MIN(l.lido_em) AS inicio_intervalo, MAX(l.lido_em) AS lido_em, ROUND(AVG(l.valor),2) AS valor, COUNT(*) AS amostras,
+            s.intervalo_comunicacao, MIN(l.lido_em) AS inicio_intervalo, MAX(l.lido_em) AS lido_em, ROUND(AVG(l.valor),2) AS valor, COUNT(*) AS amostras,
             MAX(l.limite_atencao_min) AS limite_atencao_min,MAX(l.limite_atencao_max) AS limite_atencao_max,
             MAX(l.limite_critico_min) AS limite_critico_min,MAX(l.limite_critico_max) AS limite_critico_max
             FROM leitura_sensor l JOIN sensores s ON s.id=l.sensor_id WHERE $where
-            GROUP BY l.sensor_id,s.nome,s.tipo,l.estoque_id,FLOOR(UNIX_TIMESTAMP(l.lido_em)/$passo),
+            GROUP BY l.sensor_id,s.nome,s.tipo,s.intervalo_comunicacao,l.estoque_id,FLOOR(UNIX_TIMESTAMP(l.lido_em)/$passo),
             l.limite_atencao_min,l.limite_atencao_max,l.limite_critico_min,l.limite_critico_max
             ORDER BY lido_em,l.sensor_id";
         $st=$this->pdo->prepare($sql); $st->execute($params);
         $rows=$st->fetchAll();
-        foreach ($rows as &$row) { $row['valor']=(float)$row['valor'];$row['amostras']=(int)$row['amostras'];$row['unidade']=SensorModel::unidade($tipo); }
+        foreach ($rows as &$row) { $row['valor']=(float)$row['valor'];$row['amostras']=(int)$row['amostras'];$row['intervalo_comunicacao']=(int)$row['intervalo_comunicacao'];$row['unidade']=SensorModel::unidade($tipo); }
         return $rows;
+    }
+    /**
+     * Detecta períodos sem leituras de cada sensor. Há lacuna quando o intervalo entre o fim de um ponto
+     * e o início do seguinte (ou entre o último ponto e o fim da janela, se ela chega ao presente)
+     * passa de 2x o prazo de comunicação do próprio sensor. Nada é interpolado nem preenchido.
+     *
+     * @param array[] $pontos  linhas de serie() (ordenadas por tempo)
+     * @return array{pontos:array[], lacunas:array[], sensores_desatualizados:int[]}
+     */
+    public static function detectarLacunas(array $pontos, ?int $fimJanela, int $agora): array
+    {
+        $grupos = [];
+        foreach ($pontos as $i => $p) $grupos[$p['sensor_id'] . ':' . $p['estoque_id']][] = $i;
+        $lacunas = []; $desatualizados = [];
+        foreach ($grupos as $indices) {
+            $limiar = 2 * max(1, (int) ($pontos[$indices[0]]['intervalo_comunicacao'] ?? 300));
+            usort($indices, fn($a, $b) => strcmp($pontos[$a]['lido_em'], $pontos[$b]['lido_em']));
+            foreach ($indices as $k => $i) {
+                $pontos[$i]['lacuna_antes'] = false;
+                if ($k === 0) continue;
+                $anterior = $pontos[$indices[$k - 1]];
+                $segundos = strtotime($pontos[$i]['inicio_intervalo']) - strtotime($anterior['lido_em']);
+                if ($segundos > $limiar) {
+                    $pontos[$i]['lacuna_antes'] = true;
+                    $lacunas[] = ['sensor_id' => (int) $anterior['sensor_id'], 'estoque_id' => (int) $anterior['estoque_id'],
+                        'de' => $anterior['lido_em'], 'ate' => $pontos[$i]['inicio_intervalo'], 'segundos' => $segundos, 'aberta' => false];
+                }
+            }
+            $ultimo = $pontos[end($indices)];
+            if ($fimJanela !== null && $fimJanela >= $agora - 1) { // a janela chega ao momento atual
+                $parado = $agora - strtotime($ultimo['lido_em']);
+                if ($parado > $limiar) {
+                    $lacunas[] = ['sensor_id' => (int) $ultimo['sensor_id'], 'estoque_id' => (int) $ultimo['estoque_id'],
+                        'de' => $ultimo['lido_em'], 'ate' => date('Y-m-d H:i:s', $agora), 'segundos' => $parado, 'aberta' => true];
+                    $desatualizados[] = (int) $ultimo['sensor_id'];
+                }
+            }
+        }
+        return ['pontos' => $pontos, 'lacunas' => $lacunas, 'sensores_desatualizados' => array_values(array_unique($desatualizados))];
     }
     public function atuais(int $estoqueId=0,int $sensorId=0): array
     {
         $where=escopoEstoque('s.estoque_id');$params=[];
         foreach(['estoque_id'=>$estoqueId,'id'=>$sensorId] as $campo=>$id) if($id>0){$where.=" AND s.$campo=:$campo";$params[":$campo"]=$id;}
-        $st=$this->pdo->prepare("SELECT s.*, e.nome AS estoque_nome, l.valor AS ultimo_valor,l.lido_em,
+        $st=$this->pdo->prepare("SELECT s.*, e.nome AS estoque_nome, l.valor AS ultimo_valor,l.lido_em,l.origem AS ultima_origem,
             l.situacao AS situacao_ambiental,
             CASE WHEN s.status='inativo' OR e.status='inativo' THEN 'inativo'
             WHEN l.lido_em IS NULL OR TIMESTAMPDIFF(SECOND,l.lido_em,NOW())>s.intervalo_comunicacao THEN 'sem_comunicacao'
@@ -61,14 +103,14 @@ class LeituraModel
         foreach($rows as &$row) { $row['unidade']=SensorModel::unidade($row['tipo']); $row['ultimo_valor']=$row['ultimo_valor']===null?null:(float)$row['ultimo_valor']; }
         return $rows;
     }
-    public function registrar(int $sensorId,float $valor,?array $sensor=null): int
+    public function registrar(int $sensorId,float $valor,?array $sensor=null,string $origem='manual'): int
     {
         if($sensor===null){$st=$this->pdo->prepare('SELECT * FROM sensores WHERE id=?');$st->execute([$sensorId]);$sensor=$st->fetch();}
         if(!$sensor) throw new InvalidArgumentException('Sensor não encontrado.');
         $situacao='normal';
         foreach(['atencao','critico'] as $nivel) if(($sensor["limite_{$nivel}_min"]!==null && $valor<$sensor["limite_{$nivel}_min"])||($sensor["limite_{$nivel}_max"]!==null && $valor>$sensor["limite_{$nivel}_max"])) $situacao=$nivel;
-        $st=$this->pdo->prepare('INSERT INTO leitura_sensor (sensor_id,estoque_id,valor,situacao,limite_atencao_min,limite_atencao_max,limite_critico_min,limite_critico_max,lido_em) VALUES (?,?,?,?,?,?,?,?,NOW())');
-        $st->execute([$sensorId,$sensor['estoque_id'],$valor,$situacao,$sensor['limite_atencao_min'],$sensor['limite_atencao_max'],$sensor['limite_critico_min'],$sensor['limite_critico_max']]);
+        $st=$this->pdo->prepare('INSERT INTO leitura_sensor (sensor_id,estoque_id,valor,situacao,limite_atencao_min,limite_atencao_max,limite_critico_min,limite_critico_max,origem,lido_em) VALUES (?,?,?,?,?,?,?,?,?,NOW())');
+        $st->execute([$sensorId,$sensor['estoque_id'],$valor,$situacao,$sensor['limite_atencao_min'],$sensor['limite_atencao_max'],$sensor['limite_critico_min'],$sensor['limite_critico_max'],isset(self::ORIGENS[$origem])?$origem:'manual']);
         return (int)$this->pdo->lastInsertId();
     }
 }

@@ -86,3 +86,11 @@ A identidade vem da sessão. Enviar `id`, `usuario_id`, `tipo`, `status`, `estoq
 Relatórios aceitam `por_pagina` (25, 50, 100 ou 200; padrão da API 200). Retornam `total` e `total_alertas` integrais. A lista resumida `alertas` contém até 25 entradas na consulta paginada; exportar PDF inclui todas. `horas` (6, 12, 24, 48 ou 168), sem datas, seleciona uma janela móvel coerente com o monitoramento. Datas explícitas têm prioridade. Datas JSON continuam em formato SQL para compatibilidade; HTML/CSV/PDF usam apresentação brasileira.
 
 As rotas `routes/historico.php` e `routes/exportar.php` usam a sessão web, validam o acesso aos estoques e atendem aos botões da interface. O aplicativo externo continua usando os endpoints Bearer de `api/`.
+
+
+## Alterações da revisão 3.1
+
+- **Estoques** (`estoques.php`): cada estoque traz `condicao_ambiental` (`normal|atencao|critico|indisponivel`), `comunicacao_estado` (`todos_online|parcial|sem_comunicacao|sem_sensores`), `situacao_cadastral` (`ativo|inativo`) com os respectivos `*_rotulo`, além de `sensores_ativos`, `sensores_online`, `sensores_sem_comunicacao`, `sensores_sem_comunicacao_nomes`, `sensores_criticos`, `sensores_atencao`, `alertas_ativos` e `alertas_criticos_pendentes`. O campo `condicao` foi mantido por compatibilidade, mas **agora contém somente a condição ambiental**; nunca mais "Sem comunicação"/"Sem sensores".
+- **Séries de gráfico** (`leituras.php`, `routes/grafico_dados.php`): cada ponto traz `intervalo_comunicacao` e `lacuna_antes`; a resposta traz `lacunas` (`sensor_id`, `de`, `ate`, `segundos`, `aberta`), `sensores_desatualizados` e `janela` (`inicio`, `fim`). Há lacuna quando passam mais de 2x o prazo de comunicação do sensor entre dois pontos. Clientes não devem ligar pontos separados por lacuna.
+- **Origem do dado**: leituras e valores atuais informam `origem` / `ultima_origem` (`sensor`, `manual`, `demonstracao`, `nao_informada`). Definida pelo servidor, não pelo corpo da requisição.
+- **Login** (`login.php`): 5 falhas em 15 minutos bloqueiam o IP e o login; a resposta é HTTP 401 com `mensagem` indicando o tempo restante.

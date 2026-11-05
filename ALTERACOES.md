@@ -32,3 +32,20 @@ Referência: `alterações tcc (1).docx`, fornecido junto com `tcc.zip`. A marca
 - CSV de relatórios contém todas as leituras filtradas. CSV de alertas contém todas as ocorrências filtradas. CSV dos detalhes é dividido em seções (identificação, sensores, resumo, leituras e alertas); PDF dos detalhes inclui essas mesmas informações.
 - A página de relatórios mostra até 25 alertas no resumo para não crescer indefinidamente. A página Alertas permite percorrer todos; o PDF do relatório inclui o conjunto completo.
 - Código Dart/Flutter e dispositivos físicos não estavam no ZIP. A API de sessão por Bearer foi mantida; foi acrescentado `api/conta.php`. A validação de hardware e de aplicativos externos depende desses componentes.
+
+
+## Revisão 3.1
+
+**Segurança.** Bloqueio real de tentativas de login (tabela `tentativas_login`; 5 falhas/15 min por IP e por login; liberação automática). Proteção HTTP de `sql/`, `tests/`, `docs/`, `includes/`, `app/config/`, `app/models/`, `app/controllers/`, `app/services/` e `app/views/partials/` por `.htaccess`; `router-dev.php` para `php -S`; regras nginx em `docs/SEGURANCA-SERVIDOR.md`.
+
+**Estado dos estoques.** `EstoqueModel::classificar()` separa condição ambiental, comunicação e situação cadastral. Falha de comunicação não vira irregularidade ambiental; só leituras recentes de sensores ativos entram na avaliação; estoque sem sensores é "Indisponível".
+
+**Gráficos.** Eixo temporal real, sem `spanGaps`; lacunas detectadas no servidor e desenhadas como faixa hachurada; eixo só com datas, horário exato no tooltip; leitura individual × média diferenciadas. Monitoramento com gráficos recolhíveis, seleção de tipos e preferências salvas. Painel só exibe tipos com dados.
+
+**Interface.** Cartões de estoque, estado do estoque, alertas (10/25/50/100, faixa de críticos pendentes, estados distintos), Minha conta (foto com prévia/cancelar, senha expansível, estoques compactos), seções do sensor, filtros de sensores, textos "Selecione…" no lugar de "—".
+
+**Dados.** `leitura_sensor.origem`; `estoques.demonstracao` e `usuario.demonstracao`; `sql/demonstracao.php` (substitui `sql/dados_exemplo.sql`).
+
+**Migração.** Versão `2026_revisao_31`; execute `php sql/migrar.php` ou abra `atualizar-banco.php` como administrador. Faça backup antes. Instalações já migradas não têm vínculos nem limites regravados.
+
+**Documentos novos.** `docs/LIMITES-AMBIENTAIS.md`, `docs/SEGURANCA-SERVIDOR.md`, `docs/SENSORES-E-INTEGRACAO.md`, `docs/INTEGRACAO-FLUTTER.md`.

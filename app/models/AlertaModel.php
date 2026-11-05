@@ -10,7 +10,11 @@ class AlertaModel
         'info' => 'Informativo',
     ];
 
-    /** Valores iniciais para migração/novos sensores; a avaliação usa a configuração individual. */
+    /**
+     * Valores GENÉRICOS de partida, sem validação documental: não são recomendações técnicas e não servem
+     * para qualquer produto. Novos sensores nascem sem limites; a avaliação usa sempre os limites configurados
+     * por sensor. Detalhes e pendências de validação: docs/LIMITES-AMBIENTAIS.md.
+     */
     public const LIMITES = [
         'temperatura' => ['max' => ['atencao' => 30, 'critico' => 35]],
         'ruido' => ['max' => ['atencao' => 85, 'critico' => 95]],

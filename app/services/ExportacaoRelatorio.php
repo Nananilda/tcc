@@ -1,4 +1,5 @@
 <?php
+require_once __DIR__.'/../models/LeituraModel.php';
 require_once __DIR__.'/RelatorioPdf.php';
 /** Exporta a consulta integral, com o mesmo escopo e filtros da interface. */
 function exportarRelatorio(array $resultado, string $formato): never
@@ -13,9 +14,9 @@ function exportarRelatorio(array $resultado, string $formato): never
         header('Content-Disposition: attachment; filename="akron-leituras.csv"');
         $saida = fopen('php://output', 'w');
         fwrite($saida, "\xEF\xBB\xBF");
-        fputcsv($saida, ['Data e horário','Estoque','Sensor','Tipo','Valor','Unidade','Situação'], ';', '"', '');
+        fputcsv($saida, ['Data e horário','Estoque','Sensor','Tipo','Valor','Unidade','Situação','Origem do dado'], ';', '"', '');
         foreach ($resultado['leituras'] as $l) {
-            $campos = [dataBr($l['lido_em']),$l['estoque_nome'],$l['sensor_nome'],SensorModel::rotulo($l['sensor_tipo']),$l['valor'],$l['unidade'],['normal'=>'Normal','atencao'=>'Atenção','critico'=>'Crítico'][$l['situacao']]];
+            $campos = [dataBr($l['lido_em']),$l['estoque_nome'],$l['sensor_nome'],SensorModel::rotulo($l['sensor_tipo']),$l['valor'],$l['unidade'],['normal'=>'Normal','atencao'=>'Atenção','critico'=>'Crítico'][$l['situacao']],LeituraModel::rotuloOrigem($l['origem']??null)];
             // Impede que nomes cadastrados sejam interpretados como fórmulas na planilha.
             foreach ($campos as &$campo) if (is_string($campo) && preg_match('/^[=+@\-\t\r]/', $campo)) $campo = "'".$campo;
             unset($campo);

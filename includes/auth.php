@@ -12,7 +12,7 @@
  *   1. Sessão                       iniciarSessao()
  *   2. Autenticação                 autenticarUsuario()
  *   3. Proteção CSRF                gerarCSRF(), validarCSRF()
- *   4. Bloqueio por IP e logs       verificarBloqueioIP(), registrarLog()
+ *   4. Bloqueio de tentativas e logs verificarBloqueioIP(), reservarTentativaLogin(), registrarLog()
  *   5. Controle de acesso           verificarSessao(), exigirLogin(), exigirAdmin(), ehAdmin(), encerrarSessao()
  *   6. Validação de dados           validarLogin(), validarSenha()
  */
@@ -110,17 +110,123 @@ function gerarCSRF(): string
     return $_SESSION['csrf_token'];
 }
 
-// ─── BLOQUEIO POR IP ────────────────────────────────────────────────────────
+// ─── BLOQUEIO POR TENTATIVAS DE LOGIN ───────────────────────────────────────
+// Cada tentativa é gravada em `tentativas_login` ANTES de a senha ser conferida
+// (assim requisições simultâneas também são contadas). Falhas nunca são
+// "perdoadas" por um login bem-sucedido, para que alguém com uma conta própria
+// não consiga zerar o contador. Só o IP real da conexão (REMOTE_ADDR) é usado:
+// cabeçalhos como X-Forwarded-For podem ser forjados e anulariam a proteção.
+// Regra: LOGIN_MAX_TENTATIVAS falhas em LOGIN_JANELA_SEGUNDOS, contadas por IP
+// e também por login (este último barra ataques distribuídos em vários IPs).
+// O bloqueio termina sozinho quando as falhas mais antigas saem da janela.
+
+const LOGIN_MAX_TENTATIVAS = 5;
+const LOGIN_JANELA_SEGUNDOS = 900; // 15 minutos
+
+/** Padroniza o login para contagem (minúsculas, sem caracteres inválidos, até 100). */
+function loginParaContagem(string $login): string
+{
+    $login = preg_replace('/[^a-zA-Z0-9._\-@ ]/', '', trim($login)) ?? '';
+    return substr(function_exists('mb_strtolower') ? mb_strtolower($login) : strtolower($login), 0, 100);
+}
+
+/** Cria a tabela se a instalação ainda não passou pela migração (idempotente). */
+function garantirTabelaTentativas(PDO $pdo): void
+{
+    $pdo->exec("CREATE TABLE IF NOT EXISTS tentativas_login (
+        id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+        ip VARCHAR(45) NOT NULL,
+        login VARCHAR(100) NOT NULL DEFAULT '',
+        sucesso TINYINT(1) NOT NULL DEFAULT 0,
+        criado_em DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        INDEX idx_tentativa_ip (ip, sucesso, criado_em),
+        INDEX idx_tentativa_login (login, sucesso, criado_em)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+}
+
+/** Executa $acao tolerando a ausência da tabela (cria e repete uma vez). */
+function comTabelaTentativas(PDO $pdo, callable $acao)
+{
+    try {
+        return $acao();
+    } catch (PDOException $e) {
+        if (($e->errorInfo[1] ?? 0) !== 1146) throw $e; // 1146 = tabela inexistente
+        garantirTabelaTentativas($pdo);
+        return $acao();
+    }
+}
 
 /**
- * Verifica bloqueio por tentativas excessivas de login.
- * Sem uma tabela de tentativas dedicada no banco atual, esta verificação
- * fica desativada (sempre libera o acesso); o ponto de extensão está
- * pronto para quando a tabela `tentativas_login` existir.
+ * Situação do bloqueio para um IP (e, se informado, um login).
+ *
+ * @return array{bloqueado:bool, restante:int} `restante` em segundos até a liberação.
  */
-function verificarBloqueioIP(?PDO $pdo, string $ip): bool
+function statusBloqueioLogin(?PDO $pdo, string $ip, ?string $login = null): array
 {
-    return false;
+    if ($pdo === null) return ['bloqueado' => false, 'restante' => 0];
+    $restante = 0;
+    $consultas = [['ip', $ip]];
+    $loginNorm = $login === null ? '' : loginParaContagem($login);
+    if ($loginNorm !== '') $consultas[] = ['login', $loginNorm];
+    foreach ($consultas as [$coluna, $valor]) {
+        // A liberação ocorre quando a falha de posição MAX sai da janela.
+        $sql = "SELECT GREATEST(0, :janela - TIMESTAMPDIFF(SECOND, criado_em, NOW())) FROM tentativas_login
+                WHERE $coluna = :v AND sucesso = 0 AND criado_em >= DATE_SUB(NOW(), INTERVAL :janela2 SECOND)
+                ORDER BY criado_em DESC LIMIT 1 OFFSET " . (LOGIN_MAX_TENTATIVAS - 1);
+        $r = comTabelaTentativas($pdo, function () use ($pdo, $sql, $valor) {
+            $st = $pdo->prepare($sql);
+            $st->execute([':janela' => LOGIN_JANELA_SEGUNDOS, ':v' => $valor, ':janela2' => LOGIN_JANELA_SEGUNDOS]);
+            return $st->fetchColumn();
+        });
+        if ($r !== false) $restante = max($restante, (int) $r);
+    }
+    return ['bloqueado' => $restante > 0, 'restante' => $restante];
+}
+
+/** Compatível com a assinatura original: true se o IP (e o login, se dado) está bloqueado. */
+function verificarBloqueioIP(?PDO $pdo, string $ip, ?string $login = null): bool
+{
+    return statusBloqueioLogin($pdo, $ip, $login)['bloqueado'];
+}
+
+/** Texto do bloqueio, sempre coerente com o tempo real que falta. */
+function mensagemBloqueioLogin(int $restanteSegundos): string
+{
+    $min = max(1, (int) ceil($restanteSegundos / 60));
+    return 'Acesso temporariamente bloqueado por excesso de tentativas. Tente novamente em ' . $min . ($min === 1 ? ' minuto.' : ' minutos.');
+}
+
+/**
+ * Reserva uma tentativa de login. Devolve o id da tentativa, ou null se o
+ * bloqueio está ativo (nesse caso NADA é gravado, para que quem insiste não
+ * prolongue o próprio bloqueio indefinidamente). O trinco por IP impede que
+ * requisições simultâneas ultrapassem o limite.
+ *
+ * @return array{id:?int, restante:int}
+ */
+function reservarTentativaLogin(PDO $pdo, string $ip, string $login): array
+{
+    $trinco = 'akron_login_' . sha1($ip);
+    $st = $pdo->prepare('SELECT GET_LOCK(?, 3)'); $st->execute([$trinco]);
+    if ((int) $st->fetchColumn() !== 1) return ['id' => null, 'restante' => 60];
+    try {
+        $estado = statusBloqueioLogin($pdo, $ip, $login);
+        if ($estado['bloqueado']) return ['id' => null, 'restante' => $estado['restante']];
+        $pdo->prepare('INSERT INTO tentativas_login (ip, login, sucesso) VALUES (?,?,0)')->execute([$ip, loginParaContagem($login)]);
+        $id = (int) $pdo->lastInsertId();
+        if (random_int(1, 50) === 1) { // limpeza ocasional: guarda 30 dias de histórico
+            $pdo->exec('DELETE FROM tentativas_login WHERE criado_em < DATE_SUB(NOW(), INTERVAL 30 DAY)');
+        }
+        return ['id' => $id, 'restante' => 0];
+    } finally {
+        $r = $pdo->prepare('SELECT RELEASE_LOCK(?)'); $r->execute([$trinco]);
+    }
+}
+
+/** Marca a tentativa como bem-sucedida (deixa de contar como falha). */
+function concluirTentativaLogin(PDO $pdo, int $id): void
+{
+    $pdo->prepare('UPDATE tentativas_login SET sucesso = 1 WHERE id = ?')->execute([$id]);
 }
 
 // ─── LOGS ───────────────────────────────────────────────────────────────────

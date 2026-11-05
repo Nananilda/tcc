@@ -10,7 +10,7 @@ $alertas=[]; $contagem=['critico'=>0,'atencao'=>0,'info'=>0]; $total=0; $estoque
 $pagina=max(1,min(100000,(int)($_GET['pagina'] ?? 1))); $filtros=[];
 try {
     $filtros=AlertaModel::validarFiltros($_GET);
-    $porPagina=in_array((int)($_GET['por_pagina']??25),[25,50,100],true)?(int)($_GET['por_pagina']??25):25;
+    $porPagina=in_array((int)($_GET['por_pagina']??10),[10,25,50,100],true)?(int)($_GET['por_pagina']??10):10;
     $alertas=(new AlertaModel($pdo))->listarRecentes($porPagina,$filtros,$pagina);
     $total=$controller->contarTodos($filtros);
     $contagem=$controller->contarPorSeveridade($filtros);
@@ -35,8 +35,9 @@ require __DIR__.'/../partials/cabecalho.php';
 <?php endforeach; ?>
 <div><label for="data-inicial">Data inicial</label><input type="date" id="data-inicial" name="data_inicial" value="<?= escapar($filtros['data_inicial'] ?? '') ?>"></div>
 <div><label for="data-final">Data final</label><input type="date" id="data-final" name="data_final" value="<?= escapar($filtros['data_final'] ?? '') ?>"></div>
-<label>Registros por página<select name="por_pagina"><?php foreach([25,50,100] as $n): ?><option value="<?= $n ?>" <?= ($porPagina??25)===$n?'selected':'' ?>><?= $n ?></option><?php endforeach ?></select></label><div class="form-acoes"><button type="submit" class="btn">Filtrar</button><a href="alerta.php" class="btn-secundario">Limpar</a></div>
+<label>Registros por página<select name="por_pagina"><?php foreach([10,25,50,100] as $n): ?><option value="<?= $n ?>" <?= ($porPagina??10)===$n?'selected':'' ?>><?= $n ?></option><?php endforeach ?></select></label><div class="form-acoes"><button type="submit" class="btn">Filtrar</button><a href="alerta.php" class="btn-secundario">Limpar</a></div>
 </form>
+<?php if(!empty($contagem['critico'])): ?><div class="faixa-critica" role="status"><strong><?= (int)$contagem['critico'] ?> alerta(s) crítico(s) ativo(s)</strong> nos filtros selecionados. Os críticos pendentes aparecem primeiro na lista.</div><?php endif ?>
 <div class="alertas-cards" aria-label="Alertas ativos nos filtros selecionados">
 <?php foreach(AlertaModel::SEVERIDADES as $grau=>$rotulo): ?><div class="card-severidade <?= $grau ?>"><strong class="valor"><?= $contagem[$grau] ?></strong><span><?= $rotulo ?> · ativos</span></div><?php endforeach; ?>
 </div>
@@ -44,9 +45,10 @@ require __DIR__.'/../partials/cabecalho.php';
 <section class="card"><h2>Histórico de alertas</h2><p><?= $total ?> registro(s). Reconhecimento, normalização e resolução são momentos diferentes do atendimento.</p>
 <?php if(!$alertas): ?><p class="msg-vazio">Nenhum alerta encontrado para os filtros selecionados.</p><?php endif; ?>
 <div class="alertas-grade"><?php $permitirAcoes=true;foreach($alertas as $a) require __DIR__.'/../partials/cartao_alerta.php'; ?></div>
+<?php $totalPaginas=max(1,(int)ceil($total/$porPagina));$base=$filtros+['por_pagina'=>$porPagina];$de=$total?($pagina-1)*$porPagina+1:0;$ate=min($total,$pagina*$porPagina); ?>
 <nav class="paginacao" aria-label="Páginas de alertas">
-<?php if($pagina>1): ?><a class="btn-secundario" href="?<?= escapar(http_build_query($filtros+['por_pagina'=>$porPagina,'pagina'=>$pagina-1])) ?>">Anterior</a><?php endif; ?>
-<span>Página <?= $pagina ?> de <?= max(1,(int)ceil($total/$porPagina)) ?></span>
-<?php if($pagina*$porPagina<$total): ?><a class="btn-secundario" href="?<?= escapar(http_build_query($filtros+['por_pagina'=>$porPagina,'pagina'=>$pagina+1])) ?>">Próxima</a><?php endif; ?>
+<?php if($pagina>1): ?><a class="btn-secundario" href="?<?= escapar(http_build_query($base+['pagina'=>1])) ?>" aria-label="Primeira página">«</a><a class="btn-secundario" href="?<?= escapar(http_build_query($base+['pagina'=>$pagina-1])) ?>">Anterior</a><?php endif; ?>
+<span>Mostrando <?= $de ?>–<?= $ate ?> de <?= $total ?> · página <?= $pagina ?> de <?= $totalPaginas ?></span>
+<?php if($pagina<$totalPaginas): ?><a class="btn-secundario" href="?<?= escapar(http_build_query($base+['pagina'=>$pagina+1])) ?>">Próxima</a><a class="btn-secundario" href="?<?= escapar(http_build_query($base+['pagina'=>$totalPaginas])) ?>" aria-label="Última página">»</a><?php endif; ?>
 </nav></section>
 <?php require __DIR__.'/../partials/rodape.php'; ?>

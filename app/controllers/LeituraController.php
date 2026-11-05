@@ -1,5 +1,6 @@
 <?php
 require_once __DIR__ . '/../models/AlertaModel.php';
+require_once __DIR__ . '/../models/LeituraModel.php';
 
 /** Entrada única de leituras: validação, instantâneo histórico e alertas na mesma transação. */
 class LeituraController
@@ -7,7 +8,8 @@ class LeituraController
     private PDO $pdo;
     public function __construct(PDO $pdo) { $this->pdo = $pdo; }
 
-    public function registrar(array $dados, ?int $usuarioId = null): array
+    /** $origem vem do canal autenticado (gateway com chave = 'sensor'; administrador = 'manual'), nunca do corpo da requisição. */
+    public function registrar(array $dados, ?int $usuarioId = null, string $origem = 'manual'): array
     {
         $sensorId = filter_var($dados['sensor_id'] ?? null, FILTER_VALIDATE_INT, ['options'=>['min_range'=>1]]);
         $valor = lerNumero($dados['valor'] ?? null);
@@ -24,7 +26,8 @@ class LeituraController
             $violacao=AlertaModel::avaliarLimite($sensor,$valor);
             $params=[':sensor'=>$sensorId,':estoque'=>$sensor['estoque_id'],':valor'=>$valor,':situacao'=>$violacao['severidade'] ?? 'normal'];
             foreach (['atencao_min','atencao_max','critico_min','critico_max'] as $campo) $params[':'.$campo]=$sensor['limite_'.$campo] ?? null;
-            $q=$this->pdo->prepare('INSERT INTO leitura_sensor(sensor_id,estoque_id,valor,lido_em,situacao,limite_atencao_min,limite_atencao_max,limite_critico_min,limite_critico_max) VALUES(:sensor,:estoque,:valor,NOW(),:situacao,:atencao_min,:atencao_max,:critico_min,:critico_max)');
+            $q=$this->pdo->prepare('INSERT INTO leitura_sensor(sensor_id,estoque_id,valor,lido_em,situacao,limite_atencao_min,limite_atencao_max,limite_critico_min,limite_critico_max,origem) VALUES(:sensor,:estoque,:valor,NOW(),:situacao,:atencao_min,:atencao_max,:critico_min,:critico_max,:origem)');
+            $params[':origem']=isset(LeituraModel::ORIGENS[$origem])&&$origem!=='nao_informada'?$origem:'manual';
             $q->execute($params); $leituraId=(int)$this->pdo->lastInsertId();
             $q=$this->pdo->prepare('UPDATE sensores SET ultima_comunicacao=NOW() WHERE id=:id'); $q->execute([':id'=>$sensorId]);
             $alerta=$this->atualizarOcorrencia($sensor,$valor,$violacao);

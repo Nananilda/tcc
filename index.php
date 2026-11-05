@@ -41,11 +41,21 @@ if (isset($_GET['erro'], $motivosRedirecionamento[$_GET['erro']])) {
     $aviso = 'Você saiu do sistema.';
 }
 
-// ── Bloqueio por tentativas excessivas (5 tentativas em 15 min) ──────────────
+// ── Bloqueio por tentativas excessivas (5 falhas em 15 min, por IP ou login) ──
+// A contagem real é feita no AuthController; aqui só se avisa e se desativa o
+// formulário quando o IP já está bloqueado, com o tempo que realmente falta.
 $ip = $_SERVER['REMOTE_ADDR'] ?? '0.0.0.0';
-$tentativasBloqueadas = verificarBloqueioIP($pdo, $ip);
-if ($tentativasBloqueadas) {
-    $erro = 'Acesso temporariamente bloqueado. Tente novamente em 15 minutos.';
+$tentativasBloqueadas = false;
+try {
+    $estadoIp = statusBloqueioLogin($pdo, $ip);
+    if ($estadoIp['bloqueado']) {
+        $tentativasBloqueadas = true;
+        $erro = mensagemBloqueioLogin($estadoIp['restante']);
+    }
+} catch (Throwable $e) {
+    error_log('[ÁKRON] Falha ao consultar bloqueio: ' . $e->getMessage());
+    $tentativasBloqueadas = true;
+    $erro = 'Não foi possível verificar o acesso agora. Tente novamente em instantes.';
 }
 
 // ── Envio do formulário ──────────────────────────────────────────────────────
@@ -128,6 +138,7 @@ require __DIR__ . '/app/views/partials/head.php';
         <h2 id="sobre-titulo">Conheça o ÁKRON</h2>
         <p>Monitore as condições ambientais dos seus estoques por meio de sensores conectados.</p>
         <p>Acompanhe temperatura, umidade, qualidade do ar, ruído, pressão e índice UV, consulte históricos e relatórios e receba alertas quando as medições ultrapassarem os limites configurados.</p>
+        <p>Por segurança, após 5 tentativas de acesso malsucedidas em 15 minutos o acesso é bloqueado temporariamente e liberado automaticamente depois desse período.</p>
         <form method="dialog"><button>Fechar explicação</button></form>
     </dialog>
 </body>

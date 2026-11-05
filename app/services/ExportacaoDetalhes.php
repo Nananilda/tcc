@@ -1,4 +1,5 @@
 <?php
+require_once __DIR__.'/../models/LeituraModel.php';
 require_once __DIR__.'/RelatorioPdf.php';
 function escreverCsv($saida,array $campos): void
 {
@@ -18,8 +19,8 @@ function exportarDetalhes(array $r,string $formato,string $nome): never
     if($nome!=='alertas'){
         escreverCsv($s,['RESUMO']);escreverCsv($s,['Tipo','Leituras','Média','Mínimo','Máximo','Leituras fora dos limites']);
         foreach($r['resumo']??[] as $v)escreverCsv($s,[SensorModel::rotuloComUnidade($v['sensor_tipo']),$v['total'],$v['media'],$v['minimo'],$v['maximo'],$v['fora_limites']]);
-        escreverCsv($s,['HISTÓRICO DE LEITURAS']);escreverCsv($s,['Data e horário','Estoque','Sensor','Tipo','Valor','Unidade','Estado ambiental']);
-        foreach($r['leituras']??[] as $l)escreverCsv($s,[dataBr($l['lido_em']),$l['estoque_nome'],$l['sensor_nome'],SensorModel::rotulo($l['sensor_tipo']),$l['valor'],$l['unidade'],['normal'=>'Normal','atencao'=>'Atenção','critico'=>'Crítico'][$l['situacao']]]);
+        escreverCsv($s,['HISTÓRICO DE LEITURAS']);escreverCsv($s,['Data e horário','Estoque','Sensor','Tipo','Valor','Unidade','Estado ambiental','Origem do dado']);
+        foreach($r['leituras']??[] as $l)escreverCsv($s,[dataBr($l['lido_em']),$l['estoque_nome'],$l['sensor_nome'],SensorModel::rotulo($l['sensor_tipo']),$l['valor'],$l['unidade'],['normal'=>'Normal','atencao'=>'Atenção','critico'=>'Crítico'][$l['situacao']],LeituraModel::rotuloOrigem($l['origem']??null)]);
     }
     if($nome!=='alertas')escreverCsv($s,['ALERTAS']);
     escreverCsv($s,['ID','Gravidade','Mensagem','Estoque','Sensor','Valor registrado','Unidade','Limite ultrapassado','Data e horário','Situação','Reconhecido por','Reconhecido em','Normalizado em','Resolvido por','Resolvido em','Observações']);

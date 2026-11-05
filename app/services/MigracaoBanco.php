@@ -2,21 +2,24 @@
 /** Atualização compartilhada pelo terminal e pela tela administrativa. */
 final class MigracaoBanco
 {
-    private const VERSAO = '2026_conta_interface_02';
+    private const VERSAO = '2026_revisao_31';
+    /** Versões que já executaram a parte de dados (vínculos e limites iniciais): não repetir. */
+    private const VERSOES_ANTERIORES = ['2026_estoques_01', '2026_conta_interface_02'];
 
     public static function pendente(PDO $pdo): bool
     {
         // Verifica a estrutura real, inclusive quando schema.sql foi importado
         // sobre tabelas antigas ou uma migração foi interrompida.
         $necessarias = [
-            'usuario' => ['criado_em','tema','foto','administrador_principal'],
-            'estoques' => ['id','nome','descricao','localizacao','status','criado_em'],
+            'usuario' => ['criado_em','tema','foto','administrador_principal','demonstracao'],
+            'estoques' => ['id','nome','descricao','localizacao','status','criado_em','demonstracao'],
             'usuario_estoque' => ['usuario_id','estoque_id'],
             'auditoria' => ['usuario_id','acao','descricao','criado_em'],
             'sensores' => ['estoque_id','limite_atencao_min','limite_atencao_max','limite_critico_min','limite_critico_max','intervalo_comunicacao','ultima_comunicacao'],
-            'leitura_sensor' => ['estoque_id','limite_atencao_min','limite_atencao_max','limite_critico_min','limite_critico_max','situacao'],
+            'leitura_sensor' => ['origem','estoque_id','limite_atencao_min','limite_atencao_max','limite_critico_min','limite_critico_max','situacao'],
             'alertas' => ['estoque_id','limite_ultrapassado','status','reconhecido_por','reconhecido_em','resolvido_em','normalizado_em','observacoes','automatico'],
             'migracoes' => ['versao','aplicado_em'],
+            'tentativas_login' => ['ip','login','sucesso','criado_em'],
         ];
         $colunas = [];
         foreach ($pdo->query('SELECT TABLE_NAME, COLUMN_NAME FROM information_schema.COLUMNS WHERE TABLE_SCHEMA=DATABASE()')->fetchAll() as $row) {
@@ -62,7 +65,8 @@ final class MigracaoBanco
         try {
             $pdo->exec("CREATE TABLE IF NOT EXISTS migracoes (versao VARCHAR(80) PRIMARY KEY, aplicado_em DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP) ENGINE=InnoDB");
             if (!self::pendente($pdo)) return false;
-            $jaAplicada = self::registrada($pdo) || self::registrada($pdo, '2026_estoques_01');
+            $jaAplicada = self::registrada($pdo);
+            foreach (self::VERSOES_ANTERIORES as $anterior) $jaAplicada = $jaAplicada || self::registrada($pdo, $anterior);
             // DDL no MySQL confirma transações implicitamente. Cada etapa é retomável;
             // a versão só é marcada após a migração de dados e todos os vínculos.
             $schema=file_get_contents(__DIR__.'/../../sql/schema.sql');
@@ -80,6 +84,13 @@ final class MigracaoBanco
             self::coluna($pdo,'usuario','tema',"ENUM('claro','escuro','automatico') NOT NULL DEFAULT 'automatico'");
             self::coluna($pdo,'usuario','foto','MEDIUMTEXT NULL');
             self::coluna($pdo,'usuario','administrador_principal','TINYINT(1) NOT NULL DEFAULT 0');
+            // Revisão 3.1: identificação de dados de demonstração, origem das leituras e controle de tentativas de login.
+            self::coluna($pdo,'usuario','demonstracao','TINYINT(1) NOT NULL DEFAULT 0');
+            self::coluna($pdo,'estoques','demonstracao','TINYINT(1) NOT NULL DEFAULT 0');
+            // Leituras anteriores não têm origem conhecida: ficam como 'nao_informada', nunca presumidas como de sensor físico.
+            self::coluna($pdo,'leitura_sensor','origem',"ENUM('sensor','manual','demonstracao','nao_informada') NOT NULL DEFAULT 'nao_informada'");
+            require_once __DIR__ . '/../../includes/auth.php';
+            garantirTabelaTentativas($pdo);
             if (!(int)$pdo->query('SELECT COUNT(*) FROM usuario WHERE administrador_principal=1')->fetchColumn()) {
                 $principal=$pdo->query("SELECT id FROM usuario WHERE tipo='admin' ORDER BY id LIMIT 1")->fetchColumn();
                 if ($principal) $pdo->prepare('UPDATE usuario SET administrador_principal=1 WHERE id=?')->execute([$principal]);
@@ -91,6 +102,8 @@ final class MigracaoBanco
             $pdo->exec("UPDATE sensores SET estoque_id=$initial WHERE estoque_id IS NULL");
             if (!$jaAplicada) $pdo->exec("INSERT IGNORE INTO usuario_estoque (usuario_id,estoque_id) SELECT id,$initial FROM usuario");
             // Copia os limites existentes no código antigo; não altera regras de negócio.
+            // Valores genéricos aplicados uma única vez, e só onde TODOS os limites do sensor estavam vazios (instalações da versão 2).
+            // Não têm validação documental: ver docs/LIMITES-AMBIENTAIS.md.
             $regras=['temperatura'=>[null,30,null,35],'ruido'=>[null,85,null,95],'qualidade_ar'=>[null,100,null,150],'umidade'=>[35,80,20,90],'pressao'=>[1000,1030,990,1040],'uv'=>[null,6,null,8]];
             $q=$pdo->prepare('UPDATE sensores SET limite_atencao_min=?,limite_atencao_max=?,limite_critico_min=?,limite_critico_max=? WHERE tipo=? AND limite_atencao_min IS NULL AND limite_atencao_max IS NULL AND limite_critico_min IS NULL AND limite_critico_max IS NULL');
             if (!$jaAplicada) foreach ($regras as $tipo=>$valores) $q->execute([...$valores,$tipo]);

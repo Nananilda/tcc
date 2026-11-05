@@ -1,4 +1,4 @@
--- ÁKRON 3.0 — INSTALAÇÃO NOVA / MYSQL WORKBENCH
+-- ÁKRON 3.1 — INSTALAÇÃO NOVA / MYSQL WORKBENCH
 -- Execute o arquivo inteiro no Workbench com um usuário que possa criar o banco.
 -- Banco: banco_tcc. Sem registros de exemplo; cria somente o administrador.
 -- Login no site: admin | Senha inicial: Admin@123. Altere em Minha conta.
@@ -24,7 +24,8 @@ CREATE TABLE IF NOT EXISTS usuario (
     criado_em DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     tema ENUM('claro','escuro','automatico') NOT NULL DEFAULT 'automatico',
     foto MEDIUMTEXT NULL,
-    administrador_principal TINYINT(1) NOT NULL DEFAULT 0
+    administrador_principal TINYINT(1) NOT NULL DEFAULT 0,
+    demonstracao TINYINT(1) NOT NULL DEFAULT 0
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS estoques (
@@ -33,7 +34,8 @@ CREATE TABLE IF NOT EXISTS estoques (
     descricao TEXT NULL,
     localizacao VARCHAR(150) NULL,
     status ENUM('ativo','inativo') NOT NULL DEFAULT 'ativo',
-    criado_em DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+    criado_em DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    demonstracao TINYINT(1) NOT NULL DEFAULT 0
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS usuario_estoque (
@@ -91,6 +93,7 @@ CREATE TABLE IF NOT EXISTS leitura_sensor (
     limite_atencao_max DECIMAL(10,2) NULL,
     limite_critico_min DECIMAL(10,2) NULL,
     limite_critico_max DECIMAL(10,2) NULL,
+    origem ENUM('sensor','manual','demonstracao','nao_informada') NOT NULL DEFAULT 'nao_informada',
     CONSTRAINT fk_leitura_estoque FOREIGN KEY (estoque_id) REFERENCES estoques(id) ON DELETE RESTRICT ON UPDATE CASCADE,
     CONSTRAINT fk_leitura_sensor
         FOREIGN KEY (sensor_id)
@@ -139,6 +142,18 @@ CREATE TABLE IF NOT EXISTS alertas (
     INDEX idx_alerta_resolvido (resolvido)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- ── tentativas_login ─────────────────────────────────────────────────────────
+-- Controle do bloqueio de login (5 falhas em 15 minutos, por IP e por login).
+CREATE TABLE IF NOT EXISTS tentativas_login (
+    id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    ip VARCHAR(45) NOT NULL,
+    login VARCHAR(100) NOT NULL DEFAULT '',
+    sucesso TINYINT(1) NOT NULL DEFAULT 0,
+    criado_em DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    INDEX idx_tentativa_ip (ip, sucesso, criado_em),
+    INDEX idx_tentativa_login (login, sucesso, criado_em)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 -- ── Usuário administrador inicial ────────────────────────────────────────────
 -- login: admin   |   senha: Admin@123
 -- (hash bcrypt compatível com password_verify() do PHP). TROQUE a senha após o
@@ -161,7 +176,7 @@ CREATE TABLE IF NOT EXISTS migracoes (
     aplicado_em DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 INSERT INTO migracoes (versao)
-VALUES ('2026_conta_interface_02')
+VALUES ('2026_revisao_31')
 ON DUPLICATE KEY UPDATE versao = versao;
 
 -- Resultado esperado: 8 tabelas criadas e administrador principal disponível.

@@ -1,0 +1,10 @@
+# ÁKRON — app/config/
+# Diretório interno: nenhum arquivo daqui deve ser acessado diretamente pelo navegador.
+# O código PHP daqui é carregado apenas por require/include no servidor.
+<IfModule mod_authz_core.c>
+    Require all denied
+</IfModule>
+<IfModule !mod_authz_core.c>
+    Order allow,deny
+    Deny from all
+</IfModule>

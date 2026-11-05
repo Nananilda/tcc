@@ -303,13 +303,71 @@ UPDATE alertas SET status='resolvido' WHERE @akron_status_alerta_novo AND resolv
 UPDATE sensores s SET ultima_comunicacao=(SELECT MAX(l.lido_em) FROM leitura_sensor l WHERE l.sensor_id=s.id AND l.estoque_id=s.estoque_id)
 WHERE s.ultima_comunicacao IS NULL;
 
+
+-- ── tentativas_login ─────────────────────────────────────────────────────────
+-- Controle do bloqueio de login (5 falhas em 15 minutos, por IP e por login).
+CREATE TABLE IF NOT EXISTS tentativas_login (
+    id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    ip VARCHAR(45) NOT NULL,
+    login VARCHAR(100) NOT NULL DEFAULT '',
+    sucesso TINYINT(1) NOT NULL DEFAULT 0,
+    criado_em DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    INDEX idx_tentativa_ip (ip, sucesso, criado_em),
+    INDEX idx_tentativa_login (login, sucesso, criado_em)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Revisão 3.1: acrescenta somente as colunas ausentes em usuario.
+SELECT GROUP_CONCAT(CONCAT('ADD COLUMN `', c.coluna, '` ', c.definicao) SEPARATOR ', ')
+INTO @akron_adicoes
+FROM (
+    SELECT 'demonstracao' AS coluna, 'TINYINT(1) NOT NULL DEFAULT 0' AS definicao
+) c
+WHERE NOT EXISTS (
+    SELECT 1 FROM information_schema.COLUMNS e
+    WHERE e.TABLE_SCHEMA=DATABASE() AND e.TABLE_NAME='usuario' AND e.COLUMN_NAME=c.coluna
+);
+SET @akron_sql = IF(@akron_adicoes IS NULL, 'DO 0', CONCAT('ALTER TABLE `usuario` ', @akron_adicoes));
+PREPARE akron_stmt FROM @akron_sql;
+EXECUTE akron_stmt;
+DEALLOCATE PREPARE akron_stmt;
+
+-- Revisão 3.1: acrescenta somente as colunas ausentes em estoques.
+SELECT GROUP_CONCAT(CONCAT('ADD COLUMN `', c.coluna, '` ', c.definicao) SEPARATOR ', ')
+INTO @akron_adicoes
+FROM (
+    SELECT 'demonstracao' AS coluna, 'TINYINT(1) NOT NULL DEFAULT 0' AS definicao
+) c
+WHERE NOT EXISTS (
+    SELECT 1 FROM information_schema.COLUMNS e
+    WHERE e.TABLE_SCHEMA=DATABASE() AND e.TABLE_NAME='estoques' AND e.COLUMN_NAME=c.coluna
+);
+SET @akron_sql = IF(@akron_adicoes IS NULL, 'DO 0', CONCAT('ALTER TABLE `estoques` ', @akron_adicoes));
+PREPARE akron_stmt FROM @akron_sql;
+EXECUTE akron_stmt;
+DEALLOCATE PREPARE akron_stmt;
+
+-- Revisão 3.1: acrescenta somente as colunas ausentes em leitura_sensor.
+SELECT GROUP_CONCAT(CONCAT('ADD COLUMN `', c.coluna, '` ', c.definicao) SEPARATOR ', ')
+INTO @akron_adicoes
+FROM (
+    SELECT 'origem' AS coluna, 'ENUM(''sensor'',''manual'',''demonstracao'',''nao_informada'') NOT NULL DEFAULT ''nao_informada''' AS definicao
+) c
+WHERE NOT EXISTS (
+    SELECT 1 FROM information_schema.COLUMNS e
+    WHERE e.TABLE_SCHEMA=DATABASE() AND e.TABLE_NAME='leitura_sensor' AND e.COLUMN_NAME=c.coluna
+);
+SET @akron_sql = IF(@akron_adicoes IS NULL, 'DO 0', CONCAT('ALTER TABLE `leitura_sensor` ', @akron_adicoes));
+PREPARE akron_stmt FROM @akron_sql;
+EXECUTE akron_stmt;
+DEALLOCATE PREPARE akron_stmt;
+
 -- Protege o primeiro administrador existente, mantendo login, senha e perfil.
 SET @akron_principal = (SELECT MIN(id) FROM usuario WHERE tipo='admin');
 SET @akron_tem_principal = EXISTS (SELECT 1 FROM usuario WHERE administrador_principal=1);
 UPDATE usuario SET administrador_principal=1 WHERE id=@akron_principal AND NOT @akron_tem_principal;
 
 -- Registro interno esperado pelo backend já entregue.
-INSERT INTO migracoes (versao) VALUES ('2026_conta_interface_02')
+INSERT INTO migracoes (versao) VALUES ('2026_revisao_31')
 ON DUPLICATE KEY UPDATE versao=versao;
 
 SET SESSION sql_safe_updates = @akron_safe_updates;

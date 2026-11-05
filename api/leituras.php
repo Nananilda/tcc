@@ -34,7 +34,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     require_once __DIR__ . '/../app/controllers/LeituraController.php';
     $usuarioId = $ehSensor ? null : (int) $_SESSION['usuario_id'];
-    respostaDoControlador((new LeituraController($pdo))->registrar(corpoRequisicao(), $usuarioId));
+    respostaDoControlador((new LeituraController($pdo))->registrar(corpoRequisicao(), $usuarioId, $ehSensor ? 'sensor' : 'manual'));
 }
 
 if ($_SERVER['REQUEST_METHOD'] !== 'GET') {

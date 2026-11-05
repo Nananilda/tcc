@@ -25,21 +25,28 @@ class AuthController
     /**
      * Autentica um usuário e, se der certo, abre a sessão.
      *
-     * @return array{sucesso:bool, usuario:array|null, mensagem:string}
+     * @return array{sucesso:bool, bloqueado:bool, usuario:array|null, mensagem:string}
      */
     public function login(string $login, string $senha, string $ip): array
     {
-        if (verificarBloqueioIP($this->pdo, $ip)) {
-            return [
-                'sucesso' => false,
-                'usuario' => null,
-                'mensagem' => 'Acesso temporariamente bloqueado. Tente novamente em 15 minutos.',
-            ];
+        // Reserva a tentativa antes de conferir a senha (ver includes/auth.php).
+        try {
+            $reserva = $this->pdo ? reservarTentativaLogin($this->pdo, $ip, $login) : ['id' => null, 'restante' => 0];
+        } catch (Throwable $e) {
+            error_log('[ÁKRON] Falha no controle de tentativas: ' . $e->getMessage());
+            return ['sucesso' => false, 'usuario' => null, 'bloqueado' => false,
+                'mensagem' => 'Não foi possível verificar o acesso agora. Tente novamente em instantes.'];
+        }
+        if ($reserva['id'] === null) {
+            registrarLog($this->pdo, null, 'LOGIN_BLOQUEADO', "Login: " . loginParaContagem($login) . " - IP: $ip");
+            return ['sucesso' => false, 'usuario' => null, 'bloqueado' => true,
+                'mensagem' => mensagemBloqueioLogin($reserva['restante'])];
         }
 
         $resultado = autenticarUsuario($this->pdo, $login, $senha);
 
         if ($resultado['sucesso']) {
+            concluirTentativaLogin($this->pdo, $reserva['id']);
             $this->criarSessao($resultado['usuario'], $ip);
             registrarLog($this->pdo, (int) $resultado['usuario']['id'], 'LOGIN_SUCESSO', "Login: {$resultado['usuario']['login']} - IP: $ip");
         } else {
@@ -48,6 +55,7 @@ class AuthController
 
         return [
             'sucesso' => $resultado['sucesso'],
+            'bloqueado' => false,
             'usuario' => $resultado['usuario'] ?? null,
             'mensagem' => $resultado['mensagem'] ?? '',
         ];

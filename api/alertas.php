@@ -16,7 +16,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
         unset($a);
         jsonResponse(['sucesso'=>true,'alertas'=>$alertas,'contagem'=>$controller->contarPorSeveridade($filtros),
             'total'=>$controller->contarTodos($filtros),'pagina'=>$pagina,'por_pagina'=>50,
-            'limites'=>AlertaModel::LIMITES,'limites_observacao'=>'Valores iniciais; consulte os limites individuais em sensores.']);
+            'limites'=>AlertaModel::LIMITES,'limites_observacao'=>'Valores genéricos de partida, sem validação técnica documental e não aplicáveis a qualquer produto. Os limites válidos são os configurados em cada sensor.']);
     } catch (InvalidArgumentException $e) { jsonResponse(['sucesso'=>false,'mensagem'=>$e->getMessage()],422);
     } catch (PDOException $e) { error_log($e->getMessage()); jsonResponse(['sucesso'=>false,'mensagem'=>'Não foi possível carregar os alertas.'],500); }
 }

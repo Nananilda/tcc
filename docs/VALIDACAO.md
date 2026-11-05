@@ -36,3 +36,25 @@ Para as suítes de navegador, instale Playwright em uma pasta de ferramentas, in
 - Código Dart/Flutter não estava no ZIP. Não foi possível testar ou compilar um aplicativo móvel externo.
 - Leituras foram enviadas pela API em um banco de teste. Não havia sensores físicos conectados.
 - As estatísticas de tempo fora dos limites continuam estimativas apenas onde existem amostras consecutivas suficientes.
+
+
+## Revisão 3.1 — testes efetivamente executados
+
+Ambiente: PHP 8.3.6, MariaDB 10.11, Apache 2.4 (mod_php) e Chromium headless, em máquina de desenvolvimento. Dados de teste e de demonstração, não de produção.
+
+| Teste | Resultado |
+|---|---|
+| Migração de banco 3.0 com limite vazio, vínculo removido e leitura antiga (CLI), duas execuções | Dados preservados; segunda execução sem alterações |
+| Instalação nova (`schema.sql`, `schema-cpanel.sql`) e `banco_tcc-completar-estrutura.sql` sobre base antiga | Colunas e tabela criadas; versão registrada |
+| Bloqueio de login: 5 falhas, 6ª com senha correta, outro login no mesmo IP, API, login atacado de outros IPs, liberação após 16 min | Conforme esperado |
+| Acesso HTTP a `sql/`, `tests/`, `docs/`, `includes/`, `app/config/`, `app/models/`, `app/controllers/`, `app/services/`, `README.md`, `.htaccess` (Apache e `php -S` com `router-dev.php`) | 403; páginas, `api/` e `public/assets` seguem 200 |
+| Classificação de estoques (9 cenários, script) | Conforme esperado |
+| Detecção de lacunas (script) | Conforme esperado |
+| `tests/api_test.py` | 75 verificações passaram |
+| `tests/revisao_test.py` | 42 verificações passaram |
+| Navegador: monitoramento (recolher, ocultar tipo, persistência após recarregar), tooltip com horário exato, faixa de lacuna, foto (prévia, cancelar, salvar, remover) | Conforme esperado |
+| Navegador, 390 px, temas claro e escuro, 12 páginas | Sem rolagem horizontal da página; sem erro de JavaScript |
+
+**Não executados nesta revisão:** `tests/migration_web_test.py` (exige banco legado em URL separada), `tests/ui_test.cjs` e `tests/ui_realtime.cjs` (exigem navegador via CDP), exportação de PDF, aplicativo Flutter (código não fornecido) e qualquer teste com sensor físico.
+
+Os resultados de validações anteriores neste arquivo pertencem às entregas anteriores e não foram reexecutados integralmente.

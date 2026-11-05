@@ -106,7 +106,6 @@ require __DIR__ . '/../partials/cabecalho.php';
             </div>
         </div>
 
-        <?= avatarUsuario(['nome'=>$dados['nome']?:'Usuário']) ?>
         <!-- Acesso e status -->
         <div class="usuarios-secao">
             <div class="usuarios-secao-titulo">Nível de acesso</div>

@@ -119,7 +119,7 @@ require __DIR__ . '/../partials/cabecalho.php';
         <div>
             <label for="alerta_sensor">Sensor *</label>
             <select id="alerta_sensor" name="sensor_id" required>
-                <option value="">— selecione —</option>
+                <option value="">Selecione o sensor que gerará o alerta</option>
                 <?php foreach ($sensores as $sensor): ?>
                     <option value="<?php echo (int) $sensor['id']; ?>"
                         <?php echo (string) $sensor['id'] === $formAlerta['sensor_id'] ? 'selected' : ''; ?>>
@@ -175,7 +175,7 @@ require __DIR__ . '/../partials/cabecalho.php';
         <div>
             <label for="leitura_sensor">Sensor ativo *</label>
             <select id="leitura_sensor" name="sensor_id" required>
-                <option value="">— selecione —</option>
+                <option value="">Selecione o sensor que receberá a leitura</option>
                 <?php foreach ($sensores as $sensor): ?>
                     <?php if ($sensor['status'] !== 'ativo' || $sensor['estoque_status'] !== 'ativo') { continue; } ?>
                     <option value="<?php echo (int) $sensor['id']; ?>"

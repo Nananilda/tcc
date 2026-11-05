@@ -17,7 +17,7 @@ if (!defined('APP_NOME')) {
     define('APP_NOME', 'ÁKRON');
     define('APP_DESCRICAO', 'Monitoramento Ambiental de Estoques');
     define('APP_LEMA', 'Visão de ponta a ponta para sua operação');
-    define('APP_VERSAO', '3.0');
+    define('APP_VERSAO', '3.1');
 }
 
 // ── Fuso horário ─────────────────────────────────────────────────────────────

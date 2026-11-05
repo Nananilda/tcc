@@ -1,6 +1,6 @@
 'use strict';
 window.akronAviso = texto => { let a = document.getElementById('aviso-global'); if (!a) { a = document.createElement('div'); a.id = 'aviso-global'; a.className = 'msg-alerta aviso-flutuante'; a.setAttribute('role', 'status'); document.body.append(a); } a.textContent = texto; };
-window.dataBr = (valor, hora = true) => { if (!valor) return 'Sem leitura'; const m = String(valor).match(/^(\d{4})-(\d{2})-(\d{2})(?:[ T](\d{2}:\d{2}(?::\d{2})?))?/); return m ? `${m[3]}/${m[2]}/${m[1]}${hora && m[4] ? ' ' + m[4] : ''}` : valor; };
+window.dataBr = (valor, hora = true) => { if (!valor) return 'Sem leitura'; if (valor instanceof Date) { const z = n => String(n).padStart(2, '0'); return z(valor.getDate()) + '/' + z(valor.getMonth() + 1) + '/' + valor.getFullYear() + (hora ? ' ' + z(valor.getHours()) + ':' + z(valor.getMinutes()) : ''); } const m = String(valor).match(/^(\d{4})-(\d{2})-(\d{2})(?:[ T](\d{2}:\d{2}(?::\d{2})?))?/); return m ? `${m[3]}/${m[2]}/${m[1]}${hora && m[4] ? ' ' + m[4] : ''}` : valor; };
 function prepararTabelas(raiz = document) { raiz.querySelectorAll('table').forEach(t => { const nomes = [...t.querySelectorAll('thead th')].map(th => th.textContent); t.querySelectorAll('tbody tr').forEach(tr => [...tr.children].forEach((td, i) => { td.dataset.rotulo = td.colSpan > 1 ? '' : nomes[i] || ''; })); }); }
 document.addEventListener('DOMContentLoaded', () => {
     prepararTabelas();

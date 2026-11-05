@@ -1,0 +1,134 @@
+/* ÁKRON — revisão 3.1. Carregado depois de componentes.css.
+ * Usa somente as variáveis de tema já existentes (claro/escuro). */
+
+/* ── Estados ambiental, de comunicação e cadastral ─────────────────────────── */
+.badge-indisponivel,.badge-sem_sensores{color:var(--cor-texto-suave);background:var(--cor-fundo-card-alt);border:1px dashed var(--cor-borda-forte)}
+.badge-todos_online,.badge-ativo{color:var(--cor-sucesso);background:var(--cor-sucesso-fundo)}
+.badge-parcial{color:var(--cor-alerta);background:var(--cor-alerta-fundo);border:1px solid var(--cor-alerta-borda)}
+.badge-demonstracao{color:var(--cor-link);background:var(--cor-info-fundo);border:1px solid var(--cor-borda)}
+.badge-critico{border:1px solid var(--cor-erro-borda)}
+
+/* ── Cartões de estoque ────────────────────────────────────────────────────── */
+.estoques-grade{align-items:stretch}
+.estoque-card{display:flex;flex-direction:column;align-items:stretch;border-left:4px solid var(--cor-borda-forte);min-height:340px}
+.estoque-card.amb-normal{border-left-color:var(--cor-sucesso)}
+.estoque-card.amb-atencao{border-left-color:var(--cor-alerta)}
+.estoque-card.amb-critico{border-left-color:var(--cor-erro)}
+.estoque-card.estoque-inativo{opacity:.85}
+.estoque-topo{display:flex;align-items:flex-start;justify-content:space-between;gap:10px}
+.estoque-card h2{margin:0 0 4px;font-size:1.15rem}
+.estoque-local{margin:0 0 14px;color:var(--cor-texto-suave);font-size:.9rem;min-height:1.4em}
+.estado-estoque{display:grid;grid-template-columns:auto 1fr;gap:8px 14px;align-items:center;margin:0 0 14px;padding:12px 0;border-top:1px solid var(--cor-borda);border-bottom:1px solid var(--cor-borda)}
+.estado-estoque dt{font-weight:500;font-size:.82rem;color:var(--cor-texto-suave)}
+.estado-estoque dd{margin:0}
+.estoque-metricas{min-height:64px;font-size:.9rem}
+.estoque-metricas p{margin:0 0 6px;line-height:1.5}
+.aviso-sem-sensores{color:var(--cor-texto-suave);font-style:italic}
+.contador-alertas{display:inline-block;min-width:1.6em;text-align:center;padding:0 7px;border-radius:999px;background:var(--cor-fundo-card-alt);font-weight:700}
+.contador-alertas.com-alertas{background:var(--cor-alerta-fundo);color:var(--cor-alerta)}
+.alertas-linha.tem-critico .contador-alertas{background:var(--cor-erro-fundo);color:var(--cor-erro)}
+.estoque-card .acoes-card{margin-top:auto;padding-top:16px;display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.estoque-card .acoes-card .btn-secundario{text-align:center;justify-content:center}
+.estoque-card .acoes-card:has(> :only-child){grid-template-columns:1fr}
+
+/* ── Estado do estoque (detalhes) ──────────────────────────────────────────── */
+.estado-tripla{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,210px),1fr));gap:18px}
+.estado-tripla>div{display:flex;flex-direction:column;gap:6px;align-items:flex-start}
+.estado-tripla small{color:var(--cor-texto-suave);line-height:1.45}
+.estado-rotulo{font-size:.78rem;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:var(--cor-texto-suave)}
+.estado-tripla .contador-alertas{font-size:1.2rem}
+.condicao-destaque.amb-normal{border-left-color:var(--cor-sucesso)}
+.condicao-destaque.amb-atencao{border-left-color:var(--cor-alerta)}
+.condicao-destaque.amb-critico{border-left-color:var(--cor-erro)}
+.lista-dados{display:grid;grid-template-columns:minmax(120px,.8fr) 1.4fr;gap:10px 14px;margin:0 0 8px}
+.lista-dados dt{font-weight:500;color:var(--cor-texto-suave);font-size:.88rem}
+.lista-dados dd{margin:0}
+
+/* ── Gráficos recolhíveis ──────────────────────────────────────────────────── */
+.monitor-controles{display:flex;flex-wrap:wrap;gap:12px 20px;align-items:center;justify-content:space-between;margin:16px 0}
+.monitor-controles:empty{display:none}
+.tipos-medicao{display:flex;flex-wrap:wrap;gap:8px;align-items:center;border:0;padding:0;margin:0}
+.tipos-medicao legend{float:left;margin-right:6px;padding:0;font-size:.85rem;color:var(--cor-texto-suave)}
+.chip-tipo{display:inline-flex;align-items:center;gap:8px;padding:6px 12px;border:1px solid var(--cor-borda);border-radius:999px;cursor:pointer;font-size:.88rem;background:var(--cor-fundo-card)}
+.chip-tipo:has(input:checked){border-color:var(--cor-primaria);background:var(--cor-info-fundo)}
+.chip-tipo input{width:16px;min-height:16px;margin:0}
+.acoes-grafico{display:flex;gap:8px;flex-wrap:wrap}
+.acoes-grafico button{min-height:36px;padding:6px 12px;font-size:.85rem}
+.graficos-recolhiveis{display:grid;gap:14px}
+.grafico-recolhivel{padding:0;margin:0}
+.grafico-recolhivel>summary{display:flex;flex-wrap:wrap;align-items:baseline;gap:6px 14px;padding:14px 20px;list-style:none;cursor:pointer;color:var(--cor-texto)}
+.grafico-recolhivel>summary::-webkit-details-marker{display:none}
+.grafico-recolhivel>summary::before{content:'▸';color:var(--cor-texto-suave);transition:transform .15s}
+.grafico-recolhivel[open]>summary::before{transform:rotate(90deg)}
+.grafico-recolhivel>summary h2{margin:0;font-size:1.05rem}
+.resumo-grafico{font-size:.82rem;color:var(--cor-texto-suave);font-weight:400}
+.grafico-recolhivel .grafico-area{padding:0 20px;width:auto}
+.nota-grafico{padding:8px 20px 16px;margin:0}
+.grafico-recolhivel[open]>summary{border-bottom:1px solid var(--cor-borda);margin-bottom:12px}
+
+/* ── Alertas ───────────────────────────────────────────────────────────────── */
+.faixa-critica{border:1px solid var(--cor-erro-borda);background:var(--cor-erro-fundo);color:var(--cor-texto);padding:12px 16px;border-radius:var(--raio);margin:0 0 16px}
+.faixa-critica strong{color:var(--cor-erro)}
+.alerta-card.critico-pendente{border-left-width:8px;border-color:var(--cor-erro-borda);background:linear-gradient(0deg,var(--cor-erro-fundo),var(--cor-erro-fundo)),var(--cor-fundo-card)}
+.selo-urgente{display:inline-block;font-size:.75rem;font-weight:700;color:var(--cor-erro);margin-left:4px}
+.alerta-card.st-pendente .badge-pendente{background:var(--cor-alerta);color:var(--cor-fundo-card);font-weight:700}
+.alerta-card.st-reconhecido{border-top:1px dashed var(--cor-borda-forte)}
+.alerta-card.st-normalizado .badge-normalizado{border:1px solid var(--cor-sucesso-borda)}
+.alerta-card.st-resolvido{opacity:.82}
+.alerta-card.st-resolvido .badge-resolvido{background:var(--cor-fundo-card-alt);color:var(--cor-texto-suave);border:1px solid var(--cor-borda)}
+.paginacao{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-top:16px}
+.paginacao>span{color:var(--cor-texto-suave);font-size:.9rem}
+
+/* ── Minha conta ───────────────────────────────────────────────────────────── */
+.conta-resumo{display:flex;flex-wrap:wrap;align-items:center;gap:20px 28px}
+.conta-resumo>.avatar{width:88px;height:88px;font-size:1.8rem}
+.conta-resumo-texto h2{margin:0 0 8px}
+.conta-resumo-texto p{margin:0}
+.conta-dados{margin:0;display:grid;grid-template-columns:auto auto;gap:6px 16px;margin-left:auto}
+.conta-dados dt{color:var(--cor-texto-suave);font-size:.85rem}
+.conta-dados dd{margin:0}
+.arquivo-oculto{position:absolute;width:1px;height:1px;opacity:0;overflow:hidden;pointer-events:none}
+.foto-conta-corpo{display:flex;gap:24px;align-items:center;flex-wrap:wrap}
+.foto-previa .avatar{width:96px;height:96px;font-size:2rem}
+.foto-botoes{display:flex;flex-wrap:wrap;gap:12px;align-items:center}
+.btn-arquivo{display:inline-flex;align-items:center;cursor:pointer;padding:0 18px}
+.arquivo-oculto:focus-visible+.foto-botoes .btn-arquivo,.btn-arquivo:focus-visible{outline:2px solid var(--cor-foco);outline-offset:2px}
+.campo-erro{color:var(--cor-erro);margin:6px 0 0;min-height:0}
+.secao-senha{border:1px solid var(--cor-borda);border-radius:var(--raio);padding:4px 20px 18px;margin:24px 0}
+.secao-senha>summary{padding:12px 0}
+.estoques-compactos{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,230px),1fr));gap:12px}
+.estoque-mini{display:flex;flex-direction:column;gap:2px;padding:12px 14px;border:1px solid var(--cor-borda);border-radius:var(--raio);text-decoration:none;color:var(--cor-texto);background:var(--cor-fundo-card)}
+.estoque-mini:hover{border-color:var(--cor-primaria)}
+.estoque-mini span{font-size:.85rem;color:var(--cor-texto-suave)}
+
+/* ── Painel ────────────────────────────────────────────────────────────────── */
+.painel-stats{grid-template-columns:repeat(auto-fit,minmax(min(100%,170px),1fr))!important}
+
+/* ── Alinhamento à esquerda (logos, títulos e textos) ──────────────────────── */
+.login-box,.login-marca,.login-box *:not(button):not(input){text-align:left}
+.tela-login .login-marca,.login-marca{align-items:flex-start}
+.page-header>div,.page-heading>div{text-align:left}
+
+/* ── Seletores e filtros: botões de ação ao lado dos campos ───────────────── */
+.card.filtros-linha{display:grid;grid-template-columns:auto minmax(200px,420px) auto auto;gap:12px 14px;align-items:center;justify-content:start}
+.card.filtros-linha label{margin:0}
+.card.filtros-linha select{margin:0;width:100%}
+.card.filtros-linha .btn-primario,.card.filtros-linha .btn-secundario,.card.filtros-linha button{margin:0;white-space:nowrap}
+@media (max-width:760px){.card.filtros-linha{grid-template-columns:1fr 1fr}.card.filtros-linha label,.card.filtros-linha select{grid-column:1/-1}}
+
+/* ── Tabelas no celular: cada linha vira um bloco legível, sem rolagem lateral ─ */
+@media (max-width:760px){
+  .tabela-rolagem,.table-wrapper{overflow:visible}
+  td{max-width:100%}
+  .conta-dados{margin-left:0}
+  .estado-estoque{grid-template-columns:1fr 1fr}
+  .grafico-recolhivel .grafico-area{padding:0 8px}
+  .grafico-recolhivel>summary{padding:12px 14px}
+  .monitor-controles{align-items:flex-start}
+}
+
+/* O atributo hidden deve sempre prevalecer sobre display de componentes. */
+[hidden]{display:none!important}
+.graficos-grid>:only-child{grid-column:1/-1}
+.estoque-opcao:has(input:checked){border-color:var(--cor-primaria);background:var(--cor-info-fundo)}
+.acoes-tabela{display:flex;flex-wrap:wrap;gap:4px 14px}

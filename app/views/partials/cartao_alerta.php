@@ -1,8 +1,8 @@
 <?php $unidade=SensorModel::unidade($a['sensor_tipo']??''); ?>
-<article id="alerta-<?= (int)$a['id'] ?>" class="alerta-card <?= escapar($a['severidade']) ?>">
-<div><span class="badge badge-<?= escapar($a['severidade']) ?>"><?= escapar(AlertaModel::rotuloSeveridade($a['severidade'])) ?></span><span class="badge badge-<?= escapar($a['status']) ?>"><?= escapar(AlertaModel::STATUS[$a['status']]) ?></span></div>
+<article id="alerta-<?= (int)$a['id'] ?>" class="alerta-card <?= escapar($a['severidade']) ?> st-<?= escapar($a['status']) ?><?= ($a['severidade']==='critico'&&$a['status']==='pendente')?' critico-pendente':'' ?>">
+<div><span class="badge badge-<?= escapar($a['severidade']) ?>"><?= escapar(AlertaModel::rotuloSeveridade($a['severidade'])) ?></span><span class="badge badge-<?= escapar($a['status']) ?>"><?= escapar(AlertaModel::STATUS[$a['status']]) ?></span><?php if($a['severidade']==='critico'&&$a['status']==='pendente'): ?><span class="selo-urgente">Requer atenção imediata</span><?php endif ?></div>
 <h3><?= escapar($a['mensagem']) ?></h3><p><?= escapar($a['estoque_nome']??'') ?> · <?= escapar($a['sensor_nome']??'') ?></p><p><?= escapar(dataBr($a['criado_em'])) ?></p>
-<p>Valor registrado: <strong><?= $a['valor']===null?'Não informado':escapar(AlertaModel::formatarLimite($a['valor'],$unidade)) ?></strong> · Limite ultrapassado: <?= $a['limite_ultrapassado']===null?'Não informado':escapar(AlertaModel::formatarLimite($a['limite_ultrapassado'],$unidade)) ?></p>
+<?php if($a['valor']!==null||$a['limite_ultrapassado']!==null): ?><p>Valor registrado: <strong><?= $a['valor']===null?'Não informado':escapar(AlertaModel::formatarLimite($a['valor'],$unidade)) ?></strong> · Limite ultrapassado: <?= $a['limite_ultrapassado']===null?'Não informado':escapar(AlertaModel::formatarLimite($a['limite_ultrapassado'],$unidade)) ?></p><?php else: ?><p class="texto-auxiliar">Registro manual, sem leitura associada.</p><?php endif ?>
 <details><summary>Detalhes da ocorrência #<?= (int)$a['id'] ?></summary>
 <p>Origem: <?= $a['automatico']?'Automática':'Manual' ?></p>
 <p>Reconhecimento: <?= $a['reconhecido_em']?escapar(dataBr($a['reconhecido_em']).' · '.($a['reconhecido_nome']??'Usuário indisponível')):'Ainda não reconhecido' ?></p>

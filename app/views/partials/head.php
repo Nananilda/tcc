@@ -42,6 +42,7 @@ $scriptsHead = $scriptsHead ?? [];
         <link rel="stylesheet" href="<?php echo urlApp('public/assets/css/' . $css); ?>">
     <?php endforeach; ?>
     <link rel="stylesheet" href="<?php echo urlApp('public/assets/css/componentes.css'); ?>">
+    <link rel="stylesheet" href="<?php echo urlApp('public/assets/css/revisao.css'); ?>">
     <script defer src="<?= urlApp('public/assets/js/interface.js') ?>"></script>
     <?php foreach ($scriptsHead as $script): ?>
         <script src="<?php echo urlApp('public/assets/js/' . $script); ?>"></script>

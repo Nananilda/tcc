@@ -44,8 +44,6 @@ function iconeSvg(string $nome): string
         'lua' => '<path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/>',
         // Sair
         'sair' => '<path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="M16 17l5-5-5-5M21 12H9"/>',
-        // Cadastrar Sensor: sinal de rádio + sinal de mais
-'cadastrar_sensor' => '<circle cx="10" cy="12" r="2.2"/><path d="M5.8 7.8a6 6 0 0 0 0 8.4M14.2 7.8a6 6 0 0 1 1.5 2.4M2.9 4.9a10 10 0 0 0 0 14.2"/><path d="M19 14v6M16 17h6"/>',
     ];
 
     if (!isset($icones[$nome])) {
