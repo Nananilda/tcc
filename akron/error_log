@@ -1,0 +1,40 @@
+[10-Nov-2026 10:02:24 America/Sao_Paulo] PHP Warning:  session_start(): open(/var/cpanel/php/sessions/ea-php84/sess_35daf4b8e0900eb115a7c9ea4e44f66c, O_RDWR) failed: No such file or directory (2) in /home2/athenasdev/public_html/akron/includes/auth.php on line 44
+[10-Nov-2026 10:02:24 America/Sao_Paulo] PHP Warning:  session_start(): Failed to read session data: files (path: /var/cpanel/php/sessions/ea-php84) in /home2/athenasdev/public_html/akron/includes/auth.php on line 44
+[10-Nov-2026 10:02:24 America/Sao_Paulo] PHP Warning:  session_start(): open(/var/cpanel/php/sessions/ea-php84/sess_35daf4b8e0900eb115a7c9ea4e44f66c, O_RDWR) failed: No such file or directory (2) in /home2/athenasdev/public_html/akron/includes/auth.php on line 44
+[10-Nov-2026 10:02:24 America/Sao_Paulo] PHP Warning:  session_start(): Failed to read session data: files (path: /var/cpanel/php/sessions/ea-php84) in /home2/athenasdev/public_html/akron/includes/auth.php on line 44
+[10-Nov-2026 10:02:24 America/Sao_Paulo] PHP Warning:  session_set_cookie_params(): Session cookie parameters cannot be changed after headers have already been sent in /home2/athenasdev/public_html/akron/includes/auth.php on line 37
+[10-Nov-2026 10:02:24 America/Sao_Paulo] PHP Warning:  session_start(): Session cannot be started after headers have already been sent in /home2/athenasdev/public_html/akron/includes/auth.php on line 44
+[10-Nov-2026 10:10:21 America/Sao_Paulo] Log - Usuário: 1 | Ação: LOGIN_SUCESSO | Descrição: Login: admin - IP: 201.64.130.178
+[10-Nov-2026 10:19:36 America/Sao_Paulo] Log - Usuário: anônimo | Ação: LOGIN_FALHA | Descrição: Login tentado: admin - IP: 201.64.130.178 - Motivo: Login ou senha inválidos.
+[10-Nov-2026 10:19:47 America/Sao_Paulo] Log - Usuário: 1 | Ação: LOGIN_SUCESSO | Descrição: Login: admin - IP: 201.64.130.178
+[10-Nov-2026 10:20:12 America/Sao_Paulo] Log - Usuário: 1 | Ação: LOGIN_SUCESSO | Descrição: Login: admin - IP: 201.64.130.178
+[10-Nov-2026 10:21:35 America/Sao_Paulo] Log - Usuário: 1 | Ação: LOGIN_SUCESSO | Descrição: Login: admin - IP: 201.64.130.178
+[10-Nov-2026 10:22:36 America/Sao_Paulo] Log - Usuário: 5 | Ação: LOGIN_SUCESSO | Descrição: Login: lara - IP: 201.64.130.178
+[10-Nov-2026 10:46:01 America/Sao_Paulo] Log - Usuário: 1 | Ação: LOGIN_SUCESSO | Descrição: Login: admin - IP: 201.64.130.178
+[10-Nov-2026 10:52:19 America/Sao_Paulo] Log - Usuário: 1 | Ação: LOGIN_SUCESSO | Descrição: Login: admin - IP: 200.159.43.210
+[10-Nov-2026 10:53:13 America/Sao_Paulo] Log - Usuário: anônimo | Ação: LOGIN_FALHA | Descrição: Login tentado: athenasdev - IP: 201.64.130.178 - Motivo: Login ou senha inválidos.
+[10-Nov-2026 10:53:25 America/Sao_Paulo] Log - Usuário: anônimo | Ação: LOGIN_FALHA | Descrição: Login tentado: admin - IP: 200.159.43.210 - Motivo: Login ou senha inválidos.
+[10-Nov-2026 10:53:42 America/Sao_Paulo] Log - Usuário: 1 | Ação: LOGIN_SUCESSO | Descrição: Login: admin - IP: 200.159.43.210
+[10-Nov-2026 10:54:18 America/Sao_Paulo] Log - Usuário: 1 | Ação: LOGIN_SUCESSO | Descrição: Login: admin - IP: 201.64.130.178
+[10-Nov-2026 10:55:43 America/Sao_Paulo] Log - Usuário: 5 | Ação: LOGIN_SUCESSO | Descrição: Login: lara - IP: 201.64.130.178
+[10-Nov-2026 10:56:57 America/Sao_Paulo] Log - Usuário: 5 | Ação: LOGIN_SUCESSO | Descrição: Login: lara - IP: 201.64.130.178
+[10-Nov-2026 10:58:57 America/Fortaleza] PHP Fatal error:  Uncaught Error: Call to undefined function iniciarSessao() in /home2/athenasdev/public_html/akron/index.php:18
+Stack trace:
+#0 {main}
+  thrown in /home2/athenasdev/public_html/akron/index.php on line 18
+[10-Nov-2026 10:58:59 America/Fortaleza] PHP Fatal error:  Uncaught Error: Call to undefined function iniciarSessao() in /home2/athenasdev/public_html/akron/index.php:18
+Stack trace:
+#0 {main}
+  thrown in /home2/athenasdev/public_html/akron/index.php on line 18
+[10-Nov-2026 10:59:06 America/Fortaleza] PHP Fatal error:  Uncaught Error: Call to undefined function iniciarSessao() in /home2/athenasdev/public_html/akron/index.php:18
+Stack trace:
+#0 {main}
+  thrown in /home2/athenasdev/public_html/akron/index.php on line 18
+[10-Nov-2026 10:59:17 America/Fortaleza] PHP Fatal error:  Uncaught Error: Call to undefined function iniciarSessao() in /home2/athenasdev/public_html/akron/index.php:18
+Stack trace:
+#0 {main}
+  thrown in /home2/athenasdev/public_html/akron/index.php on line 18
+[10-Nov-2026 11:03:27 America/Sao_Paulo] Log - Usuário: 5 | Ação: LOGIN_SUCESSO | Descrição: Login: lara - IP: 200.159.43.210
+[10-Nov-2026 11:04:25 America/Sao_Paulo] Log - Usuário: 1 | Ação: LOGIN_SUCESSO | Descrição: Login: admin - IP: 200.159.43.210
+[10-Nov-2026 11:04:53 America/Sao_Paulo] Log - Usuário: 1 | Ação: LOGIN_SUCESSO | Descrição: Login: admin - IP: 201.64.130.178
+[10-Nov-2026 11:05:07 America/Sao_Paulo] Log - Usuário: 1 | Ação: LOGIN_SUCESSO | Descrição: Login: admin - IP: 200.159.43.210
