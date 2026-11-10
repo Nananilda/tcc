@@ -36,7 +36,7 @@ function configuracaoBanco(): array
         'host' => 'localhost',
         'porta' => '3306',
         'banco' => 'athenasd_akron',
-        'usuario' => 'athenasdev',
+        'usuario' => 'athenasd_athenasdev',
         'senha' => 'Athenas@123',
     ];
 

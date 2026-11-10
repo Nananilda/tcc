@@ -16,7 +16,7 @@ return [
     'host' => 'localhost',
     'porta' => '3306',
     'banco' => 'athenasd_akron',
-    'usuario' => 'athenasdev',
+    'usuario' => 'athenasd_athenasdev',
     'senha' => 'Athenas@123',
     // OPCIONAL — chave (mín. 16 caracteres) que os sensores enviam no cabeçalho
     // "X-Chave-Sensor" para registrar leituras em api/leituras.php. Sem ela,
