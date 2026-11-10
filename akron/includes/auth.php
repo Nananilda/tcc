@@ -19,6 +19,12 @@
 
 require_once __DIR__ . '/../app/config/app.php';
 
+// Garantia caso app/config/app.php seja de uma versão anterior (upload parcial).
+if (!defined('SESSAO_INATIVIDADE_SEGUNDOS')) {
+    define('SESSAO_INATIVIDADE_SEGUNDOS', 7200);
+    define('SESSAO_DURACAO_MAXIMA_SEGUNDOS', 43200);
+}
+
 // ─── SESSÃO ─────────────────────────────────────────────────────────────────
 
 /**
@@ -34,7 +40,9 @@ function iniciarSessao(): void
         return;
     }
 
-    configurarArmazenamentoSessao();
+    if (function_exists('configurarArmazenamentoSessao')) {
+        configurarArmazenamentoSessao();
+    }
 
     session_set_cookie_params([
         'lifetime' => 0,          // cookie de sessão (some ao fechar o navegador)
