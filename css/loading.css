@@ -1,0 +1,73 @@
+/* =========================================================
+   Athenas — tela de carregamento inicial (A com asas)
+   Usa as peças separadas de img/ath-symbol.png:
+   ath-wing-left.png · ath-body.png · ath-wing-right.png
+   (mesmo canvas 520×204, cor assumida do tema via --logo)
+   ========================================================= */
+.loader { display: none; }
+html.has-loader { overflow: hidden; }
+html.has-loader .loader {
+    position: fixed; inset: 0; z-index: 1000; display: grid; place-items: center;
+    background: var(--bg); color: var(--text);
+    transition: opacity .55s var(--ease), visibility 0s linear .55s;
+    /* rede de segurança: se o JS falhar, a tela some sozinha */
+    animation: loaderFailsafe .01s linear 6s forwards;
+}
+html.has-loader .loader.is-leaving { opacity: 0; visibility: hidden; pointer-events: none; }
+html.has-loader .loader::before {
+    content: ""; position: absolute; inset: 0; pointer-events: none;
+    background:
+        radial-gradient(55% 50% at 50% 42%, var(--glow-1), transparent 70%),
+        radial-gradient(40% 35% at 50% 70%, var(--glow-2), transparent 70%);
+}
+@keyframes loaderFailsafe { to { opacity: 0; visibility: hidden; pointer-events: none; } }
+
+.loader-stage { position: relative; display: grid; justify-items: center; gap: 22px; padding: 24px; text-align: center; }
+
+.lg-mark {
+    --lg-w: min(54vw, 270px);
+    position: relative; width: var(--lg-w); aspect-ratio: 520 / 204;
+    will-change: transform;
+    animation: lgBob 1.1s ease-in-out infinite;
+}
+.lg-part {
+    /* caixa maior que a logo (120% × 140%) para a ponta da asa não ser cortada ao girar */
+    position: absolute; inset: -20% -10%; background-color: var(--logo);
+    -webkit-mask: var(--m) center / 83.333% 71.429% no-repeat; mask: var(--m) center / 83.333% 71.429% no-repeat;
+}
+.lg-wing-l { --m: url('../img/ath-wing-left.png');  transform-origin: 40% 67.14%; animation: lgFlapL .56s ease-in-out infinite; }
+.lg-wing-r { --m: url('../img/ath-wing-right.png'); transform-origin: 60% 67.14%; animation: lgFlapR .56s ease-in-out infinite; }
+.lg-body   { --m: url('../img/ath-body.png'); }
+
+@keyframes lgFlapL { 0%, 100% { transform: rotate(6deg); }  50% { transform: rotate(-6deg); } }
+@keyframes lgFlapR { 0%, 100% { transform: rotate(-6deg); } 50% { transform: rotate(6deg); } }
+@keyframes lgBob   { 0%, 100% { translate: 0 0; } 50% { translate: 0 -5px; } }
+
+.lg-word {
+    font-family: var(--f-title); font-weight: 800; letter-spacing: .42em; text-indent: .42em;
+    font-size: clamp(20px, 4.4vw, 28px); color: var(--text);
+    transition: opacity .35s var(--ease), transform .35s var(--ease);
+}
+.lg-slogan {
+    margin: -8px 0 0; font-size: clamp(13px, 2.6vw, 15px); color: var(--text-2); letter-spacing: .02em;
+    transition: opacity .35s var(--ease), transform .35s var(--ease);
+}
+
+/* decolagem: sobe com aceleração suave, asas mais rápidas */
+.loader.is-flying .lg-mark {
+    animation: lgBob 1.1s ease-in-out infinite paused;
+    transform: translateY(-120vh) scale(.82);
+    transition: transform 1s cubic-bezier(.55, .02, .86, .4);
+}
+.loader.is-flying .lg-wing-l, .loader.is-flying .lg-wing-r { animation-duration: .34s; }
+.loader.is-flying .lg-word, .loader.is-flying .lg-slogan { opacity: 0; transform: translateY(10px); }
+
+/* movimento reduzido: logo estática, sem bater asas nem subir */
+@media (prefers-reduced-motion: reduce) {
+    .lg-mark, .lg-wing-l, .lg-wing-r { animation: none !important; }
+    .loader.is-flying .lg-mark { transform: none; transition: none; }
+    html.has-loader .loader { transition: opacity .3s linear, visibility 0s linear .3s; }
+}
+@media (prefers-reduced-motion: reduce) {
+    html.has-loader .loader { animation: loaderFailsafe .01s linear 6s forwards !important; }
+}

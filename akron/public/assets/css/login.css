@@ -1,0 +1,208 @@
+/* login.css — referente a index.php (tela de autenticação).
+   Carregado POR ÚLTIMO (ver $cssPaginaFinal em head.php), depois de style.css,
+   componentes.css e revisao.css, para que estas regras prevaleçam.
+   Estrutura: marca no topo → cartão de autenticação → símbolo centralizado sob o cartão;
+   informações do sistema no canto inferior direito; botão "?" no canto inferior esquerdo. */
+
+body.tela-login {
+    display: grid;
+    grid-template-rows: 1fr auto;
+    min-height: 100vh;
+    min-height: 100dvh;
+    padding: 0;
+    background:
+        radial-gradient(60% 50% at 50% 0%, color-mix(in srgb, var(--cor-primaria) 14%, transparent), transparent 70%),
+        radial-gradient(circle at top, var(--cor-login-topo) 0%, var(--cor-login-base) 70%);
+    background-attachment: fixed;
+}
+
+/* Coluna central: marca, cartão e símbolo compartilham o mesmo eixo vertical */
+.tela-login .login-palco {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    max-width: 420px;
+    margin: 0 auto;
+    padding: clamp(36px, 7vh, 72px) 20px 24px;
+}
+
+/* ── Marca no topo ────────────────────────────────────────────────────────── */
+.tela-login .login-marca {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    max-width: none;
+    margin: 0 0 22px;
+    text-align: center;
+}
+
+.tela-login .login-nome-sistema {
+    margin: 0;
+    font-size: 0;
+    line-height: 0;
+    display: block;
+}
+
+.tela-login .login-nome-sistema .logo-completa {
+    display: block;
+    height: 176px;
+    margin: 0 auto;
+    filter: drop-shadow(0 4px 14px color-mix(in srgb, var(--cor-marca) 35%, transparent));
+}
+
+.tela-login .login-marca-tagline {
+    margin: 12px 0 0;
+    font-size: 0.85rem;
+    letter-spacing: 0.4px;
+    color: var(--cor-texto-suave);
+    text-align: center;
+}
+
+/* ── Cartão de autenticação ───────────────────────────────────────────────── */
+.tela-login .login-box {
+    width: 100%;
+    max-width: 400px;
+    padding: 30px 30px 24px;
+    background: var(--cor-fundo-card);
+    border: 1px solid var(--cor-borda);
+    border-radius: 14px;
+    box-shadow: var(--sombra-elevada);
+    animation: akron-entrada 0.5s var(--ease) backwards;
+    animation-delay: 0.08s;
+}
+
+.tela-login .login-box h2 {
+    margin: 0;
+    font-size: 1.25rem;
+    letter-spacing: -0.01em;
+    color: var(--cor-texto);
+    text-align: center;
+    text-transform: none;
+}
+
+.tela-login .login-subtitulo {
+    margin: 6px 0 22px;
+    font-size: 0.88rem;
+    color: var(--cor-texto-suave);
+    text-align: center;
+}
+
+.tela-login .login-campo {
+    margin-bottom: 16px;
+}
+
+.tela-login .login-campo label {
+    display: block;
+    margin-bottom: 6px;
+    font-size: 0.84rem;
+    font-weight: 600;
+    color: var(--cor-texto-suave);
+    text-align: left;
+}
+
+.tela-login .login-campo input {
+    width: 100%;
+    margin: 0;
+    transition: border-color var(--dur) var(--ease), box-shadow var(--dur) var(--ease);
+}
+
+.tela-login .login-campo input:focus {
+    border-color: var(--cor-primaria);
+    box-shadow: 0 0 0 4px color-mix(in srgb, var(--cor-primaria) 20%, transparent);
+    outline: none;
+}
+
+.tela-login .login-box button[type='submit'] {
+    width: 100%;
+    margin-top: 6px;
+    letter-spacing: 0.4px;
+    box-shadow: 0 6px 16px color-mix(in srgb, var(--cor-primaria) 30%, transparent);
+    transition: transform var(--dur) var(--ease), box-shadow var(--dur) var(--ease), background-color var(--dur) var(--ease);
+}
+
+.tela-login .login-box button[type='submit']:hover:not(:disabled) {
+    transform: translateY(-1px);
+    box-shadow: 0 10px 22px color-mix(in srgb, var(--cor-primaria) 38%, transparent);
+}
+
+.tela-login .login-box button[type='submit']:active:not(:disabled) {
+    transform: translateY(0);
+}
+
+.tela-login .login-box .msg-erro,
+.tela-login .login-box .msg-alerta {
+    margin: 0 0 16px;
+    text-align: left;
+    font-size: 0.86rem;
+}
+
+.tela-login .login-versao {
+    margin: 16px 0 0;
+    font-size: 0.78rem;
+    color: var(--cor-texto-fraco);
+    text-align: center;
+}
+
+/* ── Informações do sistema: canto inferior direito, em fluxo (nunca sobrepõe o formulário) ─ */
+.tela-login .login-sistema {
+    grid-row: 2;
+    justify-self: end;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    max-width: 300px;
+    padding: 0 clamp(16px, 2.5vw, 28px) clamp(14px, 2.5vh, 22px);
+    text-align: right;
+    font-size: 0.76rem;
+    line-height: 1.45;
+    color: var(--cor-texto-suave);
+}
+
+.tela-login .login-sistema strong {
+    font-family: var(--fonte-titulo);
+    font-size: 0.82rem;
+    letter-spacing: 0.08em;
+    color: var(--cor-texto);
+}
+
+/* ── Botão "?" (explicação do sistema): canto inferior esquerdo ────────────── */
+.tela-login .ajuda-sistema {
+    position: fixed;
+    bottom: 16px;
+    left: 18px;
+    z-index: 5;
+    width: 40px;
+    min-height: 40px;
+    height: 40px;
+    margin: 0;
+    padding: 0;
+    border-radius: 50%;
+    font-weight: 700;
+}
+
+/* ── Responsividade ───────────────────────────────────────────────────────── */
+@media (max-width: 720px) {
+    .tela-login .login-nome-sistema .logo-completa {
+        height: 140px;
+    }
+
+    /* Informações do sistema passam para o fim da página, centralizadas, sem sobreposição */
+    .tela-login .login-sistema {
+        justify-self: center;
+        align-items: center;
+        text-align: center;
+        max-width: 92vw;
+    }
+
+    .tela-login .login-box {
+        padding: 26px 20px 20px;
+    }
+}
+
+@media (max-height: 560px) {
+    .tela-login .login-palco {
+        justify-content: flex-start;
+    }
+}

@@ -1,0 +1,460 @@
+/* painel.css — referente a app/views/dashboard/painel.php
+   Abertura, indicadores gerais e cartões de navegação dos módulos (três grupos). */
+
+/* ── Abertura ─────────────────────────────────────────────────────────────── */
+.painel-abertura {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 16px 24px;
+    margin-bottom: 8px;
+}
+
+.painel-saudacao {
+    margin: 0 0 4px;
+    color: var(--cor-link);
+    font-family: var(--fonte-titulo);
+    font-size: 0.82rem;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+}
+
+.painel-abertura h1 {
+    margin: 0 0 6px;
+}
+
+.painel-resumo {
+    margin: 0;
+    color: var(--cor-texto-suave);
+    max-width: 60ch;
+}
+
+.painel-filtro {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 0;
+}
+
+.painel-filtro label {
+    margin: 0;
+    color: var(--cor-texto-suave);
+    font-size: 0.84rem;
+    font-weight: 500;
+}
+
+.painel-filtro select {
+    min-width: 210px;
+    margin: 0;
+}
+
+.painel-status {
+    min-height: 1.4em;
+    margin: 6px 0 0;
+    color: var(--cor-alerta);
+    font-size: 0.86rem;
+}
+
+.painel-status:empty {
+    min-height: 0;
+    margin: 0;
+}
+
+/* ── Indicadores ──────────────────────────────────────────────────────────── */
+.indicadores {
+    display: grid;
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+    gap: 14px;
+    margin-top: 14px;
+}
+
+.indicador {
+    --acento: var(--cor-primaria);
+    grid-column: span 2;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    min-width: 0;
+    padding: 16px 18px;
+    background: var(--cor-fundo-card);
+    border: 1px solid var(--cor-borda);
+    border-radius: var(--raio);
+    box-shadow: var(--sombra-suave);
+    animation: akron-entrada 0.4s var(--ease) backwards;
+    transition: border-color var(--dur) var(--ease), box-shadow var(--dur) var(--ease);
+}
+
+.indicador:nth-child(2) { animation-delay: 0.05s; }
+.indicador:nth-child(3) { animation-delay: 0.1s; }
+.indicador:nth-child(4) { animation-delay: 0.15s; }
+.indicador:nth-child(5) { animation-delay: 0.2s; }
+
+.indicador.atualizado {
+    animation: akron-pulso 0.9s ease-out;
+}
+
+/* Os dois indicadores mais importantes ocupam metade da largura e têm número maior */
+.indicador-destaque {
+    grid-column: span 3;
+    padding: 22px 24px;
+    gap: 18px;
+}
+
+.indicador-destaque .indicador-valor {
+    font-size: 2.6rem;
+}
+
+.indicador-destaque .indicador-icone {
+    width: 54px;
+    height: 54px;
+}
+
+.indicador-icone {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+    color: var(--acento);
+    background: color-mix(in srgb, var(--acento) 13%, var(--cor-fundo-card));
+    border: 1px solid color-mix(in srgb, var(--acento) 30%, transparent);
+}
+
+.indicador-icone svg {
+    width: 52%;
+    height: 52%;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.8;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+.indicador-corpo {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+}
+
+.indicador-valor {
+    font-family: var(--fonte-titulo);
+    font-size: 1.9rem;
+    font-weight: 700;
+    line-height: 1.1;
+    color: var(--cor-texto);
+    font-variant-numeric: tabular-nums;
+}
+
+.indicador-rotulo {
+    margin-top: 4px;
+    font-size: 0.86rem;
+    font-weight: 600;
+    color: var(--cor-texto);
+}
+
+.indicador-ajuda {
+    font-size: 0.76rem;
+    color: var(--cor-texto-suave);
+    line-height: 1.35;
+}
+
+/* Tom semântico: atenção (valor acima de zero), sem pendência (zero) e neutro */
+.indicador.ind-atencao {
+    --acento: var(--cor-alerta);
+    border-color: var(--cor-alerta-borda);
+}
+
+.indicador.ind-atencao .indicador-valor {
+    color: var(--cor-alerta);
+}
+
+.indicador.ind-ok {
+    --acento: var(--cor-sucesso);
+}
+
+.painel-ultima {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 14px 2px 0;
+    color: var(--cor-texto-suave);
+    font-size: 0.84rem;
+}
+
+.painel-ultima svg {
+    width: 16px;
+    height: 16px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.8;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+/* ── Grupos e cartões de módulo ───────────────────────────────────────────── */
+.grupo-modulos {
+    margin-top: 34px;
+}
+
+.grupo-cabecalho {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 4px 14px;
+    margin-bottom: 14px;
+}
+
+.grupo-cabecalho h2 {
+    margin: 0;
+    font-size: 0.8rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--cor-link);
+}
+
+.grupo-cabecalho p {
+    margin: 0;
+    font-size: 0.84rem;
+    color: var(--cor-texto-fraco);
+}
+
+.modulos-grade {
+    display: grid;
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+    gap: 16px;
+}
+
+/* Três colunas em telas grandes. A última linha incompleta se distribui sem deixar vazios:
+   um cartão sozinho ocupa a linha toda; dois cartões dividem a linha. */
+.modulos-grade > .modulo-card { grid-column: span 2; }
+.modulos-grade > .modulo-card:last-child:nth-child(3n+1) { grid-column: span 6; }
+.modulos-grade > .modulo-card:last-child:nth-child(3n+2),
+.modulos-grade > .modulo-card:nth-last-child(2):nth-child(3n+1) { grid-column: span 3; }
+
+/* Quatro módulos formam uma grade 2×2 equilibrada em vez de 3 + 1 */
+.modulos-grade.n-4 > .modulo-card:nth-child(n),
+.grupo-monitoramento .modulos-grade > .modulo-card:nth-child(n) { grid-column: span 3; }
+
+.modulo-card {
+    --acento: var(--cor-primaria);
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    min-width: 0;
+    padding: 20px;
+    color: var(--cor-texto);
+    background: var(--cor-fundo-card);
+    border: 1px solid var(--cor-borda);
+    border-radius: var(--raio);
+    box-shadow: var(--sombra-suave);
+    text-decoration: none;
+    overflow: hidden;
+    animation: akron-entrada 0.45s var(--ease) backwards;
+    animation-delay: calc(0.12s + var(--ordem, 0) * 0.05s);
+    transition: transform var(--dur) var(--ease), border-color var(--dur) var(--ease), box-shadow var(--dur) var(--ease);
+}
+
+/* Iluminação sutil no canto do cartão */
+.modulo-card::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(120% 90% at 0% 0%, color-mix(in srgb, var(--acento) 14%, transparent), transparent 60%);
+    opacity: 0;
+    transition: opacity var(--dur) var(--ease);
+    pointer-events: none;
+}
+
+.modulo-card:hover,
+.modulo-card:focus-visible {
+    transform: translateY(-3px);
+    border-color: color-mix(in srgb, var(--acento) 55%, var(--cor-borda));
+    box-shadow: var(--sombra-elevada);
+    text-decoration: none;
+    color: var(--cor-texto);
+}
+
+.modulo-card:hover::before,
+.modulo-card:focus-visible::before {
+    opacity: 1;
+}
+
+.modulo-card:focus-visible {
+    outline: 2px solid var(--acento);
+    outline-offset: 3px;
+}
+
+.modulo-card:active {
+    transform: translateY(-1px) scale(0.99);
+    transition-duration: 0.08s;
+}
+
+.modulo-icone {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    width: 52px;
+    height: 52px;
+    border-radius: 14px;
+    color: var(--acento);
+    background: color-mix(in srgb, var(--acento) 13%, var(--cor-fundo-card));
+    border: 1px solid color-mix(in srgb, var(--acento) 30%, transparent);
+    transition: box-shadow var(--dur) var(--ease), transform var(--dur) var(--ease);
+}
+
+.modulo-icone svg {
+    width: 26px;
+    height: 26px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.7;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+.modulo-card:hover .modulo-icone,
+.modulo-card:focus-visible .modulo-icone {
+    box-shadow: 0 0 18px color-mix(in srgb, var(--acento) 38%, transparent);
+    transform: scale(1.05);
+}
+
+.modulo-texto {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    min-width: 0;
+    flex: 1;
+}
+
+.modulo-nome {
+    font-family: var(--fonte-titulo);
+    font-size: 1rem;
+    font-weight: 600;
+    line-height: 1.3;
+}
+
+.modulo-descricao {
+    font-size: 0.83rem;
+    line-height: 1.45;
+    color: var(--cor-texto-suave);
+}
+
+/* Indicador visual de que o cartão é clicável */
+.modulo-seta {
+    flex-shrink: 0;
+    display: inline-flex;
+    color: var(--cor-texto-fraco);
+    transition: transform var(--dur) var(--ease), color var(--dur) var(--ease);
+}
+
+.modulo-seta svg {
+    width: 20px;
+    height: 20px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+.modulo-card:hover .modulo-seta,
+.modulo-card:focus-visible .modulo-seta {
+    transform: translateX(4px);
+    color: var(--acento);
+}
+
+/* ── Alertas recentes ─────────────────────────────────────────────────────── */
+.painel-recentes {
+    margin-top: 20px;
+}
+
+.painel-recentes-topo {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px 16px;
+    margin-bottom: 8px;
+}
+
+.painel-recentes-topo h2 {
+    margin: 0;
+}
+
+.alerta-resumo {
+    border-left: 3px solid var(--cor-borda-forte);
+    padding: 12px 0 12px 14px;
+    margin-top: 10px;
+    border-bottom: 0;
+    background: var(--cor-fundo-card);
+}
+
+.alerta-resumo-critico { border-left-color: var(--cor-erro); }
+.alerta-resumo-atencao { border-left-color: var(--cor-alerta); }
+
+.alerta-resumo p {
+    margin: 4px 0 0;
+}
+
+/* ── Responsividade ───────────────────────────────────────────────────────── */
+@media (max-width: 1080px) {
+    /* Duas colunas: cada cartão ocupa metade; o último, se ficar sozinho, ocupa a linha */
+    .modulos-grade > .modulo-card,
+    .modulos-grade > .modulo-card:last-child:nth-child(3n+1),
+    .modulos-grade > .modulo-card:last-child:nth-child(3n+2),
+    .modulos-grade > .modulo-card:nth-last-child(2):nth-child(3n+1) { grid-column: span 3; }
+    .modulos-grade > .modulo-card:last-child:nth-child(odd) { grid-column: span 6; }
+
+    .indicadores {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .indicador,
+    .indicador-destaque {
+        grid-column: span 1;
+    }
+
+    /* Terceiro indicador secundário (quinto cartão) ocupa a linha inteira para não deixar vazio */
+    .indicador:last-child:nth-child(odd) {
+        grid-column: 1 / -1;
+    }
+}
+
+@media (max-width: 640px) {
+    .modulos-grade > .modulo-card,
+    .modulos-grade > .modulo-card:last-child:nth-child(n),
+    .modulos-grade > .modulo-card:nth-last-child(2):nth-child(n) { grid-column: span 6; }
+
+    .indicadores {
+        grid-template-columns: 1fr;
+    }
+
+    .indicador,
+    .indicador-destaque {
+        padding: 14px 16px;
+    }
+
+    .indicador-destaque .indicador-valor {
+        font-size: 2rem;
+    }
+
+    .painel-filtro,
+    .painel-filtro select {
+        width: 100%;
+    }
+
+    .painel-filtro {
+        flex-wrap: wrap;
+    }
+
+    .modulo-card {
+        padding: 16px;
+    }
+}

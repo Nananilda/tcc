@@ -1,0 +1,538 @@
+<!DOCTYPE html>
+<html lang="pt-br" data-theme="dark">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Athenas · Desenvolvimento de Sistemas</title>
+    <meta name="description" content="Athenas Desenvolvimento de Sistemas: iniciativa de desenvolvimento de soluções tecnológicas que unem criatividade, planejamento e conhecimento técnico. Conheça o Ákron e nossas propostas de projeto. Conhecimento que impulsiona inovação.">
+    <meta name="theme-color" content="#0d1522">
+    <meta property="og:title" content="Athenas · Conhecimento que impulsiona inovação">
+    <meta property="og:description" content="Soluções tecnológicas que unem criatividade, planejamento e conhecimento técnico.">
+    <meta property="og:image" content="img/icon-512.png">
+    <link rel="icon" type="image/png" href="img/favicon.png">
+    <link rel="apple-touch-icon" href="img/apple-touch-icon.png">
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/loading.css">
+    <link rel="stylesheet" href="css/projetos.css">
+    <script>
+        (function () {
+            var d = document.documentElement, t = null;
+            d.classList.add('js');
+            try { t = localStorage.getItem('athenas-tema'); } catch (e) { }
+            if (!t) t = (window.matchMedia && matchMedia('(prefers-color-scheme: light)').matches) ? 'light' : 'dark';
+            d.setAttribute('data-theme', t === 'light' ? 'light' : 'dark');
+            // tela de carregamento: só na primeira carga da sessão
+            var seen = false; try { seen = sessionStorage.getItem('athenas-intro') === '1'; } catch (e) { }
+            if (!seen) d.classList.add('has-loader');
+        })();
+    </script>
+</head>
+
+<body>
+    <!-- Tela de carregamento inicial -->
+    <div class="loader" id="loader" role="status" aria-live="polite" aria-label="Carregando o site da Athenas">
+        <div class="loader-stage">
+            <div class="lg-mark" aria-hidden="true">
+                <span class="lg-part lg-wing-l"></span>
+                <span class="lg-part lg-wing-r"></span>
+                <span class="lg-part lg-body"></span>
+            </div>
+            <div class="lg-word">ATHENAS</div>
+            <p class="lg-slogan">Conhecimento que impulsiona inovação.</p>
+        </div>
+    </div>
+<!-- Ícones (sprite) -->
+    <svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+        <defs>
+            <symbol id="i-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></symbol>
+            <symbol id="i-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 14.5A8.5 8.5 0 0 1 9.5 4a8.5 8.5 0 1 0 10.5 10.5z"/></symbol>
+            <symbol id="i-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></symbol>
+            <symbol id="i-up" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M5 12l7-7 7 7"/></symbol>
+            <symbol id="i-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></symbol>
+            <symbol id="i-play" viewBox="0 0 24 24" fill="currentColor"><path d="M7 4.5v15a1 1 0 0 0 1.5.86l12.4-7.5a1 1 0 0 0 0-1.72L8.5 3.64A1 1 0 0 0 7 4.5z"/></symbol>
+            <symbol id="i-temp" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M14 14.8V5a2 2 0 1 0-4 0v9.8a4 4 0 1 0 4 0z"/><path d="M12 9v7"/></symbol>
+            <symbol id="i-drop" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3s6 6.2 6 10.5a6 6 0 0 1-12 0C6 9.2 12 3 12 3z"/></symbol>
+            <symbol id="i-noise" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5 6 9H3v6h3l5 4V5z"/><path d="M15.5 8.5a5 5 0 0 1 0 7M18.5 5.5a9 9 0 0 1 0 13"/></symbol>
+            <symbol id="i-wind" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8h11a3 3 0 1 0-3-3M3 12h16a3 3 0 1 1-3 3M3 16h7a3 3 0 1 1-3 3"/></symbol>
+            <symbol id="i-gauge" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 18a9 9 0 1 1 16 0"/><path d="m12 14 4-5"/><circle cx="12" cy="14" r="1.2"/></symbol>
+            <symbol id="i-uv" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3.5"/><path d="M12 3v2.5M12 18.5V21M3 12h2.5M18.5 12H21M5.6 5.6l1.8 1.8M16.6 16.6l1.8 1.8M5.6 18.4l1.8-1.8M16.6 7.4l1.8-1.8"/></symbol>
+            <symbol id="i-cpu" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="6" width="12" height="12" rx="2"/><rect x="9.5" y="9.5" width="5" height="5" rx=".8"/><path d="M9 2v3M15 2v3M9 19v3M15 19v3M2 9h3M2 15h3M19 9h3M19 15h3"/></symbol>
+            <symbol id="i-net" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.8 3 2.8 15 0 18M12 3c-2.8 3-2.8 15 0 18"/></symbol>
+            <symbol id="i-server" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="7" rx="2"/><rect x="3" y="13" width="18" height="7" rx="2"/><path d="M7 7.5h.01M7 16.5h.01"/></symbol>
+            <symbol id="i-db" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5.5" rx="8" ry="3"/><path d="M4 5.5v6c0 1.7 3.6 3 8 3s8-1.3 8-3v-6M4 11.5v6c0 1.7 3.6 3 8 3s8-1.3 8-3v-6"/></symbol>
+            <symbol id="i-monitor" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="4" width="19" height="12.5" rx="2"/><path d="M8 20.5h8M12 16.5v4M6 12l3-3 3 2.5 4-5"/></symbol>
+            <symbol id="i-phone" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="6.5" y="2.5" width="11" height="19" rx="2.5"/><path d="M10.5 18.5h3"/></symbol>
+            <symbol id="i-bell" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9a6 6 0 1 1 12 0c0 6 2.5 7.5 2.5 7.5h-17S6 15 6 9z"/><path d="M10 20a2.2 2.2 0 0 0 4 0"/></symbol>
+            <symbol id="i-sliders" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h9M17 7h3M4 17h3M11 17h9"/><circle cx="15" cy="7" r="2"/><circle cx="9" cy="17" r="2"/></symbol>
+            <symbol id="i-report" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M7 3h8l4 4v14H7z"/><path d="M14.5 3v4.5H19M10 17v-3M13 17v-5M16 17v-2"/></symbol>
+            <symbol id="i-shield" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 4.5 6v5.5c0 4.7 3.1 8.2 7.5 9.5 4.4-1.3 7.5-4.8 7.5-9.5V6L12 3z"/><path d="m9 12 2.2 2.2L15.5 10"/></symbol>
+            <symbol id="i-code" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="m8 7-5 5 5 5M16 7l5 5-5 5M14 4l-4 16"/></symbol>
+            <symbol id="i-eye" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></symbol>
+            <symbol id="i-peak" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="m2.5 20 6.5-11 3.5 5.5 2.5-3.5 7 9z"/><path d="m9 9 1.7 2.2 1.3-1.2"/></symbol>
+            <symbol id="i-alert" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/><path d="M12 9v4M12 17h.01"/></symbol>
+            <symbol id="i-users" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c.6-3.6 3.2-5.5 6.5-5.5s5.9 1.9 6.5 5.5M16 4.8a3.5 3.5 0 0 1 0 6.4M18 14.8c2 .7 3.2 2.4 3.5 5.2"/></symbol>
+            <symbol id="i-link" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1M14 10a4 4 0 0 0-5.7 0l-3 3A4 4 0 0 0 11 18.7l1-1"/></symbol>
+            <symbol id="i-lock" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="4.5" y="10.5" width="15" height="10" rx="2.5"/><path d="M8 10.5V8a4 4 0 0 1 8 0v2.5"/></symbol>
+            <symbol id="i-mail" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2.5"/><path d="m4 7.5 8 6 8-6"/></symbol>
+            <symbol id="i-pin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-7-6.2-7-11.2a7 7 0 0 1 14 0C19 14.8 12 21 12 21z"/><circle cx="12" cy="9.8" r="2.4"/></symbol>
+            <symbol id="i-book" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H20v16H6.5A2.5 2.5 0 0 0 4 21.5z"/><path d="M4 5.5v16M8.5 7.5h7"/></symbol>
+            <symbol id="i-gh" viewBox="0 0 24 24" fill="currentColor"><path d="M12 .5a11.5 11.5 0 0 0-3.64 22.41c.58.1.79-.25.79-.56v-2c-3.2.7-3.88-1.37-3.88-1.37-.52-1.33-1.28-1.69-1.28-1.69-1.04-.71.08-.7.08-.7 1.15.08 1.76 1.18 1.76 1.18 1.03 1.76 2.7 1.25 3.36.95.1-.74.4-1.25.73-1.54-2.55-.29-5.24-1.28-5.24-5.69 0-1.26.45-2.28 1.18-3.09-.12-.29-.51-1.46.11-3.05 0 0 .97-.31 3.17 1.18a11 11 0 0 1 5.78 0c2.2-1.49 3.17-1.18 3.17-1.18.62 1.59.23 2.76.11 3.05.74.81 1.18 1.83 1.18 3.09 0 4.42-2.7 5.4-5.26 5.68.41.36.78 1.06.78 2.14v3.17c0 .31.21.67.8.56A11.5 11.5 0 0 0 12 .5z"/></symbol>
+        </defs>
+    </svg>
+
+    <div class="progress" id="progress"></div>
+
+    <header class="site-header" id="header">
+        <div class="container header-inner">
+            <a href="#inicio" class="brand brand-ath" aria-label="Athenas — início">
+                <span class="logo-mask logo-ath-symbol" role="img" aria-label="Símbolo da Athenas: um A com asas"></span>
+                <span class="logo-mask logo-ath-wordmark" role="img" aria-label="Athenas"></span>
+            </a>
+
+            <nav class="nav" id="nav" aria-label="Principal">
+                <ul>
+                    <li><a href="#inicio">Início</a></li>
+                    <li><a href="#sobre">Sobre nós</a></li>
+                    <li><a href="#servicos">Serviços</a></li>
+                    <li><a href="#identidade">Identidade</a></li>
+                    <li><a href="#projetos">Projetos</a></li>
+                    <li><a href="#equipe">Equipe</a></li>
+                    <li><a href="#contato">Contato</a></li>
+                </ul>
+            </nav>
+
+            <div class="header-actions">
+                <button class="theme-toggle" id="themeToggle" type="button" aria-label="Alternar entre tema claro e escuro">
+                    <svg class="i-sun"><use href="#i-sun" /></svg>
+                    <svg class="i-moon"><use href="#i-moon" /></svg>
+                </button>
+                <a href="apresentacao.html" class="btn btn-primary btn-sm">Conheça o Ákron</a>
+                <button class="menu-toggle" id="menuToggle" type="button" aria-expanded="false" aria-controls="nav" aria-label="Abrir menu">
+                    <span></span><span></span><span></span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <main>
+        <!-- ===================== HERO ===================== -->
+        <section class="hero atmos" id="inicio">
+            <div class="contours" aria-hidden="true">
+                <svg viewBox="0 0 1200 800" preserveAspectRatio="xMidYMid slice">
+                    <path d="M-50 740C190 660 240 740 400 660S680 500 840 540 1100 460 1280 400"/>
+                    <path d="M-50 690C170 610 250 690 410 610S690 450 850 490 1110 410 1280 350"/>
+                    <path d="M-50 640C150 560 260 640 420 560S700 400 860 440 1120 360 1280 300"/>
+                    <path d="M-50 590C130 510 270 590 430 510S710 350 870 390 1130 310 1280 250"/>
+                    <path d="M-50 540C120 460 280 540 440 460S720 300 880 340 1140 260 1280 200"/>
+                    <path d="M-50 490C110 410 290 490 450 410S730 250 890 290 1150 210 1280 150"/>
+                    <path d="M-50 440C100 360 300 440 460 360S740 200 900 240 1160 160 1280 100"/>
+                </svg>
+            </div>
+
+            <div class="container hero-grid">
+                <div>
+                    <span class="pill reveal"><span class="dot"></span> Desenvolvimento de Sistemas · Mococa-SP</span>
+                    <h1 class="reveal" style="--d:.08s">Conhecimento que <em>impulsiona inovação.</em></h1>
+                    <p class="hero-lead reveal" style="--d:.16s">A <strong>Athenas</strong> é uma iniciativa voltada ao desenvolvimento de soluções tecnológicas que unem criatividade, planejamento e conhecimento técnico. Por meio da análise de necessidades e da aplicação de diferentes tecnologias, buscamos transformar ideias em projetos capazes de gerar resultados e contribuir positivamente para diferentes contextos.</p>
+                    <div class="hero-actions reveal" style="--d:.24s">
+                        <a href="#projetos" class="btn btn-primary">Conheça nossos projetos <svg class="arrow"><use href="#i-arrow" /></svg></a>
+                        <a href="#video" class="btn btn-ghost"><svg style="width:16px;height:16px"><use href="#i-play" /></svg> Assistir ao vídeo</a>
+                    </div>
+                    <div class="hero-facts reveal" style="--d:.32s">
+                        <div><strong><span data-count="3">0</span></strong><span>projetos no portfólio</span></div>
+                        <div><strong><span data-count="5">0</span></strong><span>integrantes na equipe</span></div>
+                        <div><strong><span data-count="2026">0</span></strong><span>ano de fundação</span></div>
+                    </div>
+                </div>
+
+                <div class="reveal" style="--d:.2s">
+                    <div class="hero-logo-card">
+                        <svg class="rings" viewBox="0 0 400 400" aria-hidden="true" preserveAspectRatio="xMidYMid slice">
+                            <circle cx="200" cy="200" r="70" /><circle cx="200" cy="200" r="110" /><circle cx="200" cy="200" r="150" /><circle cx="200" cy="200" r="190" /><circle cx="200" cy="200" r="235" /><circle cx="200" cy="200" r="285" />
+                        </svg>
+                        <span class="logo-mask logo-ath-full" role="img" aria-label="Logo da Athenas: um A com asas. Conhecimento que impulsiona inovação"></span>
+                        <span class="tag t1"><svg><use href="#i-code" /></svg> Sistemas</span>
+                        <span class="tag t2"><svg><use href="#i-monitor" /></svg> Web e mobile</span>
+                        <span class="tag t3"><svg><use href="#i-link" /></svg> Integrações</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ===================== SOBRE ===================== -->
+        <section id="sobre">
+            <div class="container problem-grid">
+                <div class="reveal">
+                    <span class="eyebrow">Quem somos</span>
+                    <h2 class="section-title">Uma startup que nasceu na sala de aula</h2>
+                    <p class="section-lead">Somos uma equipe de desenvolvimento que acredita na tecnologia como ferramenta de transformação. Trabalhamos de forma colaborativa, reunindo diferentes conhecimentos e habilidades para planejar, desenvolver e aprimorar soluções digitais. Cada projeto representa uma oportunidade de aprender, experimentar novas possibilidades e construir ferramentas que respondam a necessidades concretas.</p>
+                    <p class="section-lead" style="margin-top:12px">A Athenas nasceu no curso Técnico em Desenvolvimento de Sistemas do SENAI, em Mococa-SP.</p>
+                    <p class="problem-quote">Resolver problemas com inteligência: planejar primeiro, construir depois.</p>
+                </div>
+                <div class="problem-list">
+                    <article class="problem-item reveal">
+                        <span class="n">01</span>
+                        <div><h3>Sistemas que não conversam</h3><p>Quando cada ferramenta vive isolada, a informação se perde no caminho. Criamos integrações entre plataformas para que os dados circulem sem retrabalho.</p></div>
+                    </article>
+                    <article class="problem-item reveal" style="--d:.08s">
+                        <span class="n">02</span>
+                        <div><h3>Dados desorganizados</h3><p>Planilhas soltas e registros duplicados atrapalham decisões. Estruturamos as informações para que sejam fáceis de encontrar, de confiar e de usar.</p></div>
+                    </article>
+                    <article class="problem-item reveal" style="--d:.16s">
+                        <span class="n">03</span>
+                        <div><h3>Excesso de tarefas manuais</h3><p>O que se repete, a tecnologia pode fazer. Automatizamos rotinas para liberar o tempo das pessoas para o que realmente exige atenção.</p></div>
+                    </article>
+                </div>
+            </div>
+        </section>
+
+        <!-- ===================== SERVIÇOS ===================== -->
+        <section class="alt" id="servicos">
+            <div class="container">
+                <div class="section-head reveal">
+                    <span class="eyebrow">O que fazemos</span>
+                    <h2 class="section-title wide">Soluções pensadas a partir de necessidades reais</h2>
+                    <p class="section-lead">Da análise do problema à entrega de uma solução, atuamos em todas as etapas e damos atenção especial à experiência de quem vai usar o sistema.</p>
+                </div>
+
+                <div class="grid g-3">
+                    <article class="card reveal">
+                        <div class="icon-chip"><svg><use href="#i-eye" /></svg></div>
+                        <h3>Análise de problemas</h3>
+                        <p>Antes de programar, observamos o contexto e identificamos o problema que realmente precisa ser resolvido.</p>
+                    </article>
+                    <article class="card reveal" style="--d:.08s">
+                        <div class="icon-chip gold"><svg><use href="#i-report" /></svg></div>
+                        <h3>Levantamento de requisitos</h3>
+                        <p>Registramos o que o sistema precisa fazer e quais condições ele deve respeitar, com apoio de pesquisa e conversas.</p>
+                    </article>
+                    <article class="card reveal" style="--d:.16s">
+                        <div class="icon-chip"><svg><use href="#i-sliders" /></svg></div>
+                        <h3>Planejamento de sistemas</h3>
+                        <p>Definimos arquitetura, casos de uso e etapas de desenvolvimento para que cada decisão tenha uma razão.</p>
+                    </article>
+                    <article class="card reveal">
+                        <div class="icon-chip gold"><svg><use href="#i-phone" /></svg></div>
+                        <h3>Aplicações web e mobile</h3>
+                        <p>Criamos aplicações para o computador e o celular, com foco na experiência do usuário: interfaces claras e fáceis de usar.</p>
+                    </article>
+                    <article class="card reveal" style="--d:.08s">
+                        <div class="icon-chip"><svg><use href="#i-db" /></svg></div>
+                        <h3>Bancos de dados</h3>
+                        <p>Estruturamos tabelas, relacionamentos e regras para que as informações sejam organizadas e confiáveis.</p>
+                    </article>
+                    <article class="card reveal" style="--d:.16s">
+                        <div class="icon-chip gold"><svg><use href="#i-link" /></svg></div>
+                        <h3>Integração de tecnologias</h3>
+                        <p>Conectamos sensores, servidores, bancos de dados e aplicações por meio de APIs e protocolos.</p>
+                    </article>
+                </div>
+
+                <div class="pillars" style="margin-top:20px">
+                    <div class="card reveal"><h3>Eficiência</h3><p>Processos mais rápidos e menos retrabalho no dia a dia.</p></div>
+                    <div class="card reveal" style="--d:.06s"><h3>Integração</h3><p>Partes do negócio falando a mesma língua e compartilhando dados.</p></div>
+                    <div class="card reveal" style="--d:.12s"><h3>Escalabilidade</h3><p>Arquiteturas em camadas, prontas para crescer sem recomeçar do zero.</p></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ===================== MÉTODO ===================== -->
+        <section id="metodo">
+            <div class="container">
+                <div class="section-head reveal">
+                    <span class="eyebrow">Como trabalhamos</span>
+                    <h2 class="section-title wide">Do problema à solução, com método</h2>
+                    <p class="section-lead">Os projetos não surgem apenas da programação: partem de um processo organizado de análise e desenvolvimento, apoiado em princípios da Engenharia de Software e em práticas ágeis (Scrum).</p>
+                </div>
+                <div class="method">
+                    <article class="card reveal"><h3>Identificar o problema</h3><p>Observamos o contexto e definimos qual necessidade o projeto deve atender.</p></article>
+                    <article class="card reveal" style="--d:.06s"><h3>Pesquisar</h3><p>Estudamos o cenário, o público e as soluções que já existem.</p></article>
+                    <article class="card reveal" style="--d:.12s"><h3>Planejar</h3><p>Organizamos etapas, responsabilidades e tecnologias do projeto.</p></article>
+                    <article class="card reveal" style="--d:.18s"><h3>Definir requisitos</h3><p>Registramos requisitos funcionais e não funcionais que guiam o desenvolvimento.</p></article>
+                    <article class="card reveal"><h3>Prototipar</h3><p>Desenhamos telas e fluxos para validar ideias antes de programar.</p></article>
+                    <article class="card reveal" style="--d:.06s"><h3>Implementar</h3><p>Desenvolvemos o sistema em ciclos curtos, de forma colaborativa.</p></article>
+                    <article class="card reveal" style="--d:.12s"><h3>Testar</h3><p>Verificamos o funcionamento e registramos o que foi corrigido.</p></article>
+                    <article class="card reveal" style="--d:.18s"><h3>Aprimorar</h3><p>Ajustamos e evoluímos a solução a partir do que foi aprendido.</p></article>
+                </div>
+            </div>
+        </section>
+
+        <!-- ===================== IDENTIDADE ===================== -->
+        <section class="alt" id="identidade">
+            <div class="container name-grid">
+                <div class="name-art reveal">
+                    <svg class="rings" viewBox="0 0 400 400" aria-hidden="true">
+                        <circle cx="200" cy="200" r="70" /><circle cx="200" cy="200" r="110" /><circle cx="200" cy="200" r="150" /><circle cx="200" cy="200" r="190" /><circle cx="200" cy="200" r="235" />
+                    </svg>
+                    <span class="logo-mask logo-ath-full" style="width:76%" role="img" aria-label="Logo da Athenas"></span>
+                </div>
+                <div>
+                    <div class="reveal">
+                        <span class="eyebrow">Nome e identidade</span>
+                        <h2 class="section-title">Por que Athenas?</h2>
+                        <p class="section-lead">O nome vem da deusa grega Athena, símbolo de sabedoria, estratégia e inteligência. Diferente de Ares, deus da guerra bruta, Athena representava a guerra planejada, o que reforça a ideia de resolver problemas com inteligência.</p>
+                    </div>
+                    <div class="ideas">
+                        <div class="idea reveal">
+                            <div class="icon-chip"><svg><use href="#i-users" /></svg></div>
+                            <div><h3>No plural, de propósito</h3><p>Em grego, o nome da cidade é <em>Ἀθῆναι (Athênai)</em>, um substantivo plural. “Athenas” remete à cidade, à deusa e ao trabalho coletivo de cinco pessoas.</p></div>
+                        </div>
+                        <div class="idea reveal" style="--d:.08s">
+                            <div class="icon-chip gold"><svg><use href="#i-peak" /></svg></div>
+                            <div><h3>Um “A” com asas</h3><p>O símbolo representa inteligência, estratégia e evolução. As asas remetem a progresso, inovação e direcionamento: crescimento guiado por planejamento.</p></div>
+                        </div>
+                        <div class="idea reveal" style="--d:.16s">
+                            <div class="icon-chip"><svg><use href="#i-book" /></svg></div>
+                            <div><h3>Conhecimento que impulsiona inovação</h3><p>Nosso slogan resume a proposta: transformar o que aprendemos em soluções tecnológicas eficientes, planejadas e orientadas a resultados.</p></div>
+                        </div>
+                    </div>
+                    <div class="swatches reveal" aria-label="Paleta de cores da marca">
+                        <div class="swatch"><i style="background:#F7EFD8"></i><div><b>Bege claro</b><code>#F7EFD8</code></div></div>
+                        <div class="swatch"><i style="background:#556270"></i><div><b>Azul-acinzentado</b><code>#556270</code></div></div>
+                        <div class="swatch"><i style="background:#273142"></i><div><b>Azul-escuro</b><code>#273142</code></div></div>
+                    </div>
+                    <div class="values reveal"><span>Tecnologia</span><span>Planejamento</span><span>Inovação</span></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ===================== PROJETOS ===================== -->
+        <section id="projetos">
+            <div class="container">
+                <div class="section-head reveal projects-head">
+                    <span class="eyebrow">Nossos projetos</span>
+                    <h2 class="section-title wide">Do monitoramento industrial à proteção animal e ao apoio social</h2>
+                    <p class="section-lead">Cada projeto desenvolvido pela Athenas parte de uma necessidade e busca transformá-la em uma solução tecnológica. Nosso portfólio reúne iniciativas que exploram diferentes áreas de aplicação da tecnologia, desde o monitoramento industrial até propostas voltadas à proteção animal e ao apoio social. Conheça as soluções desenvolvidas e as ideias que estão em processo de planejamento.</p>
+                </div>
+
+                <!-- Projeto principal: Ákron -->
+                <article class="akron-feature proj-main reveal" data-brand="akron" aria-labelledby="akron-titulo">
+                    <div class="logo-wrap"><span class="logo-mask logo-full" role="img" aria-label="Logo do Ákron"></span></div>
+                    <div>
+                        <div class="badge-row">
+                            <span class="badge main">Projeto principal</span>
+                        </div>
+                        <h3 id="akron-titulo">Ákron</h3>
+                        <p class="proj-sub">Sistema Integrado de Monitoramento Ambiental de Estoques com IoT, Aplicativo Móvel e Plataforma Web</p>
+                        <p>O Ákron é uma solução tecnológica desenvolvida para monitorar as condições ambientais de estoques por meio da integração entre sensores IoT, plataforma web e aplicativo móvel. O sistema permite acompanhar variáveis como temperatura, umidade, ruído e qualidade do ar, visualizar históricos de leituras e receber alertas sobre condições que exigem atenção. Seu objetivo é facilitar o acompanhamento dos ambientes de armazenamento, centralizar informações e auxiliar na tomada de decisões.</p>
+
+                        <div class="proj-actions">
+                            <a href="apresentacao.html" class="btn btn-access"><span class="live" aria-hidden="true"></span> Ver apresentação <svg class="arrow"><use href="#i-arrow" /></svg></a>
+                        </div>
+                    </div>
+                </article>
+
+                <!-- Propostas em planejamento -->
+                <div class="subhead reveal">
+                    <div>
+                        <h3>Propostas em planejamento</h3>
+                        <p>Ideias com pesquisa e análise próprias. Ainda não são sistemas implementados.</p>
+                    </div>
+                </div>
+
+                <div class="prop-grid">
+                    <article class="prop prop-amparo reveal">
+                        <div class="prop-art"><img src="img/projetos/protecao-animal.svg" alt="Ilustração com pata de animal, coração e marcador de localização" loading="lazy"></div>
+                        <div class="prop-body">
+                            <span class="badge plan" style="align-self:flex-start">Proposta em planejamento</span>
+                            <h3>Amparo <small>Plataforma Digital para Apoio à Adoção e Proteção de Animais</small></h3>
+                            <p>Proposta de plataforma que centraliza adoção, doações, denúncias de maus-tratos e localização de animais, aproximando ONGs, protetores independentes e pessoas interessadas em ajudar.</p>
+                            <div class="chips"><span class="chip">Adoção</span><span class="chip">Doações</span><span class="chip">Denúncias</span><span class="chip">Geolocalização</span></div>
+                            <p class="name-note">Nome provisório.</p>
+                            <a href="projetos/protecao-animal.html" class="prop-link">Ver apresentação <svg><use href="#i-arrow" /></svg></a>
+                        </div>
+                    </article>
+                    <article class="prop prop-elo reveal" style="--d:.1s">
+                        <div class="prop-art"><img src="img/projetos/doacao-alimentos.svg" alt="Ilustração com cesta de alimentos, coração e cartão de demandas" loading="lazy"></div>
+                        <div class="prop-body">
+                            <span class="badge plan" style="align-self:flex-start">Proposta em planejamento</span>
+                            <h3>Elo <small>Plataforma Online para Doação de Alimentos e Itens Essenciais</small></h3>
+                            <p>Proposta de plataforma que aproxima doadores, instituições sociais e famílias que precisam de apoio, organizando demandas e acompanhando as doações até a distribuição.</p>
+                            <div class="chips"><span class="chip">Demandas</span><span class="chip">Doadores</span><span class="chip">Pontos de coleta</span><span class="chip">Informações nutricionais</span></div>
+                            <p class="name-note">Nome provisório.</p>
+                            <a href="projetos/doacao-alimentos.html" class="prop-link">Ver apresentação <svg><use href="#i-arrow" /></svg></a>
+                        </div>
+                    </article>
+                </div>
+            </div>
+        </section>
+
+        <!-- ===================== VÍDEO ===================== -->
+        <section class="video-section" id="video">
+            <div class="container">
+                <div class="section-head center reveal">
+                    <span class="eyebrow">Conheça em 2 minutos</span>
+                    <h2 class="section-title wide">A Athenas e o Ákron em vídeo</h2>
+                    <p class="section-lead">Veja quem somos, o desafio que escolhemos enfrentar e como o Ákron funciona, do sensor ao painel e ao aplicativo.</p>
+                </div>
+
+                <div class="video-frame reveal" id="videoFrame">
+                    <video id="videoPlayer" preload="metadata" controls playsinline poster="media/poster.jpg">
+                        <source src="media/apresentacao-akron.mp4" type="video/mp4">
+                        Seu navegador não suporta vídeo HTML5. <a href="media/apresentacao-akron.mp4">Baixe o vídeo</a>.
+                    </video>
+                    <button class="video-cover" id="videoCover" type="button" aria-label="Reproduzir o vídeo de apresentação da Athenas e do Ákron">
+                        <span class="play"><svg><use href="#i-play" /></svg></span>
+                        <span class="video-cap">
+                            <strong>Athenas &amp; Ákron</strong>
+                            <span>1 min 46 s · com legendas</span>
+                        </span>
+                    </button>
+                </div>
+
+                <div class="video-chapters reveal" aria-label="Capítulos do vídeo">
+                    <button class="chip" type="button" data-seek="0"><time>0:00</time> A Athenas</button>
+                    <button class="chip" type="button" data-seek="33"><time>0:33</time> O desafio</button>
+                    <button class="chip" type="button" data-seek="48"><time>0:48</time> O Ákron</button>
+                    <button class="chip" type="button" data-seek="54"><time>0:54</time> Do sensor ao painel</button>
+                    <button class="chip" type="button" data-seek="70"><time>1:10</time> Sistema web</button>
+                    <button class="chip" type="button" data-seek="89"><time>1:29</time> Aplicativo móvel</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- ===================== EQUIPE ===================== -->
+        <section id="equipe">
+            <div class="container">
+                <div class="section-head center reveal">
+                    <span class="eyebrow">Quem constrói</span>
+                    <h2 class="section-title wide">Cinco pessoas, uma equipe</h2>
+                    <p class="section-lead">Cada integrante assume uma função de acordo com sua área de atuação. Passe o mouse (ou toque) sobre um cartão para ver o que cada pessoa faz no projeto.</p>
+                </div>
+
+                <figure class="group-photo reveal">
+                    <img src="img/equipe/grupo.jpg" alt="Foto da equipe Athenas" loading="lazy">
+                    <figcaption>Equipe Athenas · Desenvolvimento do projeto Ákron.</figcaption>
+                </figure>
+
+                <div class="team flipteam"><article class="fcard featured-owner reveal" tabindex="0" role="group" aria-label="Anna Hilda, Product Owner. Cartão giratório: passe o mouse, toque ou pressione Enter para ver a função.">
+                        <div class="fcard-inner">
+                            <div class="fcard-face fcard-front">
+                                <div class="ph"><span class="team-ribbon">Product Owner</span><img src="img/equipe/annah.jpg" alt="Anna Hilda Castelani Frezarini" loading="lazy"></div>
+                                <div class="info"><h3>Anna Hilda</h3><p class="role"><b>Product Owner</b><br>Desenvolvedora Full Stack</p><span class="hint">Ver função</span></div>
+                            </div>
+                            <div class="fcard-face fcard-back">
+                                <div><span class="back-role">Product Owner</span><h3>Anna Hilda</h3><p>Lidera a equipe e acompanha todas as etapas do projeto, participando do planejamento, desenvolvimento e integração das funcionalidades.</p></div>
+                                <a href="https://github.com/Nananilda" target="_blank" rel="noopener" aria-label="GitHub de Anna Hilda (abre em nova aba)"><svg><use href="#i-gh" /></svg> GitHub</a>
+                            </div>
+                        </div>
+                    </article>
+<article class="fcard reveal" style="--d:.24s" tabindex="0" role="group" aria-label="Beatriz Gonçalves, Documentação. Cartão giratório: passe o mouse, toque ou pressione Enter para ver a função.">
+                        <div class="fcard-inner">
+                            <div class="fcard-face fcard-front">
+                                <div class="ph"><img src="img/equipe/beatriz.jpg" alt="Beatriz Gonçalves Lense Campos" loading="lazy"></div>
+                                <div class="info"><h3>Beatriz Gonçalves</h3><p class="role"><b>Documentação</b></p><span class="hint">Ver função</span></div>
+                            </div>
+                            <div class="fcard-face fcard-back">
+                                <div><span class="back-role">Documentação</span><h3>Beatriz Gonçalves</h3><p>Organiza a documentação técnica e os registros do projeto, descrevendo requisitos, processos e decisões de desenvolvimento.</p></div>
+                                <a href="https://github.com/biagoncalvezx" target="_blank" rel="noopener" aria-label="GitHub de Beatriz Gonçalves (abre em nova aba)"><svg><use href="#i-gh" /></svg> GitHub</a>
+                            </div>
+                        </div>
+                    </article>
+<article class="fcard reveal" style="--d:.06s" tabindex="0" role="group" aria-label="Bianca Moreira, Scrum Master. Cartão giratório: passe o mouse, toque ou pressione Enter para ver a função.">
+                        <div class="fcard-inner">
+                            <div class="fcard-face fcard-front">
+                                <div class="ph"><span class="team-ribbon">Scrum Master</span><img src="img/equipe/bianca.jpg" alt="Bianca Moreira de Oliveira" loading="lazy"></div>
+                                <div class="info"><h3>Bianca Moreira</h3><p class="role"><b>Scrum Master</b><br>Desenvolvedora Back-end</p><span class="hint">Ver função</span></div>
+                            </div>
+                            <div class="fcard-face fcard-back">
+                                <div><span class="back-role">Scrum Master</span><h3>Bianca Moreira</h3><p>Organiza o fluxo de trabalho, acompanha as atividades e trabalha na lógica do sistema, nas APIs e na integração com o banco de dados.</p></div>
+                                <a href="https://github.com/bywoliveira" target="_blank" rel="noopener" aria-label="GitHub de Bianca Moreira (abre em nova aba)"><svg><use href="#i-gh" /></svg> GitHub</a>
+                            </div>
+                        </div>
+                    </article>
+<article class="fcard reveal" style="--d:.12s" tabindex="0" role="group" aria-label="Carlos Eduardo, Desenvolvedor Front-end. Cartão giratório: passe o mouse, toque ou pressione Enter para ver a função.">
+                        <div class="fcard-inner">
+                            <div class="fcard-face fcard-front">
+                                <div class="ph"><img src="img/equipe/carlos.jpg" alt="Carlos Eduardo Martins da Costa" loading="lazy"></div>
+                                <div class="info"><h3>Carlos Eduardo</h3><p class="role"><b>Desenvolvedor Front-end</b></p><span class="hint">Ver função</span></div>
+                            </div>
+                            <div class="fcard-face fcard-back">
+                                <div><span class="back-role">Desenvolvedor Front-end</span><h3>Carlos Eduardo</h3><p>Desenvolve as interfaces do sistema, trabalhando na estrutura visual, na usabilidade e na interação entre os usuários e as funcionalidades.</p></div>
+                                <a href="https://github.com/Carlos-Eduardo-Costa" target="_blank" rel="noopener" aria-label="GitHub de Carlos Eduardo (abre em nova aba)"><svg><use href="#i-gh" /></svg> GitHub</a>
+                            </div>
+                        </div>
+                    </article>
+<article class="fcard reveal" style="--d:.18s" tabindex="0" role="group" aria-label="Marcelo Duzzi, Banco de Dados. Cartão giratório: passe o mouse, toque ou pressione Enter para ver a função.">
+                        <div class="fcard-inner">
+                            <div class="fcard-face fcard-front">
+                                <div class="ph"><img src="img/equipe/marcelo.jpg" alt="Marcelo Duzzi Santonio" loading="lazy"></div>
+                                <div class="info"><h3>Marcelo Duzzi</h3><p class="role"><b>Banco de Dados</b></p><span class="hint">Ver função</span></div>
+                            </div>
+                            <div class="fcard-face fcard-back">
+                                <div><span class="back-role">Banco de Dados</span><h3>Marcelo Duzzi</h3><p>Estrutura e organiza o banco de dados, definindo tabelas, relacionamentos e mecanismos de gerenciamento das informações.</p></div>
+                                <a href="https://github.com/Mar3l00" target="_blank" rel="noopener" aria-label="GitHub de Marcelo Duzzi (abre em nova aba)"><svg><use href="#i-gh" /></svg> GitHub</a>
+                            </div>
+                        </div>
+                    </article>
+                </div>
+
+                <p class="advisors reveal">Sob orientação dos professores <strong>Leonardo Oliveira Casellato</strong>, <strong>Ricardo Akira Harada</strong> e <strong>Wellinton Cardoso Teodoro</strong> · SENAI</p>
+            </div>
+        </section>
+
+        <!-- ===================== CONTATO ===================== -->
+        <section class="alt" id="contato">
+            <div class="container contact-grid">
+                <div class="reveal">
+                    <span class="eyebrow">Vamos conversar</span>
+                    <h2 class="section-title">Tem um problema para resolver?</h2>
+                    <p class="section-lead">Conte para a equipe da Athenas. Ao enviar, o seu aplicativo de e-mail abre com a mensagem já preenchida e o assunto “Contato pelo site da Athenas”.</p>
+                    <div class="contact-lines">
+                        <div class="cline"><span class="icon-chip"><svg><use href="#i-mail" /></svg></span> <a href="mailto:contatoathenasdev@athenas.dev.br?subject=Contato%20pelo%20site%20da%20Athenas" data-mail-link style="text-decoration:underline;text-underline-offset:3px">contatoathenasdev@athenas.dev.br</a></div>
+                        <div class="cline"><span class="icon-chip"><svg><use href="#i-pin" /></svg></span> Mococa · SP</div>
+                        <div class="cline"><span class="icon-chip"><svg><use href="#i-peak" /></svg></span> <a href="apresentacao.html" style="text-decoration:underline;text-underline-offset:3px">Conhecer o projeto Ákron</a></div>
+                    </div>
+                </div>
+
+                <form class="form reveal" id="form" novalidate style="--d:.1s">
+                    <div class="field"><label for="nome">Nome</label><input type="text" id="nome" name="nome" placeholder="Seu nome completo" autocomplete="name" required><small></small></div>
+                    <div class="field"><label for="email">E-mail</label><input type="email" id="email" name="email" placeholder="voce@exemplo.com" autocomplete="email" required><small></small></div>
+                    <div class="field"><label for="mensagem">Mensagem</label><textarea id="mensagem" name="mensagem" placeholder="Como podemos ajudar?" required></textarea><small></small></div>
+                    <button type="submit" class="btn btn-primary">Enviar mensagem <svg class="arrow"><use href="#i-arrow" /></svg></button>
+                    <p class="form-status" role="status" aria-live="polite"></p>
+                </form>
+            </div>
+        </section>
+    </main>
+
+    <footer class="site-footer">
+        <div class="container footer-grid">
+            <div class="footer-brand">
+                <span class="logo-mask logo-ath-full" role="img" aria-label="Logo da Athenas"></span>
+                <p>Athenas Desenvolvimento de Sistemas. Soluções tecnológicas que unem criatividade, planejamento e conhecimento técnico.</p>
+            </div>
+            <div>
+                <h4>Empresa</h4>
+                <ul>
+                    <li><a href="#sobre">Sobre nós</a></li>
+                    <li><a href="#servicos">Serviços</a></li>
+                    <li><a href="#identidade">Identidade</a></li>
+                    <li><a href="#projetos">Projetos</a></li>
+                    <li><a href="#equipe">Equipe</a></li>
+                    <li><a href="apresentacao.html">Projeto Ákron</a></li>
+                </ul>
+            </div>
+            <div>
+                <h4>Contato</h4>
+                <ul>
+                    <li><a href="mailto:contatoathenasdev@athenas.dev.br?subject=Contato%20pelo%20site%20da%20Athenas" data-mail-link>contatoathenasdev@athenas.dev.br</a></li>
+                    <li>Mococa · SP</li>
+                    <li>SENAI · Técnico em Desenvolvimento de Sistemas</li>
+                </ul>
+            </div>
+        </div>
+        <div class="container footer-bottom">
+            <p>© <span data-year>2026</span> Athenas Desenvolvimento de Sistemas. Conhecimento que impulsiona inovação.</p>
+            <a href="#inicio" class="to-top" aria-label="Voltar ao topo"><svg><use href="#i-up" /></svg></a>
+        </div>
+    </footer>
+
+    <script src="js/config.js"></script>
+    <script src="js/loading.js"></script>
+    <script src="js/main.js"></script>
+    <script src="js/projetos.js"></script>
+</body>
+
+</html>

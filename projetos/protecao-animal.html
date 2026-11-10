@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="pt-br" data-theme="dark">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Amparo · Athenas</title>
+    <meta name="description" content="Amparo (nome provisório): proposta da Athenas de plataforma digital para apoio à adoção e proteção de animais. Projeto em fase de planejamento.">
+    <meta name="theme-color" content="#0d1522">
+    <meta property="og:title" content="Amparo · Athenas">
+    <meta property="og:description" content="Amparo (nome provisório): proposta da Athenas de plataforma digital para apoio à adoção e proteção de animais. Projeto em fase de planejamento.">
+    <meta property="og:image" content="../img/icon-512.png">
+    <link rel="icon" type="image/png" href="../img/favicon.png">
+    <link rel="apple-touch-icon" href="../img/apple-touch-icon.png">
+    <link rel="stylesheet" href="../css/style.css">
+    <link rel="stylesheet" href="../css/projetos.css">
+    <script>
+        (function () {
+            var d = document.documentElement, t = null;
+            d.classList.add('js');
+            try { t = localStorage.getItem('athenas-tema'); } catch (e) { }
+            if (!t) t = (window.matchMedia && matchMedia('(prefers-color-scheme: light)').matches) ? 'light' : 'dark';
+            d.setAttribute('data-theme', t === 'light' ? 'light' : 'dark');
+        })();
+    </script>
+</head>
+
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+        <defs>
+            <symbol id="i-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></symbol>
+            <symbol id="i-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 14.5A8.5 8.5 0 0 1 9.5 4a8.5 8.5 0 1 0 10.5 10.5z"/></symbol>
+            <symbol id="i-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></symbol>
+            <symbol id="i-up" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M5 12l7-7 7 7"/></symbol>
+            <symbol id="i-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></symbol>
+            <symbol id="i-play" viewBox="0 0 24 24" fill="currentColor"><path d="M7 4.5v15a1 1 0 0 0 1.5.86l12.4-7.5a1 1 0 0 0 0-1.72L8.5 3.64A1 1 0 0 0 7 4.5z"/></symbol>
+            <symbol id="i-temp" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M14 14.8V5a2 2 0 1 0-4 0v9.8a4 4 0 1 0 4 0z"/><path d="M12 9v7"/></symbol>
+            <symbol id="i-drop" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3s6 6.2 6 10.5a6 6 0 0 1-12 0C6 9.2 12 3 12 3z"/></symbol>
+            <symbol id="i-noise" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5 6 9H3v6h3l5 4V5z"/><path d="M15.5 8.5a5 5 0 0 1 0 7M18.5 5.5a9 9 0 0 1 0 13"/></symbol>
+            <symbol id="i-wind" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8h11a3 3 0 1 0-3-3M3 12h16a3 3 0 1 1-3 3M3 16h7a3 3 0 1 1-3 3"/></symbol>
+            <symbol id="i-gauge" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 18a9 9 0 1 1 16 0"/><path d="m12 14 4-5"/><circle cx="12" cy="14" r="1.2"/></symbol>
+            <symbol id="i-uv" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3.5"/><path d="M12 3v2.5M12 18.5V21M3 12h2.5M18.5 12H21M5.6 5.6l1.8 1.8M16.6 16.6l1.8 1.8M5.6 18.4l1.8-1.8M16.6 7.4l1.8-1.8"/></symbol>
+            <symbol id="i-cpu" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="6" width="12" height="12" rx="2"/><rect x="9.5" y="9.5" width="5" height="5" rx=".8"/><path d="M9 2v3M15 2v3M9 19v3M15 19v3M2 9h3M2 15h3M19 9h3M19 15h3"/></symbol>
+            <symbol id="i-net" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.8 3 2.8 15 0 18M12 3c-2.8 3-2.8 15 0 18"/></symbol>
+            <symbol id="i-server" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="7" rx="2"/><rect x="3" y="13" width="18" height="7" rx="2"/><path d="M7 7.5h.01M7 16.5h.01"/></symbol>
+            <symbol id="i-db" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5.5" rx="8" ry="3"/><path d="M4 5.5v6c0 1.7 3.6 3 8 3s8-1.3 8-3v-6M4 11.5v6c0 1.7 3.6 3 8 3s8-1.3 8-3v-6"/></symbol>
+            <symbol id="i-monitor" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="4" width="19" height="12.5" rx="2"/><path d="M8 20.5h8M12 16.5v4M6 12l3-3 3 2.5 4-5"/></symbol>
+            <symbol id="i-phone" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="6.5" y="2.5" width="11" height="19" rx="2.5"/><path d="M10.5 18.5h3"/></symbol>
+            <symbol id="i-bell" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9a6 6 0 1 1 12 0c0 6 2.5 7.5 2.5 7.5h-17S6 15 6 9z"/><path d="M10 20a2.2 2.2 0 0 0 4 0"/></symbol>
+            <symbol id="i-sliders" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h9M17 7h3M4 17h3M11 17h9"/><circle cx="15" cy="7" r="2"/><circle cx="9" cy="17" r="2"/></symbol>
+            <symbol id="i-report" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M7 3h8l4 4v14H7z"/><path d="M14.5 3v4.5H19M10 17v-3M13 17v-5M16 17v-2"/></symbol>
+            <symbol id="i-shield" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 4.5 6v5.5c0 4.7 3.1 8.2 7.5 9.5 4.4-1.3 7.5-4.8 7.5-9.5V6L12 3z"/><path d="m9 12 2.2 2.2L15.5 10"/></symbol>
+            <symbol id="i-code" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="m8 7-5 5 5 5M16 7l5 5-5 5M14 4l-4 16"/></symbol>
+            <symbol id="i-eye" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></symbol>
+            <symbol id="i-peak" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="m2.5 20 6.5-11 3.5 5.5 2.5-3.5 7 9z"/><path d="m9 9 1.7 2.2 1.3-1.2"/></symbol>
+            <symbol id="i-alert" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/><path d="M12 9v4M12 17h.01"/></symbol>
+            <symbol id="i-users" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c.6-3.6 3.2-5.5 6.5-5.5s5.9 1.9 6.5 5.5M16 4.8a3.5 3.5 0 0 1 0 6.4M18 14.8c2 .7 3.2 2.4 3.5 5.2"/></symbol>
+            <symbol id="i-link" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1M14 10a4 4 0 0 0-5.7 0l-3 3A4 4 0 0 0 11 18.7l1-1"/></symbol>
+            <symbol id="i-lock" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="4.5" y="10.5" width="15" height="10" rx="2.5"/><path d="M8 10.5V8a4 4 0 0 1 8 0v2.5"/></symbol>
+            <symbol id="i-mail" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2.5"/><path d="m4 7.5 8 6 8-6"/></symbol>
+            <symbol id="i-pin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-7-6.2-7-11.2a7 7 0 0 1 14 0C19 14.8 12 21 12 21z"/><circle cx="12" cy="9.8" r="2.4"/></symbol>
+            <symbol id="i-book" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H20v16H6.5A2.5 2.5 0 0 0 4 21.5z"/><path d="M4 5.5v16M8.5 7.5h7"/></symbol>
+            <symbol id="i-gh" viewBox="0 0 24 24" fill="currentColor"><path d="M12 .5a11.5 11.5 0 0 0-3.64 22.41c.58.1.79-.25.79-.56v-2c-3.2.7-3.88-1.37-3.88-1.37-.52-1.33-1.28-1.69-1.28-1.69-1.04-.71.08-.7.08-.7 1.15.08 1.76 1.18 1.76 1.18 1.03 1.76 2.7 1.25 3.36.95.1-.74.4-1.25.73-1.54-2.55-.29-5.24-1.28-5.24-5.69 0-1.26.45-2.28 1.18-3.09-.12-.29-.51-1.46.11-3.05 0 0 .97-.31 3.17 1.18a11 11 0 0 1 5.78 0c2.2-1.49 3.17-1.18 3.17-1.18.62 1.59.23 2.76.11 3.05.74.81 1.18 1.83 1.18 3.09 0 4.42-2.7 5.4-5.26 5.68.41.36.78 1.06.78 2.14v3.17c0 .31.21.67.8.56A11.5 11.5 0 0 0 12 .5z"/></symbol>
+        </defs>
+    </svg>
+    <div class="progress" id="progress"></div>
+
+    <header class="site-header" id="header">
+        <div class="container header-inner">
+            <a href="../index.html#inicio" class="brand brand-ath" aria-label="Athenas — início">
+                <span class="logo-mask logo-ath-symbol" role="img" aria-label="Símbolo da Athenas: um A com asas"></span>
+                <span class="logo-mask logo-ath-wordmark" role="img" aria-label="Athenas"></span>
+            </a>
+            <nav class="nav" id="nav" aria-label="Principal">
+                <ul>
+                    <li><a href="../index.html#inicio">Início</a></li>
+                    <li><a href="../index.html#sobre">Sobre nós</a></li>
+                    <li><a href="../index.html#servicos">Serviços</a></li>
+                    <li><a href="../index.html#identidade">Identidade</a></li>
+                    <li><a href="../index.html#projetos" class="active" aria-current="page">Projetos</a></li>
+                    <li><a href="../index.html#equipe">Equipe</a></li>
+                    <li><a href="../index.html#contato">Contato</a></li>
+                </ul>
+            </nav>
+            <div class="header-actions">
+                <button class="theme-toggle" id="themeToggle" type="button" aria-label="Alternar entre tema claro e escuro">
+                    <svg class="i-sun"><use href="#i-sun" /></svg>
+                    <svg class="i-moon"><use href="#i-moon" /></svg>
+                </button>
+                <a href="../apresentacao.html" class="btn btn-primary btn-sm">Conheça o Ákron</a>
+                <button class="menu-toggle" id="menuToggle" type="button" aria-expanded="false" aria-controls="nav" aria-label="Abrir menu">
+                    <span></span><span></span><span></span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <main id="inicio">
+        <section class="page-hero atmos">
+            <div class="contours" aria-hidden="true"><svg viewBox="0 0 1200 800" preserveAspectRatio="xMidYMid slice"><path d="M-50 740C190 660 240 740 400 660S680 500 840 540 1100 460 1280 400"/><path d="M-50 640C150 560 260 640 420 560S700 400 860 440 1120 360 1280 300"/><path d="M-50 540C120 460 280 540 440 460S720 300 880 340 1140 260 1280 200"/><path d="M-50 440C100 360 300 440 460 360S740 200 900 240 1160 160 1280 100"/></svg></div>
+            <div class="container">
+                <nav class="crumbs reveal" aria-label="Você está em"><a href="../index.html">Athenas</a><span aria-hidden="true">/</span><a href="../index.html#projetos">Projetos</a><span aria-hidden="true">/</span><span aria-current="page">Amparo</span></nav>
+                <div class="page-hero-grid">
+                    <div>
+                        <div class="badge-row reveal"><span class="badge plan">Proposta em planejamento</span><span class="badge">Nome provisório</span></div>
+                        <h1 class="reveal" style="--d:.06s">Amparo</h1>
+                        <p class="full-title reveal" style="--d:.1s">Plataforma Digital para Apoio à Adoção e Proteção de Animais</p>
+                        <p class="lead reveal" style="--d:.16s">Uma proposta que reúne, em um único ambiente digital, adoção, doações, denúncias de maus-tratos e localização de animais, para aproximar ONGs, protetores independentes e pessoas que querem ajudar.</p>
+                    </div>
+                    <div class="hero-art reveal" style="--d:.2s"><img src="../img/projetos/protecao-animal.svg" alt="Ilustração com pata de animal, coração e marcador de localização"></div>
+                </div>
+            </div>
+        </section>
+
+        <section class="pj-section alt" id="problema">
+            <div class="container">
+                <div class="reveal"><span class="eyebrow">O problema</span><h2>Quem ajuda os animais hoje precisa se desdobrar em vários canais</h2><p class="lead">A proposta surgiu da necessidade de melhorar a comunicação entre organizações de proteção animal, protetores independentes e pessoas interessadas em contribuir com a causa.</p></div>
+                <div class="pj-two"><article class="info-card reveal"><h3>Como funciona hoje</h3><p>Muitas iniciativas dependem de redes sociais, publicações independentes e processos manuais para divulgar animais disponíveis para adoção, organizar doações e encontrar pessoas dispostas a ajudar.</p></article><article class="info-card reveal"><h3>O que isso dificulta</h3><p>Essa fragmentação pode dificultar o acesso às informações, a localização de animais próximos e o acompanhamento das necessidades das organizações.</p></article></div>
+            </div>
+        </section>
+
+        <section class="pj-section" id="solucao">
+            <div class="container">
+                <div class="reveal"><span class="eyebrow">A solução proposta</span><h2>Um ambiente digital para centralizar a proteção animal</h2><p class="lead">A plataforma proposta reúne diferentes atividades relacionadas à proteção animal em um só lugar. Cada frente funciona com regras e responsáveis definidos.</p></div>
+                <div class="grid g-2" style="margin-top:28px"><article class="info-card reveal"><h3>Adoção</h3><p>ONGs e protetores cadastram animais, publicam informações sobre suas condições e necessidades, disponibilizam fotografias e indicam a localização. Os interessados pesquisam por região, conhecem as características e demonstram interesse na adoção.</p></article><article class="info-card reveal" style="--d:.06s"><h3>Doações</h3><p>Um módulo de doações permite divulgar as necessidades das organizações e facilitar a contribuição de pessoas interessadas.</p></article><article class="info-card reveal" style="--d:.12s"><h3>Denúncias</h3><p>Registro de possíveis maus-tratos com descrição da ocorrência, imagens e localização, com encaminhamento e acompanhamento por responsáveis autorizados.</p></article><article class="info-card reveal accent" style="--d:.18s"><h3>Segurança e validação</h3><p>O sistema deverá contar com medidas de segurança e validação para evitar denúncias falsas, exposição indevida de pessoas e divulgação de informações sensíveis.</p></article></div>
+            </div>
+        </section>
+
+        <section class="pj-section alt" id="funcionalidades">
+            <div class="container">
+                <div class="reveal"><span class="eyebrow">Funcionalidades previstas</span><h2>O que a plataforma deverá oferecer</h2><p class="lead">Funcionalidades previstas para a proposta. Itens marcados dependem de decisões futuras e não são obrigatórios na primeira versão.</p></div>
+                <div class="fn-grid"><div class="fn reveal"><div class="icon-chip"><svg><use href="#i-pin" /></svg></div><div><b>Cadastro de animais</b><span>Informações, fotos e localização</span></div></div><div class="fn reveal"><div class="icon-chip"><svg><use href="#i-eye" /></svg></div><div><b>Busca por localização</b><span>Animais próximos ao interessado</span></div></div><div class="fn reveal"><div class="icon-chip"><svg><use href="#i-users" /></svg></div><div><b>Solicitações de adoção</b><span>Gerenciamento dos pedidos</span></div></div><div class="fn reveal"><div class="icon-chip"><svg><use href="#i-shield" /></svg></div><div><b>Cadastro de organizações</b><span>ONGs e protetores</span></div></div><div class="fn reveal"><div class="icon-chip"><svg><use href="#i-bell" /></svg></div><div><b>Campanhas</b><span>Divulgação de ações e causas</span></div></div><div class="fn reveal"><div class="icon-chip"><svg><use href="#i-gauge" /></svg></div><div><b>Gerenciamento de doações</b><span>Necessidades e contribuições</span></div></div><div class="fn reveal"><div class="icon-chip"><svg><use href="#i-alert" /></svg></div><div><b>Registro de denúncias</b><span>Texto, imagens e localização</span></div></div><div class="fn reveal"><div class="icon-chip"><svg><use href="#i-sliders" /></svg></div><div><b>Administração de usuários</b><span>Perfis e permissões</span></div></div><div class="fn reveal later"><div class="icon-chip"><svg><use href="#i-link" /></svg></div><div><b>Clínicas veterinárias parceiras</b><span>Possibilidade de integração</span><span class="tagl">Possibilidade</span></div></div><div class="fn reveal later"><div class="icon-chip"><svg><use href="#i-peak" /></svg></div><div><b>Sistema de recomendação</b><span>Sugere animais conforme preferências informadas</span><span class="tagl">Possível evolução</span></div></div></div>
+            </div>
+        </section>
+
+        <section class="pj-section" id="concorrencia">
+            <div class="container">
+                <div class="reveal"><span class="eyebrow">Análise de concorrência</span><h2>O que já existe e onde a proposta se encaixa</h2><p class="lead">Existem ferramentas que oferecem divulgação e conexão entre pessoas interessadas em adoção. A proposta da Athenas busca integrar atividades que normalmente estão distribuídas entre diferentes serviços.</p></div>
+                <div class="rivals"><article class="rival reveal"><small>Plataforma de adoção</small><h3>Petfinder</h3><p>Plataforma online voltada à divulgação de animais disponíveis para adoção.</p></article><article class="rival reveal"><small>Plataforma de adoção</small><h3>Adopt-a-Pet</h3><p>Plataforma online que conecta pessoas interessadas a animais para adoção.</p></article><article class="rival reveal"><small>Classificados</small><h3>OLX</h3><p>Classificados usados por parte das pessoas para divulgar animais e procurar adotantes.</p></article><article class="rival reveal"><small>Redes sociais</small><h3>Facebook e Instagram</h3><p>Redes sociais onde protetores e organizações costumam divulgar animais, campanhas e pedidos de ajuda.</p></article></div>
+                <div class="info-card accent diff reveal"><h3>O diferencial da proposta</h3><p>O diferencial não está em ter um cadastro de animais, e sim em centralizar adoção, doações, denúncias e localização em uma mesma plataforma, com foco no contexto brasileiro.</p></div>
+            </div>
+        </section>
+
+        <section class="pj-section alt" id="viabilidade">
+            <div class="container">
+                <div class="reveal"><span class="eyebrow">Análise de viabilidade</span><h2>É possível? O que precisa existir para funcionar</h2><p class="lead">Resumo das quatro dimensões analisadas. A proposta tem potencial, mas depende de planejamento e de pessoas dispostas a fazê-la funcionar.</p></div>
+                <div class="via-tabs reveal">
+                    <div class="tabs" role="tablist" aria-label="Dimensões da viabilidade"><button class="tab" role="tab" id="tab-tec" aria-selected="true" aria-controls="panel-tec">Técnica</button><button class="tab" role="tab" id="tab-eco" aria-selected="false" aria-controls="panel-eco">Econômica</button><button class="tab" role="tab" id="tab-ope" aria-selected="false" aria-controls="panel-ope">Operacional</button><button class="tab" role="tab" id="tab-soc" aria-selected="false" aria-controls="panel-soc">Social</button></div>
+                    <div class="via-panel" role="tabpanel" id="panel-tec" aria-labelledby="tab-tec"><p>A proposta é tecnicamente possível com tecnologias de desenvolvimento web e mobile, bancos de dados, armazenamento de imagens e serviços de geolocalização.</p><ul><li>Segurança dos dados dos usuários e das ocorrências</li><li>Validação das organizações cadastradas</li><li>Gestão das denúncias e dos encaminhamentos</li><li>Armazenamento das informações e das imagens</li></ul></div>
+<div class="via-panel" role="tabpanel" id="panel-eco" aria-labelledby="tab-eco" hidden><p>O desenvolvimento inicial pode utilizar ferramentas de código aberto e serviços de infraestrutura de baixo custo.</p><ul><li>A expansão dependeria de parcerias e de recursos para manutenção</li></ul></div>
+<div class="via-panel" role="tabpanel" id="panel-ope" aria-labelledby="tab-ope" hidden><p>A plataforma dependeria da participação de ONGs, protetores e usuários.</p><ul><li>Responsáveis pela análise das solicitações</li><li>Responsáveis pela análise das denúncias</li></ul></div>
+<div class="via-panel" role="tabpanel" id="panel-soc" aria-labelledby="tab-soc" hidden><p>A proposta apresenta potencial de contribuir para a divulgação de animais, incentivar a adoção responsável e facilitar o apoio às organizações de proteção.</p></div>
+
+                </div>
+                <div class="callout gold conclusion reveal"><b>Conclusão.</b> A proposta possui potencial de viabilidade, mas depende de planejamento, parcerias, validação das informações e definição dos processos de funcionamento.</div>
+            </div>
+        </section>
+
+        <section class="pj-section" id="aviso">
+            <div class="container">
+                <div class="notice reveal" role="note">
+                    <div class="ic" aria-hidden="true"><svg><use href="#i-alert" /></svg></div>
+                    <div>
+                        <h2>Projeto ainda em progresso</h2>
+                        <p>Esta proposta encontra-se em fase de planejamento e estruturação. As funcionalidades, tecnologias e estratégias de implementação ainda poderão passar por ajustes durante o desenvolvimento.</p>
+                        <p class="no-app">Trata-se de uma proposta: ainda não existe uma aplicação final disponível para acesso.</p>
+                    </div>
+                </div>
+                <div class="subhead reveal" style="margin-top:56px"><h3>Conheça também</h3></div>
+                <div class="other-projects"><a class="info-card reveal" href="../apresentacao.html"><span class="badge " style="align-self:flex-start">Projeto principal · em desenvolvimento</span><h3>Ákron</h3><p>Sistema integrado de monitoramento ambiental de estoques com IoT, aplicativo móvel e plataforma web.</p><span class="prop-link">Conhecer o Ákron <svg><use href="#i-arrow" /></svg></span></a><a class="info-card reveal" href="doacao-alimentos.html"><span class="badge plan" style="align-self:flex-start">Proposta em planejamento</span><h3>Elo</h3><p>Plataforma online para doação de alimentos e itens essenciais.</p><span class="prop-link">Conhecer a proposta <svg><use href="#i-arrow" /></svg></span></a></div>
+            </div>
+        </section>
+    </main>
+
+    <footer class="site-footer">
+        <div class="container footer-grid">
+            <div class="footer-brand">
+                <span class="logo-mask logo-ath-full" role="img" aria-label="Logo da Athenas"></span>
+                <p>Athenas Desenvolvimento de Sistemas. Soluções tecnológicas que unem criatividade, planejamento e conhecimento técnico.</p>
+            </div>
+            <div>
+                <h4>Empresa</h4>
+                <ul>
+                    <li><a href="../index.html#sobre">Sobre nós</a></li>
+                    <li><a href="../index.html#servicos">Serviços</a></li>
+                    <li><a href="../index.html#projetos">Projetos</a></li>
+                    <li><a href="../index.html#equipe">Equipe</a></li>
+                    <li><a href="../apresentacao.html">Projeto Ákron</a></li>
+                </ul>
+            </div>
+            <div>
+                <h4>Contato</h4>
+                <ul>
+                    <li><a href="mailto:contatoathenasdev@athenas.dev.br?subject=Contato%20pelo%20site%20da%20Athenas" data-mail-link>contatoathenasdev@athenas.dev.br</a></li>
+                    <li>Mococa · SP</li>
+                    <li>SENAI · Técnico em Desenvolvimento de Sistemas</li>
+                </ul>
+            </div>
+        </div>
+        <div class="container footer-bottom">
+            <p>© <span data-year>2026</span> Athenas Desenvolvimento de Sistemas. Conhecimento que impulsiona inovação.</p>
+            <a href="#inicio" class="to-top" aria-label="Voltar ao topo"><svg><use href="#i-up" /></svg></a>
+        </div>
+    </footer>
+
+    <script src="../js/main.js"></script>
+</body>
+
+</html>

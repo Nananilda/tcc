@@ -1,0 +1,723 @@
+<!DOCTYPE html>
+<html lang="pt-br" data-theme="dark" data-brand="akron">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ákron · Monitoramento do ambiente de produção</title>
+    <meta name="description" content="Ákron: sistema de monitoramento do ambiente de produção integrado à gestão industrial. Sensores IoT, alertas automáticos, plataforma web e aplicativo móvel. TCC da Athenas Desenvolvimento de Sistemas, SENAI Mococa-SP, 2026.">
+    <meta name="theme-color" content="#0b1118">
+    <meta property="og:title" content="Ákron — Inteligência e Monitoramento para a Indústria">
+    <meta property="og:image" content="img/icon-512-akron.png">
+    <link rel="icon" type="image/png" href="img/favicon-akron.png">
+    <link rel="apple-touch-icon" href="img/apple-touch-akron.png">
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/projetos.css">
+    <script>
+        (function () {
+            var d = document.documentElement, t = null;
+            d.classList.add('js');
+            try { t = localStorage.getItem('athenas-tema'); } catch (e) { }
+            if (!t) t = (window.matchMedia && matchMedia('(prefers-color-scheme: light)').matches) ? 'light' : 'dark';
+            d.setAttribute('data-theme', t === 'light' ? 'light' : 'dark');
+        })();
+    </script>
+</head>
+
+<body>
+<!-- Ícones (sprite) -->
+    <svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+        <defs>
+            <symbol id="i-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></symbol>
+            <symbol id="i-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 14.5A8.5 8.5 0 0 1 9.5 4a8.5 8.5 0 1 0 10.5 10.5z"/></symbol>
+            <symbol id="i-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></symbol>
+            <symbol id="i-up" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M5 12l7-7 7 7"/></symbol>
+            <symbol id="i-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></symbol>
+            <symbol id="i-play" viewBox="0 0 24 24" fill="currentColor"><path d="M7 4.5v15a1 1 0 0 0 1.5.86l12.4-7.5a1 1 0 0 0 0-1.72L8.5 3.64A1 1 0 0 0 7 4.5z"/></symbol>
+            <symbol id="i-temp" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M14 14.8V5a2 2 0 1 0-4 0v9.8a4 4 0 1 0 4 0z"/><path d="M12 9v7"/></symbol>
+            <symbol id="i-drop" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3s6 6.2 6 10.5a6 6 0 0 1-12 0C6 9.2 12 3 12 3z"/></symbol>
+            <symbol id="i-noise" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5 6 9H3v6h3l5 4V5z"/><path d="M15.5 8.5a5 5 0 0 1 0 7M18.5 5.5a9 9 0 0 1 0 13"/></symbol>
+            <symbol id="i-wind" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8h11a3 3 0 1 0-3-3M3 12h16a3 3 0 1 1-3 3M3 16h7a3 3 0 1 1-3 3"/></symbol>
+            <symbol id="i-gauge" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 18a9 9 0 1 1 16 0"/><path d="m12 14 4-5"/><circle cx="12" cy="14" r="1.2"/></symbol>
+            <symbol id="i-uv" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3.5"/><path d="M12 3v2.5M12 18.5V21M3 12h2.5M18.5 12H21M5.6 5.6l1.8 1.8M16.6 16.6l1.8 1.8M5.6 18.4l1.8-1.8M16.6 7.4l1.8-1.8"/></symbol>
+            <symbol id="i-cpu" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="6" width="12" height="12" rx="2"/><rect x="9.5" y="9.5" width="5" height="5" rx=".8"/><path d="M9 2v3M15 2v3M9 19v3M15 19v3M2 9h3M2 15h3M19 9h3M19 15h3"/></symbol>
+            <symbol id="i-net" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.8 3 2.8 15 0 18M12 3c-2.8 3-2.8 15 0 18"/></symbol>
+            <symbol id="i-server" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="7" rx="2"/><rect x="3" y="13" width="18" height="7" rx="2"/><path d="M7 7.5h.01M7 16.5h.01"/></symbol>
+            <symbol id="i-db" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5.5" rx="8" ry="3"/><path d="M4 5.5v6c0 1.7 3.6 3 8 3s8-1.3 8-3v-6M4 11.5v6c0 1.7 3.6 3 8 3s8-1.3 8-3v-6"/></symbol>
+            <symbol id="i-monitor" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="4" width="19" height="12.5" rx="2"/><path d="M8 20.5h8M12 16.5v4M6 12l3-3 3 2.5 4-5"/></symbol>
+            <symbol id="i-phone" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="6.5" y="2.5" width="11" height="19" rx="2.5"/><path d="M10.5 18.5h3"/></symbol>
+            <symbol id="i-bell" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9a6 6 0 1 1 12 0c0 6 2.5 7.5 2.5 7.5h-17S6 15 6 9z"/><path d="M10 20a2.2 2.2 0 0 0 4 0"/></symbol>
+            <symbol id="i-sliders" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h9M17 7h3M4 17h3M11 17h9"/><circle cx="15" cy="7" r="2"/><circle cx="9" cy="17" r="2"/></symbol>
+            <symbol id="i-report" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M7 3h8l4 4v14H7z"/><path d="M14.5 3v4.5H19M10 17v-3M13 17v-5M16 17v-2"/></symbol>
+            <symbol id="i-shield" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 4.5 6v5.5c0 4.7 3.1 8.2 7.5 9.5 4.4-1.3 7.5-4.8 7.5-9.5V6L12 3z"/><path d="m9 12 2.2 2.2L15.5 10"/></symbol>
+            <symbol id="i-code" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="m8 7-5 5 5 5M16 7l5 5-5 5M14 4l-4 16"/></symbol>
+            <symbol id="i-eye" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></symbol>
+            <symbol id="i-peak" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="m2.5 20 6.5-11 3.5 5.5 2.5-3.5 7 9z"/><path d="m9 9 1.7 2.2 1.3-1.2"/></symbol>
+            <symbol id="i-alert" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/><path d="M12 9v4M12 17h.01"/></symbol>
+            <symbol id="i-users" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c.6-3.6 3.2-5.5 6.5-5.5s5.9 1.9 6.5 5.5M16 4.8a3.5 3.5 0 0 1 0 6.4M18 14.8c2 .7 3.2 2.4 3.5 5.2"/></symbol>
+            <symbol id="i-link" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1M14 10a4 4 0 0 0-5.7 0l-3 3A4 4 0 0 0 11 18.7l1-1"/></symbol>
+            <symbol id="i-lock" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="4.5" y="10.5" width="15" height="10" rx="2.5"/><path d="M8 10.5V8a4 4 0 0 1 8 0v2.5"/></symbol>
+            <symbol id="i-mail" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2.5"/><path d="m4 7.5 8 6 8-6"/></symbol>
+            <symbol id="i-pin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-7-6.2-7-11.2a7 7 0 0 1 14 0C19 14.8 12 21 12 21z"/><circle cx="12" cy="9.8" r="2.4"/></symbol>
+            <symbol id="i-book" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H20v16H6.5A2.5 2.5 0 0 0 4 21.5z"/><path d="M4 5.5v16M8.5 7.5h7"/></symbol>
+            <symbol id="i-gh" viewBox="0 0 24 24" fill="currentColor"><path d="M12 .5a11.5 11.5 0 0 0-3.64 22.41c.58.1.79-.25.79-.56v-2c-3.2.7-3.88-1.37-3.88-1.37-.52-1.33-1.28-1.69-1.28-1.69-1.04-.71.08-.7.08-.7 1.15.08 1.76 1.18 1.76 1.18 1.03 1.76 2.7 1.25 3.36.95.1-.74.4-1.25.73-1.54-2.55-.29-5.24-1.28-5.24-5.69 0-1.26.45-2.28 1.18-3.09-.12-.29-.51-1.46.11-3.05 0 0 .97-.31 3.17 1.18a11 11 0 0 1 5.78 0c2.2-1.49 3.17-1.18 3.17-1.18.62 1.59.23 2.76.11 3.05.74.81 1.18 1.83 1.18 3.09 0 4.42-2.7 5.4-5.26 5.68.41.36.78 1.06.78 2.14v3.17c0 .31.21.67.8.56A11.5 11.5 0 0 0 12 .5z"/></symbol>
+        </defs>
+    </svg>
+
+    <div class="progress" id="progress"></div>
+
+    <header class="site-header" id="header">
+        <div class="container header-inner">
+            <a href="#inicio" class="brand" aria-label="Ákron — início">
+                <span class="logo-mask logo-symbol" role="img" aria-label="Símbolo do Ákron"></span>
+                <span>
+                    <span class="logo-mask logo-wordmark" role="img" aria-label="Ákron"></span>
+                    <span class="brand-by">by Athenas</span>
+                </span>
+            </a>
+            <nav class="nav" id="nav" aria-label="Principal">
+                <ul>
+                    <li><a href="#problema">O desafio</a></li>
+                    <li><a href="#nome">O nome</a></li>
+                    <li><a href="#como-funciona">Como funciona</a></li>
+                    <li><a href="#recursos">Recursos</a></li>
+                    <li><a href="index.html#video">Vídeo</a></li>
+                    <li><a href="#documentacao">Documentação</a></li>
+                </ul>
+            </nav>
+            <div class="header-actions">
+                <button class="theme-toggle" id="themeToggle" type="button" aria-label="Alternar entre tema claro e escuro">
+                    <svg class="i-sun"><use href="#i-sun" /></svg>
+                    <svg class="i-moon"><use href="#i-moon" /></svg>
+                </button>
+                <a href="index.html" class="btn btn-ghost btn-sm">← Athenas</a>
+                <button class="menu-toggle" id="menuToggle" type="button" aria-expanded="false" aria-controls="nav" aria-label="Abrir menu">
+                    <span></span><span></span><span></span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <main>
+        <!-- ===================== HERO ===================== -->
+        <section class="hero atmos" id="inicio">
+            <div class="contours" aria-hidden="true">
+                <svg viewBox="0 0 1200 800" preserveAspectRatio="xMidYMid slice">
+                    <path d="M-50 640C150 560 260 640 420 560S700 400 860 440 1120 360 1280 300"/>
+                    <path d="M-50 590C130 510 270 590 430 510S710 350 870 390 1130 310 1280 250"/>
+                    <path d="M-50 540C120 460 280 540 440 460S720 300 880 340 1140 260 1280 200"/>
+                    <path d="M-50 490C110 410 290 490 450 410S730 250 890 290 1150 210 1280 150"/>
+                    <path d="M-50 440C100 360 300 440 460 360S740 200 900 240 1160 160 1280 100"/>
+                    <path d="M-50 390C90 310 310 390 470 310S750 150 910 190 1170 110 1280 50"/>
+                    <path d="M-50 340C80 260 320 340 480 260S760 100 920 140 1180 60 1280 0"/>
+                    <path d="M-50 690C170 610 250 690 410 610S690 450 850 490 1110 410 1280 350"/>
+                    <path d="M-50 740C190 660 240 740 400 660S680 500 840 540 1100 460 1280 400"/>
+                </svg>
+            </div>
+
+            <div class="container hero-grid">
+                <div>
+                    <span class="pill reveal"><span class="dot"></span> TCC da Athenas · SENAI Mococa-SP · 2026</span>
+                    <h1 class="reveal" style="--d:.08s">A <em>visão do alto</em> do seu ambiente de produção.</h1>
+                    <p class="hero-lead reveal" style="--d:.16s">O <strong>Ákron</strong> coleta, armazena e exibe em tempo real temperatura, umidade, ruído, qualidade do ar, pressão e radiação UV, e avisa o gestor quando um limite é ultrapassado. <em>Inteligência e Monitoramento para a Indústria.</em></p>
+                    <div class="hero-actions reveal" style="--d:.24s">
+                        <a href="index.html#video" class="btn btn-primary">
+                            <svg style="width:16px;height:16px"><use href="#i-play" /></svg> Assistir ao vídeo
+                        </a>
+                        <a href="akron/" class="btn btn-access">Ir para o sistema <svg class="arrow"><use href="#i-arrow" /></svg></a>
+                    </div>
+                    <div class="hero-facts reveal" style="--d:.32s">
+                        <div><strong><span data-count="6">0</span></strong><span>variáveis monitoradas</span></div>
+                        <div><strong><span data-count="2">0</span></strong><span>plataformas: web e mobile</span></div>
+                        <div><strong><span data-count="8">0</span></strong><span>objetivos específicos</span></div>
+                    </div>
+                </div>
+
+                <div class="demo-wrap reveal" style="--d:.2s">
+                    <div class="float-chip"><svg><use href="#i-peak" /></svg> Visão geral em um painel</div>
+                    <div class="demo" aria-label="Demonstração ilustrativa do painel do Ákron">
+                        <div class="demo-bar">
+                            <i></i><i></i><i></i>
+                            <b>Ákron · Painel</b>
+                            <span class="live"><span class="dot"></span> AO VIVO</span>
+                        </div>
+                        <div class="demo-body">
+                            <div class="demo-tiles" id="tiles">
+                                <div class="tile" data-k="temp" data-base="26" data-var="1.4" data-lim="30" data-dec="1">
+                                    <div class="tile-top">Temperatura <svg><use href="#i-temp" /></svg></div>
+                                    <div class="tile-val"><span>26,0</span><small>°C</small></div>
+                                    <svg class="spark" viewBox="0 0 100 26" preserveAspectRatio="none"><path d=""/></svg>
+                                    <div class="tile-state">Normal</div>
+                                </div>
+                                <div class="tile" data-k="umid" data-base="58" data-var="2.5" data-lim="80" data-dec="0">
+                                    <div class="tile-top">Umidade <svg><use href="#i-drop" /></svg></div>
+                                    <div class="tile-val"><span>58</span><small>%</small></div>
+                                    <svg class="spark" viewBox="0 0 100 26" preserveAspectRatio="none"><path d=""/></svg>
+                                    <div class="tile-state">Normal</div>
+                                </div>
+                                <div class="tile" data-k="ruido" data-base="68" data-var="3" data-lim="85" data-dec="0">
+                                    <div class="tile-top">Ruído <svg><use href="#i-noise" /></svg></div>
+                                    <div class="tile-val"><span>68</span><small>dB</small></div>
+                                    <svg class="spark" viewBox="0 0 100 26" preserveAspectRatio="none"><path d=""/></svg>
+                                    <div class="tile-state">Normal</div>
+                                </div>
+                                <div class="tile" data-k="ar" data-base="42" data-var="3" data-lim="100" data-dec="0">
+                                    <div class="tile-top">Qual. do ar <svg><use href="#i-wind" /></svg></div>
+                                    <div class="tile-val"><span>42</span><small>AQI</small></div>
+                                    <svg class="spark" viewBox="0 0 100 26" preserveAspectRatio="none"><path d=""/></svg>
+                                    <div class="tile-state">Normal</div>
+                                </div>
+                                <div class="tile" data-k="pres" data-base="1013" data-var="1.2" data-lim="1030" data-dec="0">
+                                    <div class="tile-top">Pressão <svg><use href="#i-gauge" /></svg></div>
+                                    <div class="tile-val"><span>1013</span><small>hPa</small></div>
+                                    <svg class="spark" viewBox="0 0 100 26" preserveAspectRatio="none"><path d=""/></svg>
+                                    <div class="tile-state">Normal</div>
+                                </div>
+                                <div class="tile" data-k="uv" data-base="3.4" data-var=".5" data-lim="8" data-dec="1">
+                                    <div class="tile-top">Radiação UV <svg><use href="#i-uv" /></svg></div>
+                                    <div class="tile-val"><span>3,4</span><small>índice</small></div>
+                                    <svg class="spark" viewBox="0 0 100 26" preserveAspectRatio="none"><path d=""/></svg>
+                                    <div class="tile-state">Normal</div>
+                                </div>
+                            </div>
+                            <div class="demo-chart">
+                                <header>Temperatura · últimas leituras <span>limite 30 °C</span></header>
+                                <svg class="chart-svg" id="chart" viewBox="0 0 320 96" preserveAspectRatio="none">
+                                    <defs>
+                                        <linearGradient id="gArea" x1="0" y1="0" x2="0" y2="1">
+                                            <stop offset="0" stop-color="var(--brand)" stop-opacity=".35" />
+                                            <stop offset="1" stop-color="var(--brand)" stop-opacity="0" />
+                                        </linearGradient>
+                                    </defs>
+                                    <line class="grid-l" x1="0" y1="24" x2="320" y2="24" />
+                                    <line class="grid-l" x1="0" y1="48" x2="320" y2="48" />
+                                    <line class="grid-l" x1="0" y1="72" x2="320" y2="72" />
+                                    <line class="limit" x1="0" y1="14" x2="320" y2="14" />
+                                    <path class="area" d="" />
+                                    <path class="line" d="" />
+                                </svg>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="toast" id="toast" role="status" aria-live="polite">
+                        <svg><use href="#i-alert" /></svg>
+                        <div><strong>Alerta automático</strong><span>Temperatura acima do limite configurado (30 °C).</span></div>
+                    </div>
+                    <p class="demo-note">Demonstração ilustrativa com dados simulados.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- ===================== FAIXA ===================== -->
+        <div class="strip" aria-label="Tecnologias do projeto">
+            <div class="strip-track">
+                <span>Internet das Coisas</span><span>Arduino</span><span>HTTP + JSON</span><span>API RESTful</span><span>PHP + PDO</span><span>MySQL</span><span>HTML · CSS · JavaScript</span><span>Aplicativo móvel</span><span>Indústria 4.0</span><span>Scrum</span>
+                <span>Internet das Coisas</span><span>Arduino</span><span>HTTP + JSON</span><span>API RESTful</span><span>PHP + PDO</span><span>MySQL</span><span>HTML · CSS · JavaScript</span><span>Aplicativo móvel</span><span>Indústria 4.0</span><span>Scrum</span>
+            </div>
+        </div>
+
+        <!-- ===================== PROBLEMA E JUSTIFICATIVA ===================== -->
+        <section id="problema">
+            <div class="container">
+                <div class="problem-grid">
+                    <div class="reveal">
+                        <span class="eyebrow">O desafio</span>
+                        <h2 class="section-title">A empresa sabe quanto produziu. Mas e o ambiente agora?</h2>
+                        <p class="section-lead">Boa parte das indústrias já tem sistemas consolidados de gestão, como estoque, planejamento de produção e ERP. Mesmo assim, ainda faltam informações em tempo real sobre as condições físicas do ambiente em que se produz.</p>
+                        <p class="problem-quote">“Sabe quanto estoque tem e quanto produziu, mas nem sempre sabe, no mesmo instante, se a temperatura está acima do tolerável ou se o ruído passou do limite.”</p>
+                    </div>
+                    <div class="problem-list">
+                        <article class="problem-item reveal"><span class="n">01</span><div><h3>Monitoramento contínuo</h3><p>Muitas medições ainda são feitas de forma manual e periódica, deixando lacunas entre uma verificação e outra.</p></div></article>
+                        <article class="problem-item reveal" style="--d:.08s"><span class="n">02</span><div><h3>Comunicação entre setores</h3><p>A informação sobre uma condição inadequada nem sempre chega rápido a quem pode agir.</p></div></article>
+                        <article class="problem-item reveal" style="--d:.16s"><span class="n">03</span><div><h3>Acompanhamento em tempo real</h3><p>Relatórios atrasados impedem ações preventivas e afetam produtividade, eficiência e a segurança de quem trabalha.</p></div></article>
+                    </div>
+                </div>
+
+                <div class="section-head reveal" style="margin:clamp(56px,7vw,96px) 0 32px">
+                    <span class="eyebrow">Por que este projeto</span>
+                    <h2 class="section-title wide">Justificativa: três razões para o Ákron existir</h2>
+                </div>
+                <div class="grid g-3">
+                    <article class="card reveal">
+                        <div class="icon-chip"><svg><use href="#i-gauge" /></svg></div>
+                        <h3>Para a indústria</h3>
+                        <p>Eficiência, segurança e agilidade são fatores decisivos. Ver o ambiente em tempo real e receber alertas preventivos permite agir antes que um problema vire parada, acidente ou perda de qualidade. Soluções de grande porte costumam ser complexas e voltadas a grandes operações; o Ákron foi pensado para ser acessível à realidade de pequenas e médias indústrias.</p>
+                    </article>
+                    <article class="card reveal" style="--d:.08s">
+                        <div class="icon-chip gold"><svg><use href="#i-shield" /></svg></div>
+                        <h3>Para quem trabalha</h3>
+                        <p>Temperatura inadequada, ruído elevado e má qualidade do ar podem afetar a produtividade e a saúde. Monitorar essas condições de forma contínua é um passo para ambientes mais seguros e confortáveis, sem substituir as normas regulamentadoras de segurança.</p>
+                    </article>
+                    <article class="card reveal" style="--d:.16s">
+                        <div class="icon-chip"><svg><use href="#i-book" /></svg></div>
+                        <h3>Para a formação</h3>
+                        <p>O projeto integra áreas que o curso ensina separadamente: desenvolvimento de software, banco de dados, Internet das Coisas e desenvolvimento móvel. Permite aplicar o aprendizado na prática, da modelagem à implantação simulada.</p>
+                    </article>
+                </div>
+
+                <div class="callout reveal" style="margin-top:32px;max-width:none">
+                    <b>A lacuna que identificamos:</b> faltam sistemas integrados que monitorem, em tempo real, as condições do ambiente produtivo e que se conectem com facilidade aos sistemas que a empresa já usa. O Ákron complementa a camada administrativa com dados do chão de fábrica, sem substituí-la.
+                </div>
+                <div class="grid g-4" style="margin-top:20px">
+                    <div class="card reveal"><h3 style="font-size:16px">Gestores de produção</h3><p>Visão geral do ambiente sem depender de estar no chão de fábrica.</p></div>
+                    <div class="card reveal" style="--d:.05s"><h3 style="font-size:16px">Supervisores</h3><p>Alertas imediatos quando um parâmetro foge do padrão.</p></div>
+                    <div class="card reveal" style="--d:.1s"><h3 style="font-size:16px">Trabalhadores</h3><p>Ambiente acompanhado de perto, com mais atenção à segurança.</p></div>
+                    <div class="card reveal" style="--d:.15s"><h3 style="font-size:16px">Indústrias</h3><p>Solução acessível que complementa o que já existe.</p></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ===================== COMO FUNCIONA ===================== -->
+        <section id="como-funciona">
+            <div class="container">
+                <div class="section-head reveal">
+                    <span class="eyebrow">Como funciona</span>
+                    <h2 class="section-title wide">Um dado nasce no sensor e termina na sua tela</h2>
+                    <p class="section-lead">Cada passagem tem uma responsabilidade clara: o sensor mede, o microcontrolador empacota, a rede transporta, o servidor valida e guarda, e as interfaces exibem.</p>
+                </div>
+
+                <div class="flow">
+                    <div class="flow-step reveal">
+                        <div class="flow-ic"><svg><use href="#i-temp" /></svg></div>
+                        <div><small>Etapa 1</small><h3>Sensores</h3><p>Convertem a grandeza física em sinal elétrico.</p></div>
+                    </div>
+                    <div class="flow-step reveal" style="--d:.08s">
+                        <div class="flow-ic"><svg><use href="#i-cpu" /></svg></div>
+                        <div><small>Etapa 2</small><h3>Arduino</h3><p>Lê os sensores e monta a mensagem a enviar.</p></div>
+                    </div>
+                    <div class="flow-step reveal" style="--d:.16s">
+                        <div class="flow-ic"><svg><use href="#i-net" /></svg></div>
+                        <div><small>Etapa 3</small><h3>Rede · HTTP + JSON</h3><p>Envio das leituras em formato leve e padronizado.</p></div>
+                    </div>
+                    <div class="flow-step reveal" style="--d:.24s">
+                        <div class="flow-ic"><svg><use href="#i-server" /></svg></div>
+                        <div><small>Etapa 4</small><h3>API PHP + MySQL</h3><p>Valida, compara com os limites, gera alertas e grava o histórico.</p></div>
+                    </div>
+                    <div class="flow-step reveal" style="--d:.32s">
+                        <div class="flow-ic"><svg><use href="#i-monitor" /></svg></div>
+                        <div><small>Etapa 5</small><h3>Web e aplicativo</h3><p>Painéis, gráficos, relatórios e notificações.</p></div>
+                    </div>
+                </div>
+
+                <div class="sensors" aria-label="Variáveis monitoradas">
+                    <div class="sensor reveal"><svg><use href="#i-temp" /></svg><strong>Temperatura</strong><span>°C</span></div>
+                    <div class="sensor reveal" style="--d:.05s"><svg><use href="#i-drop" /></svg><strong>Umidade</strong><span>%</span></div>
+                    <div class="sensor reveal" style="--d:.1s"><svg><use href="#i-noise" /></svg><strong>Ruído</strong><span>dB</span></div>
+                    <div class="sensor reveal" style="--d:.15s"><svg><use href="#i-wind" /></svg><strong>Qualidade do ar</strong><span>AQI</span></div>
+                    <div class="sensor reveal" style="--d:.2s"><svg><use href="#i-gauge" /></svg><strong>Pressão</strong><span>hPa</span></div>
+                    <div class="sensor reveal" style="--d:.25s"><svg><use href="#i-uv" /></svg><strong>Radiação UV</strong><span>índice</span></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ===================== RECURSOS ===================== -->
+        <section class="alt" id="recursos">
+            <div class="container">
+                <div class="section-head reveal">
+                    <span class="eyebrow">Recursos</span>
+                    <h2 class="section-title wide">O problema encontra o gestor, e não o contrário</h2>
+                    <p class="section-lead">As funcionalidades nascem dos requisitos do projeto: monitorar, alertar, analisar e acompanhar de qualquer lugar.</p>
+                </div>
+
+                <div class="bento">
+                    <article class="card b-1 reveal">
+                        <div class="icon-chip"><svg><use href="#i-monitor" /></svg></div>
+                        <h3>Monitoramento em tempo real</h3>
+                        <p>Painel com o valor atual de cada grandeza, o estado (normal ou em alerta) e os alertas mais recentes. Gráficos em tempo real permitem acompanhar variações por sensor e período.</p>
+                        <div class="mini-chart" aria-hidden="true">
+                            <svg viewBox="0 0 400 120" preserveAspectRatio="none">
+                                <defs><linearGradient id="gMini" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="var(--brand)" stop-opacity=".3"/><stop offset="1" stop-color="var(--brand)" stop-opacity="0"/></linearGradient></defs>
+                                <line class="g" x1="0" y1="40" x2="400" y2="40"/><line class="g" x1="0" y1="80" x2="400" y2="80"/>
+                                <line class="lim" x1="0" y1="18" x2="400" y2="18"/><text x="4" y="12">LIMITE</text>
+                                <path class="a" d="M0 92 C40 84 60 70 100 76 S160 96 200 70 S270 28 310 36 S360 60 400 48 L400 120 L0 120Z"/>
+                                <path class="l" d="M0 92 C40 84 60 70 100 76 S160 96 200 70 S270 28 310 36 S360 60 400 48"/>
+                            </svg>
+                        </div>
+                    </article>
+                    <article class="card b-2 reveal" style="--d:.06s">
+                        <div class="icon-chip gold"><svg><use href="#i-bell" /></svg></div>
+                        <h3>Alertas automáticos e manuais</h3>
+                        <p>Quando uma leitura ultrapassa o limite, o Ákron cria o alerta sozinho. O administrador também pode registrar alertas manuais e marcá-los como resolvidos.</p>
+                        <div class="mini-alerts">
+                            <div class="mini-alert"><span class="sev c">Crítico</span><span>Ruído acima de 85 dB na prensa</span></div>
+                            <div class="mini-alert"><span class="sev w">Atenção</span><span>Temperatura acima do limite</span></div>
+                            <div class="mini-alert"><span class="sev i">Info</span><span>Leitura de qualidade do ar registrada</span></div>
+                        </div>
+                    </article>
+                    <article class="card b-3 reveal">
+                        <div class="icon-chip"><svg><use href="#i-sliders" /></svg></div>
+                        <h3>Limites configuráveis</h3>
+                        <p>O administrador define mínimo e máximo por sensor. O sistema impede limites incoerentes.</p>
+                        <div class="limit-demo" aria-hidden="true">
+                            <div class="range"><i></i><i></i></div>
+                            <div class="range-l"><span>mín.</span><span>faixa aceitável</span><span>máx.</span></div>
+                        </div>
+                    </article>
+                    <article class="card b-4 reveal" style="--d:.06s">
+                        <div class="icon-chip"><svg><use href="#i-report" /></svg></div>
+                        <h3>Relatórios históricos</h3>
+                        <p>Escolha período e sensores para gerar tabela com leituras, média, mínimo e máximo, e descubra padrões, como uma temperatura que sobe sempre no mesmo horário.</p>
+                        <div class="mini-table" aria-hidden="true">
+                            <div><span>Sensor</span><span>Média</span><span>Mín.</span><span>Máx.</span></div>
+                            <div><span>Temperatura</span><span>22,9</span><span>16,4</span><span>36,4</span></div>
+                            <div><span>Umidade</span><span>61,2</span><span>33,1</span><span>77,9</span></div>
+                        </div>
+                    </article>
+                    <article class="card b-5 reveal" style="--d:.12s">
+                        <div class="icon-chip"><svg><use href="#i-phone" /></svg></div>
+                        <h3>Aplicativo móvel</h3>
+                        <p>Acompanhe de onde estiver, com tema claro e escuro e perfis de administrador e funcionário.</p>
+                        <div class="phones" aria-hidden="true">
+                            <div class="phone"><i></i><i class="b"></i><i class="b"></i></div>
+                            <div class="phone"><i></i><i class="b"></i><i></i><i class="b"></i></div>
+                            <div class="phone"><i></i><i class="b"></i><i class="b"></i></div>
+                        </div>
+                    </article>
+                    <article class="card b-6 reveal">
+                        <div class="icon-chip"><svg><use href="#i-lock" /></svg></div>
+                        <h3>Acesso controlado por perfil</h3>
+                        <p>Login com e-mail e senha. As senhas são armazenadas como hash, e o perfil define o que cada pessoa pode ver e fazer: o administrador gerencia usuários, dispositivos, sensores e limites.</p>
+                        <div class="profile-row">
+                            <span class="chip">Administrador</span><span class="chip">Funcionário</span><span class="chip">Consultas preparadas (PDO)</span>
+                        </div>
+                    </article>
+                    <article class="card b-7 reveal" style="--d:.06s">
+                        <div class="icon-chip gold"><svg><use href="#i-link" /></svg></div>
+                        <h3>API RESTful em JSON</h3>
+                        <p>As leituras ficam disponíveis por uma API, a mesma usada pelos dispositivos e pelo aplicativo, abrindo caminho para integração com sistemas existentes, sem substituí-los.</p>
+                        <pre class="code-block"><span class="k">POST</span> /api/leituras
+{ <span class="n">"sensor_id"</span>: <span class="s">3</span>, <span class="n">"valor"</span>: <span class="s">27.4</span> }
+<span class="k">→ 201</span> { <span class="n">"alerta"</span>: <span class="s">false</span> }</pre>
+                    </article>
+                </div>
+                <p class="cmp-note reveal" style="margin-top:20px">O trecho de API acima é um exemplo ilustrativo do formato de comunicação descrito na documentação, não um endereço real.</p>
+            </div>
+        </section>
+
+        <!-- ===================== NOME ÁKRON ===================== -->
+        <section class="alt" id="nome">
+            <div class="container name-grid">
+                <div class="name-art reveal">
+                    <svg class="rings" viewBox="0 0 400 400" aria-hidden="true">
+                        <circle cx="200" cy="215" r="70" /><circle cx="200" cy="215" r="110" /><circle cx="200" cy="215" r="150" /><circle cx="200" cy="215" r="190" /><circle cx="200" cy="215" r="230" />
+                    </svg>
+                    <span class="logo-mask logo-full" role="img" aria-label="Logo do Ákron: letra A com asas e escudo"></span>
+                </div>
+                <div>
+                    <div class="reveal">
+                        <span class="eyebrow">O nome</span>
+                        <h2 class="section-title">Ákron <span class="greek">Ἄκρον</span></h2>
+                        <p class="section-lead">Do grego antigo: extremidade, ponto mais alto, cume. A mesma raiz de <em>acrópole</em>, a colina que domina Atenas e abrigava o santuário da deusa Athena. Se a Athenas homenageia a sabedoria, o Ákron nomeia o lugar elevado de onde ela observa.</p>
+                    </div>
+                    <div class="ideas">
+                        <div class="idea reveal">
+                            <div class="icon-chip"><svg><use href="#i-eye" /></svg></div>
+                            <div><h3>Visão do alto</h3><p>Como a Acrópole permitia observar toda a cidade, o Ákron reúne em um painel as informações de todos os sensores. O gestor deixa de olhar sensor por sensor e passa a ver o conjunto.</p></div>
+                        </div>
+                        <div class="idea reveal" style="--d:.08s">
+                            <div class="icon-chip gold"><svg><use href="#i-alert" /></svg></div>
+                            <div><h3>Extremos e limites</h3><p>O sistema monitora justamente os valores que chegam aos extremos configurados. O alerta é o sistema avisando que algo chegou ao limite.</p></div>
+                        </div>
+                        <div class="idea reveal" style="--d:.16s">
+                            <div class="icon-chip"><svg><use href="#i-peak" /></svg></div>
+                            <div><h3>Cume da eficiência</h3><p>Em seu sentido de ápice, expressa o objetivo do projeto: elevar a eficiência, a segurança e a qualidade da decisão na indústria.</p></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="documentacao" class="alt" style="padding-top:clamp(56px,7vw,96px)"><div class="container"><div class="section-head reveal"><span class="eyebrow">Documentação do TCC</span><h2 class="section-title wide">Tudo o que foi planejado e construído</h2><p class="section-lead">Trabalho de Conclusão de Curso do Técnico em Desenvolvimento de Sistemas, SENAI · Mococa-SP · 2026. Autores: Anna Hilda Castelani Frezarini, Beatriz Gonçalves Lense Campos, Bianca Moreira de Oliveira, Carlos Eduardo Martins da Costa e Marcelo Duzzi Santonio. Orientação: Prof. Leonardo Oliveira Casellato, Prof. Ricardo Akira Harada e Prof. Wellinton Cardoso Teodoro.</p></div></div><div style="padding-top:8px"></div>
+            <div class="container doc-layout">
+                <aside class="toc" aria-label="Neste documento">
+                    <h4>Na documentação</h4>
+                    <a href="#resumo">Resumo</a>
+                    <a href="#objetivos">Objetivos</a>
+                    <a href="#metodologia">Metodologia</a>
+                    <a href="#requisitos">Requisitos</a>
+                    <a href="#dados">Modelagem de dados</a>
+                    <a href="#arquitetura">Arquitetura</a>
+                    <a href="#comunicacao">Comunicação</a>
+                    <a href="#telas">Telas</a>
+                    <a href="#conclusao">Considerações finais</a>
+                </aside>
+
+                <div class="doc">
+                    <!-- RESUMO -->
+                    <article class="doc-section" id="resumo">
+                        <span class="eyebrow">Resumo</span>
+                        <h2>O que é o Ákron</h2>
+                        <p>Este trabalho apresenta o desenvolvimento do Ákron, um sistema de monitoramento do ambiente de produção integrado à gestão industrial, criado pela Athenas Desenvolvimento de Sistemas. O projeto parte do problema de que muitas indústrias, mesmo possuindo sistemas administrativos consolidados, ainda têm dificuldade em acompanhar de forma contínua e em tempo real as condições físicas do ambiente produtivo (temperatura, umidade, ruído, qualidade do ar, pressão e radiação ultravioleta), o que pode afetar a eficiência operacional e a segurança dos trabalhadores.</p>
+                        <p>O objetivo foi desenvolver uma solução integrada para coleta, armazenamento, análise e visualização desses dados, com emissão de alertas quando os parâmetros ultrapassam limites definidos. A metodologia seguiu princípios da Engenharia de Software e da gestão ágil (Scrum). A solução é composta por sensores ligados a um microcontrolador, que enviam as medições por HTTP, em formato JSON, a uma API RESTful desenvolvida em PHP; os dados são gravados em banco MySQL, acessado por PHP Data Objects (PDO) com consultas preparadas, e apresentados em uma plataforma web (HTML, CSS e JavaScript) e em um aplicativo móvel.</p>
+                        <p>A arquitetura modular adotada permite ampliar o sistema com novos sensores, atuadores e integrações.</p>
+                        <div class="profile-row" style="padding-top:8px">
+                            <span class="chip">Internet das Coisas</span><span class="chip">Indústria 4.0</span><span class="chip">Monitoramento ambiental</span><span class="chip">Gestão industrial</span><span class="chip">Sensores</span>
+                        </div>
+                    </article>
+
+                    <!-- OBJETIVOS -->
+                    <article class="doc-section" id="objetivos">
+                        <span class="eyebrow">Capítulo 1</span>
+                        <h2>Objetivos</h2>
+                        <div class="callout gold"><b>Objetivo geral.</b> Desenvolver um sistema integrado de monitoramento do ambiente de produção aplicado à gestão industrial, com foco na coleta, análise e visualização de dados ambientais em tempo real, visando à melhoria da eficiência operacional, da segurança dos trabalhadores e da tomada de decisão em ambientes industriais.</div>
+                        <h3 class="sub">Objetivos específicos</h3>
+                        <div class="obj-grid">
+                            <div class="obj"><b>OE1</b><p>Coletar dados ambientais por meio de sensores IoT conectados a um microcontrolador, medindo temperatura, umidade, ruído, qualidade do ar, pressão e radiação ultravioleta.</p></div>
+                            <div class="obj"><b>OE2</b><p>Transmitir as medições a um servidor por meio da rede e armazená-las em banco de dados, mantendo o histórico.</p></div>
+                            <div class="obj"><b>OE3</b><p>Apresentar os dados em uma plataforma web, por meio de painéis e gráficos que facilitem a interpretação.</p></div>
+                            <div class="obj"><b>OE4</b><p>Permitir a configuração de limites de referência e emitir alertas automáticos quando houver valores fora do padrão.</p></div>
+                            <div class="obj"><b>OE5</b><p>Gerar relatórios históricos que apoiem a análise e a tomada de decisão.</p></div>
+                            <div class="obj"><b>OE6</b><p>Disponibilizar o acompanhamento remoto e o recebimento de notificações em aplicativo móvel.</p></div>
+                            <div class="obj"><b>OE7</b><p>Oferecer integração com sistemas existentes por meio de uma API, sem substituí-los.</p></div>
+                            <div class="obj"><b>OE8</b><p>Validar a solução em ambiente simulado, representando uma linha de produção, por meio de testes documentados.</p></div>
+                        </div>
+                    </article>
+
+                    <!-- METODOLOGIA -->
+                    <article class="doc-section" id="metodologia">
+                        <span class="eyebrow">Capítulo 1</span>
+                        <h2>Metodologia</h2>
+                        <p>O desenvolvimento foi dividido em etapas, seguindo os princípios da Engenharia de Software, da análise do problema até a implementação e a avaliação da solução. A equipe adotou práticas de metodologia ágil, com os papéis de Product Owner e Scrum Master.</p>
+                        <div class="timeline">
+                            <div class="tl"><span class="num">1</span><div><h3>Pesquisa e levantamento de necessidades</h3><p>Compreender as dificuldades do monitoramento do ambiente produtivo e coletar requisitos funcionais e não funcionais.</p></div></div>
+                            <div class="tl"><span class="num">2</span><div><h3>Análise e especificação de requisitos</h3><p>Definição das funcionalidades, restrições e objetivos, resultando nas tabelas de requisitos funcionais e não funcionais.</p></div></div>
+                            <div class="tl"><span class="num">3</span><div><h3>Modelagem</h3><p>Diagrama de casos de uso, modelo de dados (MER e DER) e arquitetura, incluindo a integração entre hardware e software.</p></div></div>
+                            <div class="tl"><span class="num">4</span><div><h3>Desenvolvimento</h3><p>Arduino para leitura dos sensores; PHP com PDO no back-end; MySQL para armazenamento; HTML, CSS e JavaScript na interface web e aplicativo móvel. Comunicação por HTTP com JSON, organizada como API RESTful.</p></div></div>
+                            <div class="tl"><span class="num">5</span><div><h3>Testes</h3><p>Validação da coleta de dados, do processamento, da geração de alertas e da exibição na web e no aplicativo. Erros encontrados foram registrados e corrigidos.</p></div></div>
+                            <div class="tl"><span class="num">6</span><div><h3>Análise de viabilidade técnica e operacional</h3><p>Adequação das tecnologias, integração entre dispositivos, escalabilidade e aplicabilidade em ambientes industriais reais.</p></div></div>
+                            <div class="tl"><span class="num">7</span><div><h3>Implantação simulada</h3><p>Operação em ambiente controlado que representa uma linha de produção, para observar o comportamento do sistema em condições próximas da realidade.</p></div></div>
+                            <div class="tl"><span class="num">8</span><div><h3>Manutenção e evolução</h3><p>Sistema modular, de modo que correções, melhorias e adaptações possam ser feitas sem refazer toda a solução.</p></div></div>
+                        </div>
+                    </article>
+
+                    <!-- REQUISITOS -->
+                    <article class="doc-section" id="requisitos">
+                        <span class="eyebrow">Capítulo 2</span>
+                        <h2>Requisitos</h2>
+                        <p>Os requisitos foram numerados para permitir rastreabilidade: relacionar cada requisito a um objetivo, a uma tela e a um teste.</p>
+
+                        <div class="tabs" role="tablist" aria-label="Tipo de requisito">
+                            <button class="tab" role="tab" id="tab-rf" aria-selected="true" aria-controls="panel-rf">Funcionais</button>
+                            <button class="tab" role="tab" id="tab-rnf" aria-selected="false" aria-controls="panel-rnf">Não funcionais</button>
+                        </div>
+
+                        <div class="tabpanel" role="tabpanel" id="panel-rf" aria-labelledby="tab-rf">
+                            <div class="req-table">
+                                <div class="req"><code>RF01</code><span>Coletar dados ambientais por meio de sensores IoT (temperatura, ruído, umidade, qualidade do ar, pressão e UV).</span></div>
+                                <div class="req"><code>RF02</code><span>Receber dados dos dispositivos (por exemplo, Arduino) em tempo real via internet.</span></div>
+                                <div class="req"><code>RF03</code><span>Armazenar os dados coletados em um banco de dados.</span></div>
+                                <div class="req"><code>RF04</code><span>Processar os dados para análise das condições do ambiente.</span></div>
+                                <div class="req"><code>RF05</code><span>Exibir os dados em uma plataforma web por meio de gráficos e relatórios.</span></div>
+                                <div class="req"><code>RF06</code><span>Permitir o monitoramento em tempo real do ambiente produtivo.</span></div>
+                                <div class="req"><code>RF07</code><span>Gerar alertas automáticos quando os dados estiverem fora dos padrões definidos.</span></div>
+                                <div class="req"><code>RF08</code><span>Enviar notificações para o aplicativo mobile.</span></div>
+                                <div class="req"><code>RF09</code><span>Permitir o acesso remoto às informações via aplicativo mobile.</span></div>
+                                <div class="req"><code>RF10</code><span>Permitir visualização por administrador.</span></div>
+                                <div class="req"><code>RF11</code><span>Possibilitar a geração de relatórios históricos.</span></div>
+                                <div class="req"><code>RF12</code><span>Integrar-se a sistemas já existentes (como controle de estoque), sem substituí-los.</span></div>
+                            </div>
+                        </div>
+
+                        <div class="tabpanel" role="tabpanel" id="panel-rnf" aria-labelledby="tab-rnf" hidden>
+                            <div class="req-table">
+                                <div class="req"><code>RNF01</code><span>Alta disponibilidade para monitoramento contínuo.</span></div>
+                                <div class="req"><code>RNF02</code><span>Baixo tempo de resposta na exibição de dados em tempo real.</span></div>
+                                <div class="req"><code>RNF03</code><span>Segurança dos dados (acesso controlado e proteção das informações).</span></div>
+                                <div class="req"><code>RNF04</code><span>Escalabilidade, permitindo implementação em diferentes setores da indústria.</span></div>
+                                <div class="req"><code>RNF05</code><span>Compatibilidade com dispositivos web e mobile.</span></div>
+                                <div class="req"><code>RNF06</code><span>Interface intuitiva e de fácil utilização.</span></div>
+                                <div class="req"><code>RNF07</code><span>Suporte à integração com hardware Arduino.</span></div>
+                                <div class="req"><code>RNF10</code><span>Integridade dos dados coletados.</span></div>
+                                <div class="req"><code>RNF11</code><span>Padrões básicos de confiabilidade para evitar falhas operacionais.</span></div>
+                            </div>
+                            <p class="cmp-note">RNF08, RNF09 e RNF12 foram reclassificados como restrições e delimitações (RT01, RT02 e DL01), abaixo.</p>
+                        </div>
+
+                        <h3 class="sub">Restrições e delimitações</h3>
+                        <p>Alguns itens do levantamento original descrevem limites do projeto, e não qualidades do sistema, e por isso foram reclassificados.</p>
+                        <div class="limits">
+                            <div class="limit"><code>RT01</code><h4>Restrição tecnológica</h4><p>PHP no back-end, MySQL como banco de dados e HTML, CSS e JavaScript no front-end web.</p></div>
+                            <div class="limit"><code>RT02</code><h4>Restrição operacional</h4><p>O funcionamento adequado depende de conexão de rede estável entre dispositivos, servidor e clientes.</p></div>
+                            <div class="limit"><code>DL01</code><h4>Delimitação do projeto</h4><p>O sistema não substitui as normas regulamentadoras de segurança industrial nem os equipamentos de proteção exigidos por elas.</p></div>
+                        </div>
+                    </article>
+
+                    <!-- DADOS -->
+                    <article class="doc-section" id="dados">
+                        <span class="eyebrow">Capítulo 2</span>
+                        <h2>Modelagem de dados</h2>
+                        <p>Todo sistema de monitoramento é, em essência, uma máquina de produzir e consultar registros: a qualidade do banco determina a confiabilidade dos gráficos, dos alertas e dos relatórios. No modelo lógico, cada entidade vira uma tabela e cada relacionamento 1:N vira uma chave estrangeira no lado N.</p>
+                        <div class="er" role="img" aria-label="Diagrama entidade-relacionamento com as tabelas usuario, sensores, leitura_sensor e alertas">
+                            <div class="er-table">
+                                <h4>sensores <svg><use href="#i-db" /></svg></h4>
+                                <ul>
+                                    <li><span class="k pk">PK</span> id <em>INT</em></li>
+                                    <li>nome <em>VARCHAR(100)</em></li>
+                                    <li>tipo <em>ENUM</em></li>
+                                    <li>localizacao <em>VARCHAR(150)</em></li>
+                                    <li>status <em>ENUM</em></li>
+                                    <li>criado_em <em>DATETIME</em></li>
+                                </ul>
+                            </div>
+                            <div class="er-table">
+                                <h4>leitura_sensor <svg><use href="#i-db" /></svg></h4>
+                                <ul>
+                                    <li><span class="k pk">PK</span> id <em>INT</em></li>
+                                    <li><span class="k fk">FK</span> sensor_id <em>INT</em></li>
+                                    <li>valor <em>DECIMAL(10,2)</em></li>
+                                    <li>lido_em <em>DATETIME</em></li>
+                                </ul>
+                            </div>
+                            <div class="er-table">
+                                <h4>alertas <svg><use href="#i-db" /></svg></h4>
+                                <ul>
+                                    <li><span class="k pk">PK</span> id <em>INT</em></li>
+                                    <li><span class="k fk">FK</span> sensor_id <em>INT</em></li>
+                                    <li>severidade <em>ENUM</em></li>
+                                    <li>mensagem <em>VARCHAR(200)</em></li>
+                                    <li>valor <em>DECIMAL(10,2)</em></li>
+                                    <li>resolvido <em>TINYINT(1)</em></li>
+                                    <li>criado_em <em>DATETIME</em></li>
+                                    <li><span class="k fk">FK</span> resolvido_por <em>INT</em></li>
+                                </ul>
+                            </div>
+                            <div class="er-table">
+                                <h4>usuario <svg><use href="#i-db" /></svg></h4>
+                                <ul>
+                                    <li><span class="k pk">PK</span> id <em>INT</em></li>
+                                    <li>nome <em>VARCHAR(100)</em></li>
+                                    <li><span class="k uk">UK</span> login <em>VARCHAR(100)</em></li>
+                                    <li>senha <em>VARCHAR</em></li>
+                                    <li>tipo <em>ENUM</em></li>
+                                    <li>status <em>ENUM</em></li>
+                                </ul>
+                            </div>
+                        </div>
+                        <div class="rels">
+                            <span class="chip">1 sensor → N leituras</span>
+                            <span class="chip">1 sensor → N alertas</span>
+                            <span class="chip">1 usuário → N alertas resolvidos</span>
+                        </div>
+                    </article>
+
+                    <!-- ARQUITETURA -->
+                    <article class="doc-section" id="arquitetura">
+                        <span class="eyebrow">Capítulo 2</span>
+                        <h2>Arquitetura em camadas</h2>
+                        <p>Cada camada tem uma responsabilidade clara. Essa separação facilita a manutenção, permite trocar uma parte sem refazer as outras e é a base da escalabilidade (RNF04).</p>
+                        <div class="layers">
+                            <div class="layer"><span class="n">4</span><b>Clientes (front-end)</b><span>Sistema web, dispositivos de campo IoT e aplicativo móvel, que consome a API RESTful por JSON sobre HTTP.</span></div>
+                            <div class="layer"><span class="n">3</span><b>Back-end (PHP)</b><span>Configuração, regras de negócio, validações, consultas e autenticação.</span></div>
+                            <div class="layer"><span class="n">2</span><b>Acesso a dados (PDO)</b><span>Interface padronizada com o banco, usando consultas preparadas (prepared statements).</span></div>
+                            <div class="layer"><span class="n">1</span><b>Banco de dados (MySQL)</b><span>Guarda de forma permanente leituras, limites, alertas, usuários e dispositivos.</span></div>
+                        </div>
+                        <div class="callout" style="margin-top:28px"><b>Segurança por projeto.</b> Com PDO, o comando SQL e os valores viajam separados: mesmo que um valor malicioso chegue ao sistema, ele é tratado como dado e nunca como parte do comando, o que evita injeção de SQL. As senhas são guardadas como hash (<code>password_hash</code> / <code>password_verify</code>), e o acesso é controlado por perfil.</div>
+                    </article>
+
+                    <article class="doc-section" id="comunicacao">
+                        <span class="eyebrow">Capítulo 3</span>
+                        <h2>Comunicação entre dispositivos e servidor</h2>
+                        <p>Os dispositivos enviam as leituras por requisições HTTP, em formato JSON, a uma API RESTful. A escolha é simples de implementar em microcontroladores, atravessa a maioria das redes corporativas e permite usar o mesmo servidor PHP para dispositivos, web e aplicativo.</p>
+                        <h3 class="sub">O que o servidor faz ao receber uma leitura</h3>
+                        <ol class="steps7">
+                            <li><b>Autentica</b> o dispositivo.</li>
+                            <li><b>Valida o formato</b> da mensagem.</li>
+                            <li><b>Confere a faixa física plausível</b> do sensor (por exemplo, rejeita umidade acima de 100%).</li>
+                            <li><b>Converte unidades</b> quando necessário.</li>
+                            <li><b>Grava</b> a leitura no banco de dados.</li>
+                            <li><b>Compara com o limite</b> e, se violado, gera o alerta.</li>
+                            <li><b>Responde</b> ao dispositivo com um código que informa o resultado.</li>
+                        </ol>
+                    </article>
+
+                    <!-- TELAS -->
+                    <article class="doc-section" id="telas">
+                        <span class="eyebrow">Capítulo 4</span>
+                        <h2>Apresentação da aplicação</h2>
+                        <p>As telas exibem as informações coletadas pelos sensores de forma organizada e facilitam o acompanhamento das condições do ambiente. Veja-as em funcionamento no <a href="index.html#video" style="text-decoration:underline;text-underline-offset:3px;color:var(--brand)">vídeo de apresentação</a>.</p>
+                        <div class="screens">
+                            <div class="screen"><small>4.1</small><h3>Login</h3><p>Entrada com e-mail e senha; define o perfil (usuário ou administrador), que determina o que a pessoa pode ver e fazer.</p></div>
+                            <div class="screen"><small>4.2</small><h3>Dashboard</h3><p>Panorama geral: valor atual de cada grandeza, estado (normal ou alerta) e os alertas mais recentes.</p></div>
+                            <div class="screen"><small>4.3</small><h3>Monitoramento</h3><p>Dados por dispositivo e por sensor, com unidade, horário da última leitura e indicação de estado.</p></div>
+                            <div class="screen"><small>4.4</small><h3>Gráficos e histórico</h3><p>Variações ao longo do tempo, com escolha de sensor e período.</p></div>
+                            <div class="screen"><small>4.5</small><h3>Configuração de limites</h3><p>O administrador define mínimo e máximo por sensor; limites incoerentes são impedidos.</p></div>
+                            <div class="screen"><small>4.6</small><h3>Alertas</h3><p>Sensor, valor, limite violado e horário de cada situação fora do padrão.</p></div>
+                            <div class="screen"><small>4.7</small><h3>Relatórios</h3><p>Relatório histórico por período e sensores, com tabela e resumo estatístico.</p></div>
+                            <div class="screen"><small>4.8</small><h3>Administrativa</h3><p>Gestão de usuários, dispositivos e sensores, acessível apenas ao perfil administrador.</p></div>
+                            <div class="screen"><small>4.9</small><h3>Aplicativo móvel</h3><p>O essencial do monitoramento no celular: login, leituras atuais, gráficos e alertas, com tema claro e escuro.</p></div>
+                        </div>
+                    </article>
+
+                    <!-- CONCLUSÃO -->
+                    <article class="doc-section" id="conclusao">
+                        <span class="eyebrow">Capítulo 5</span>
+                        <h2>Considerações finais</h2>
+                        <p>O desenvolvimento do Ákron possibilitou aplicar os conhecimentos do curso, principalmente em programação, banco de dados, desenvolvimento web e Internet das Coisas. Mais do que reunir tecnologias, o projeto exigiu integrá-las: um dado nasce em um sensor, atravessa um microcontrolador, uma rede, um servidor e um banco, e termina em uma tela ou em um aviso no celular.</p>
+                        <div class="callout gold"><b>Limites declarados.</b> O Ákron foi validado em ambiente simulado, e não em uma indústria real. Os sensores usados são de baixo custo e não substituem instrumentos certificados. Melhorias de produtividade, aumento da segurança ou redução de custos são benefícios esperados, fundamentados na literatura, e não resultados medidos neste trabalho: o que o projeto comprova é o funcionamento técnico do protótipo, nos limites do ambiente simulado.</div>
+                        <div class="lists-2">
+                            <div class="panel">
+                                <h3><svg><use href="#i-shield" /></svg> Limitações</h3>
+                                <ul>
+                                    <li>Validação em ambiente simulado, não em indústria real.</li>
+                                    <li>Sensores de baixo custo, sem calibração com instrumentos certificados.</li>
+                                    <li>O sistema apoia a gestão, mas não substitui as normas regulamentadoras de segurança industrial (DL01).</li>
+                                    <li>A integração com sistemas externos não representa integração com sistemas empresariais completos.</li>
+                                </ul>
+                            </div>
+                            <div class="panel">
+                                <h3><svg><use href="#i-peak" /></svg> Trabalhos futuros</h3>
+                                <ul>
+                                    <li>Novos sensores e novas variáveis.</li>
+                                    <li>Análise preditiva: identificar tendências antes de o limite ser atingido.</li>
+                                    <li>Integração real com ERP e controle de estoque.</li>
+                                    <li>Ampliação do controle de atuadores.</li>
+                                    <li>HTTPS e mecanismos de segurança mais robustos.</li>
+                                    <li>Aplicativo publicado para Android e iOS.</li>
+                                    <li>Validação em ambiente industrial real.</li>
+                                </ul>
+                            </div>
+                        </div>
+                        <p style="margin-top:28px">Para a Athenas, o projeto representa o primeiro passo na construção de uma empresa que busca, fiel ao seu nome, transformar conhecimento em soluções inteligentes.</p>
+                    </article>
+
+                    
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer class="site-footer">
+        <div class="container footer-grid">
+            <div class="footer-brand">
+                <span class="logo-mask logo-full" role="img" aria-label="Logo do Ákron"></span>
+                <p>Sistema de monitoramento do ambiente de produção integrado à gestão industrial. Um projeto da <a href="index.html" style="text-decoration:underline;text-underline-offset:3px">Athenas Desenvolvimento de Sistemas</a>.</p>
+            </div>
+            <div>
+                <h4>Neste site</h4>
+                <ul>
+                    <li><a href="#problema">O desafio</a></li>
+                    <li><a href="#como-funciona">Como funciona</a></li>
+                    <li><a href="#recursos">Recursos</a></li>
+                    <li><a href="#documentacao">Documentação</a></li>
+                    <li><a href="index.html">Voltar para a Athenas</a></li>
+                </ul>
+            </div>
+            <div>
+                <h4>Projeto</h4>
+                <ul>
+                    <li>Trabalho de Conclusão de Curso</li>
+                    <li>Técnico em Desenvolvimento de Sistemas</li>
+                    <li>SENAI · Mococa-SP · 2026</li>
+                </ul>
+            </div>
+        </div>
+        <div class="container footer-bottom">
+            <p>© <span data-year>2026</span> Ákron · um projeto da Athenas Desenvolvimento de Sistemas.</p>
+            <a href="#inicio" class="to-top" aria-label="Voltar ao topo"><svg><use href="#i-up" /></svg></a>
+        </div>
+    </footer>
+
+    <script src="js/main.js"></script>
+</body>
+
+</html>

@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 560" role="img" aria-label="Ilustração: cesta com alimentos, coração e mãos que compartilham">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#1c2a42"/><stop offset="1" stop-color="#0d1522"/></linearGradient>
+    <radialGradient id="gl" cx=".25" cy=".15" r=".8"><stop offset="0" stop-color="#d9b26a" stop-opacity=".28"/><stop offset="1" stop-color="#d9b26a" stop-opacity="0"/></radialGradient>
+  </defs>
+  <rect width="800" height="560" fill="url(#bg)"/><rect width="800" height="560" fill="url(#gl)"/>
+  <g fill="none" stroke="#e3cf9d" stroke-opacity=".12" stroke-width="1.5">
+    <circle cx="400" cy="300" r="110"/><circle cx="400" cy="300" r="170"/><circle cx="400" cy="300" r="235"/><circle cx="400" cy="300" r="310"/>
+  </g>
+  <!-- itens na cesta -->
+  <ellipse cx="318" cy="262" rx="44" ry="40" fill="#d9b26a"/><path d="M318 224c2-14 10-22 22-24" stroke="#e3cf9d" stroke-width="7" stroke-linecap="round" fill="none"/>
+  <rect x="372" y="206" width="64" height="104" rx="14" fill="#556270"/><rect x="372" y="226" width="64" height="20" fill="#e3cf9d" fill-opacity=".8"/><rect x="372" y="206" width="64" height="12" rx="6" fill="#e3cf9d"/>
+  <ellipse cx="486" cy="262" rx="62" ry="32" transform="rotate(-18 486 262)" fill="#f1e6c8"/><path d="M450 246l22 28M478 232l22 28M506 224l18 24" stroke="#d9b26a" stroke-width="5" stroke-linecap="round"/>
+  <!-- cesta -->
+  <path d="M236 300h328l-34 164a22 22 0 0 1-21 17H291a22 22 0 0 1-21-17z" fill="#f1e6c8"/>
+  <g stroke="#d9b26a" stroke-width="6" stroke-linecap="round" opacity=".85">
+    <path d="M250 340h300M258 380h284M266 420h268"/><path d="M320 300l-14 181M400 300v181M480 300l14 181"/>
+  </g>
+  <path d="M236 300h328" stroke="#273142" stroke-width="10" stroke-linecap="round"/>
+  <!-- coração -->
+  <g transform="translate(600 130)"><circle r="56" fill="#d9b26a" fill-opacity=".14"/>
+    <path d="M0 30C-26 12-44-3-44-22c0-14 11-24 24-24 9 0 16 4 20 11 4-7 11-11 20-11 13 0 24 10 24 24 0 19-18 34-44 52z" fill="#d9b26a" transform="translate(0 6) scale(.9)"/></g>
+  <!-- cartão de demanda -->
+  <g transform="translate(86 118)">
+    <rect width="190" height="104" rx="16" fill="#162135" stroke="#e3cf9d" stroke-opacity=".28"/>
+    <rect x="20" y="22" width="80" height="9" rx="4.5" fill="#e3cf9d" fill-opacity=".75"/>
+    <rect x="20" y="46" width="150" height="10" rx="5" fill="#273850"/><rect x="20" y="46" width="98" height="10" rx="5" fill="#d9b26a"/>
+    <rect x="20" y="68" width="150" height="10" rx="5" fill="#273850"/><rect x="20" y="68" width="62" height="10" rx="5" fill="#d9b26a" fill-opacity=".7"/>
+  </g>
+</svg>

@@ -1,0 +1,346 @@
+/* usuarios.css — referente a app/views/usuarios/*.php
+   (cadastro.php, editar.php, excluir.php, gestao_usuarios.php) e às Configurações pessoais (perfil.php). */
+
+/* Seções do formulário (Dados, Credencial, Nível de acesso) */
+.usuarios-secao {
+    margin-bottom: 22px;
+    padding-bottom: 18px;
+    border-bottom: 1px solid var(--cor-borda);
+}
+
+.usuarios-secao:last-of-type {
+    border-bottom: none;
+}
+
+.usuarios-secao-titulo {
+    font-family: var(--fonte-titulo);
+    font-size: 0.78rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    color: var(--cor-link);
+    margin-bottom: 14px;
+}
+
+.usuarios-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 16px;
+}
+
+.usuarios-dica {
+    font-size: 0.78rem;
+    color: var(--cor-texto-suave);
+    margin-top: 6px;
+}
+
+/* Quadro de confirmação de exclusão */
+.usuarios-perigo-box {
+    border: 1px solid var(--cor-erro-borda);
+    background: var(--cor-erro-fundo);
+    border-radius: var(--raio);
+    padding: 16px 18px;
+}
+
+/* Linha de botões de ação (ex.: "Sim, excluir" + "Não, cancelar") */
+.usuarios-acoes {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 12px;
+    margin-top: 16px;
+}
+
+/* ═══ Configurações pessoais (perfil.php) ═════════════════════════════════════ */
+.config-indice {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin: 0 0 20px;
+}
+
+.config-indice a {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 7px 14px 7px 10px;
+    border: 1px solid var(--cor-borda);
+    border-radius: 999px;
+    background: var(--cor-fundo-card);
+    color: var(--cor-texto-suave);
+    font-size: 0.86rem;
+    font-weight: 500;
+    transition: border-color var(--dur) var(--ease), color var(--dur) var(--ease);
+}
+
+.config-indice a:hover {
+    color: var(--cor-texto);
+    border-color: var(--acento);
+    text-decoration: none;
+}
+
+.config-indice svg,
+.config-secao-icone svg,
+.tema-rotulo svg {
+    width: 17px;
+    height: 17px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.8;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+.config-secao {
+    scroll-margin-top: calc(var(--altura-topbar, 64px) + 16px);
+}
+
+.config-secao-topo {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-bottom: 20px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid var(--cor-borda);
+}
+
+.config-secao .config-secao-topo h2 {
+    margin: 0;
+}
+
+.config-secao .config-secao-topo p {
+    margin: 2px 0 0;
+    font-size: 0.86rem;
+    color: var(--cor-texto-suave);
+}
+
+.config-secao-icone {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    width: 40px;
+    height: 40px;
+    border-radius: 11px;
+    color: var(--acento);
+    background: color-mix(in srgb, var(--acento) 14%, var(--cor-fundo-card));
+    border: 1px solid color-mix(in srgb, var(--acento) 30%, transparent);
+}
+
+.config-secao-icone svg {
+    width: 20px;
+    height: 20px;
+}
+
+/* Perfil */
+.perfil-identidade {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 20px 28px;
+    margin-bottom: 22px;
+}
+
+.perfil-identidade .foto-previa .avatar {
+    width: 104px;
+    height: 104px;
+    font-size: 2.2rem;
+    box-shadow: 0 0 0 3px var(--cor-fundo-card), 0 0 0 5px color-mix(in srgb, var(--acento) 45%, transparent);
+}
+
+.perfil-nome {
+    margin: 0 0 6px;
+    font-family: var(--fonte-titulo);
+    font-size: 1.15rem;
+    font-weight: 600;
+}
+
+.perfil-selos {
+    margin: 0 0 12px;
+}
+
+.config-secao .conta-dados {
+    margin: 22px 0 0;
+    padding-top: 16px;
+    border-top: 1px solid var(--cor-borda);
+    grid-template-columns: auto minmax(0, 1fr);
+}
+
+/* Aparência: cartões selecionáveis */
+.tema-opcoes {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 14px;
+    margin: 0 0 12px;
+    padding: 0;
+    border: 0;
+}
+
+.tema-opcao {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 12px 12px 14px;
+    border: 2px solid var(--cor-borda);
+    border-radius: var(--raio);
+    background: var(--cor-fundo-card);
+    cursor: pointer;
+    transition: border-color var(--dur) var(--ease), box-shadow var(--dur) var(--ease), transform var(--dur) var(--ease);
+}
+
+.tema-opcao:hover {
+    border-color: var(--cor-borda-forte);
+    transform: translateY(-2px);
+}
+
+.tema-opcao input {
+    position: absolute;
+    opacity: 0;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    cursor: pointer;
+}
+
+.tema-opcao:has(input:checked) {
+    border-color: var(--acento);
+    box-shadow: var(--brilho-suave);
+}
+
+.tema-opcao:has(input:focus-visible) {
+    outline: 2px solid var(--cor-foco);
+    outline-offset: 3px;
+}
+
+.tema-rotulo {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 0 2px;
+}
+
+.tema-ajuda {
+    padding: 0 2px;
+    font-size: 0.78rem;
+    line-height: 1.4;
+    color: var(--cor-texto-suave);
+}
+
+/* Marca de seleção */
+.tema-marca {
+    position: absolute;
+    top: 18px;
+    right: 18px;
+    display: inline-flex;
+    width: 22px;
+    height: 22px;
+    padding: 3px;
+    border-radius: 50%;
+    color: var(--cor-texto-sobre-primaria);
+    background: var(--acento);
+    opacity: 0;
+    transform: scale(0.6);
+    transition: opacity var(--dur) var(--ease), transform var(--dur) var(--ease);
+}
+
+.tema-marca svg {
+    width: 100%;
+    height: 100%;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 2.4;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+.tema-opcao:has(input:checked) .tema-marca {
+    opacity: 1;
+    transform: none;
+}
+
+/* Miniaturas: representam cada tema com as cores reais da paleta (valores fixos, independentes do tema ativo) */
+.tema-miniatura {
+    --mini-fundo: #f1f4f8;
+    --mini-barra: #ffffff;
+    --mini-card: #ffffff;
+    --mini-linha: #d2dbe5;
+    display: block;
+    height: 84px;
+    border: 1px solid var(--mini-linha);
+    border-radius: 8px;
+    background: var(--mini-fundo);
+    overflow: hidden;
+}
+
+.tema-escuro .tema-miniatura {
+    --mini-fundo: #0d1218;
+    --mini-barra: #161f29;
+    --mini-card: #1d2733;
+    --mini-linha: #2a3846;
+}
+
+.tema-automatico .tema-miniatura {
+    background: linear-gradient(115deg, #f1f4f8 50%, #0d1218 50%);
+    --mini-barra: transparent;
+}
+
+.mini-barra {
+    display: block;
+    height: 14px;
+    background: var(--mini-barra);
+    border-bottom: 1px solid var(--mini-linha);
+}
+
+.mini-corpo {
+    display: flex;
+    gap: 6px;
+    padding: 8px;
+}
+
+.mini-corpo i {
+    flex: 1;
+    height: 46px;
+    border: 1px solid var(--mini-linha);
+    border-radius: 5px;
+    background: var(--mini-card);
+}
+
+.tema-automatico .mini-corpo i:first-child {
+    background: #ffffff;
+    border-color: #d2dbe5;
+}
+
+.tema-automatico .mini-corpo i:last-child {
+    background: #1d2733;
+    border-color: #2a3846;
+}
+
+/* Segurança e acessos */
+.config-secao .secao-senha {
+    margin: 0;
+}
+
+.config-acoes {
+    margin: 0 0 20px;
+}
+
+@media (max-width: 720px) {
+    .tema-opcoes {
+        grid-template-columns: 1fr;
+    }
+
+    .tema-miniatura {
+        height: 64px;
+    }
+
+    .mini-corpo i {
+        height: 30px;
+    }
+
+    .perfil-identidade {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+}
