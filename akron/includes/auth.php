@@ -34,6 +34,8 @@ function iniciarSessao(): void
         return;
     }
 
+    configurarArmazenamentoSessao();
+
     session_set_cookie_params([
         'lifetime' => 0,          // cookie de sessão (some ao fechar o navegador)
         'path' => '/',
@@ -257,10 +259,10 @@ function registrarLog(?PDO $pdo, ?int $usuario_id, string $acao, string $descric
 
 /**
  * Confere se existe uma sessão autenticada e válida, SEM redirecionar.
- * Aplica o timeout de sessão (2 horas) e a validação de IP.
+ * Aplica o timeout de sessão (2 h de inatividade, 12 h no máximo) e confere o navegador.
  *
  * @return string|null null se a sessão é válida; caso contrário o motivo:
- *                     'sessao' (não logado), 'timeout' ou 'seguranca' (IP mudou).
+ *                     'sessao' (não logado), 'timeout' ou 'seguranca' (navegador mudou).
  */
 function verificarSessao(): ?string
 {
@@ -270,18 +272,29 @@ function verificarSessao(): ?string
         return 'sessao';
     }
 
-    // Timeout de sessão: 2 horas
-    $timeout = 7200;
-    if (isset($_SESSION['login_hora']) && (time() - strtotime($_SESSION['login_hora'])) > $timeout) {
+    // Timeout por INATIVIDADE (renovado a cada requisição) + limite absoluto.
+    // Antes o prazo de 2 h era contado só desde o login: quem estava usando o
+    // sistema era deslogado mesmo assim.
+    $agora = time();
+    $ultima = (int) ($_SESSION['ultima_atividade'] ?? strtotime($_SESSION['login_hora'] ?? 'now'));
+    $inicio = strtotime($_SESSION['login_hora'] ?? 'now') ?: $agora;
+    if (($agora - $ultima) > SESSAO_INATIVIDADE_SEGUNDOS || ($agora - $inicio) > SESSAO_DURACAO_MAXIMA_SEGUNDOS) {
         encerrarSessao();
         return 'timeout';
     }
+    $_SESSION['ultima_atividade'] = $agora;
 
-    // Proteção contra session hijacking: valida IP
-    if (isset($_SESSION['ip_login']) && $_SESSION['ip_login'] !== ($_SERVER['REMOTE_ADDR'] ?? '')) {
+    // O vínculo com o IP foi removido de propósito: em redes móveis, CGNAT,
+    // proxies e provedores com mais de uma saída o IP muda no meio da sessão
+    // e derrubava o usuário (no log, o mesmo admin alternava entre dois IPs).
+    // Como proteção contra roubo de cookie, o cookie já é HttpOnly/SameSite e o
+    // id é regenerado no login; aqui só se confere o navegador (User-Agent).
+    $assinatura = hash('sha256', $_SERVER['HTTP_USER_AGENT'] ?? '');
+    if (isset($_SESSION['ua_hash']) && !hash_equals($_SESSION['ua_hash'], $assinatura)) {
         encerrarSessao();
         return 'seguranca';
     }
+    $_SESSION['ua_hash'] = $_SESSION['ua_hash'] ?? $assinatura;
 
     // Revogação de conta/perfil vale também para a sessão web já aberta.
     global $pdo;

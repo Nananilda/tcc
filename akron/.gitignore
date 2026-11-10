@@ -14,3 +14,6 @@ desktop.ini
 # ── Python (tests/api_test.py) ───────────────────────────────────────────────
 __pycache__/
 *.pyc
+
+# Sessões PHP (pasta própria)
+storage/sessoes/

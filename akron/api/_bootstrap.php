@@ -81,7 +81,8 @@ function tokenDaRequisicao(): ?string
 ini_set('session.use_cookies', '0');      // a API não usa cookies
 ini_set('session.use_only_cookies', '0'); // permite definir o id manualmente
 ini_set('session.use_strict_mode', '1');  // ignora ids que o servidor não criou (anti session-fixation)
-ini_set('session.gc_maxlifetime', '7200'); // sessões vivem 2 h, igual ao timeout do web
+require_once __DIR__ . '/../app/config/app.php';
+configurarArmazenamentoSessao(); // pasta e prazo próprios (ver app/config/app.php)
 
 $token = tokenDaRequisicao();
 if ($token !== null) {
@@ -131,9 +132,12 @@ function exigirLoginApi(): void
         jsonResponse(['sucesso' => false, 'mensagem' => 'Sessão não autenticada.'], 401);
     }
 
-    // Timeout absoluto de 2 horas, como no sistema web
-    $timeout = 7200;
-    if (isset($_SESSION['login_hora']) && (time() - strtotime($_SESSION['login_hora'])) > $timeout) {
+    // Mesmas regras do sistema web: 2 h de inatividade ou 12 h desde o login
+    $agora = time();
+    $ultima = (int) ($_SESSION['ultima_atividade'] ?? strtotime($_SESSION['login_hora'] ?? 'now'));
+    $inicio = strtotime($_SESSION['login_hora'] ?? 'now') ?: $agora;
+    $_SESSION['ultima_atividade'] = $agora;
+    if (($agora - $ultima) > SESSAO_INATIVIDADE_SEGUNDOS || ($agora - $inicio) > SESSAO_DURACAO_MAXIMA_SEGUNDOS) {
         encerrarSessao();
         jsonResponse(['sucesso' => false, 'mensagem' => 'Sessão expirada. Faça login novamente.'], 401);
     }

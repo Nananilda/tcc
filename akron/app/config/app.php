@@ -26,6 +26,35 @@ if (!defined('APP_NOME')) {
 // Para mudar, defina a variável de ambiente AKRON_TIMEZONE.
 date_default_timezone_set(getenv('AKRON_TIMEZONE') ?: 'America/Sao_Paulo');
 
+// ── Sessão ───────────────────────────────────────────────────────────────────
+// Expira após 2 h SEM uso (cada requisição renova) ou 12 h após o login.
+const SESSAO_INATIVIDADE_SEGUNDOS = 7200;
+const SESSAO_DURACAO_MAXIMA_SEGUNDOS = 43200;
+
+/**
+ * Evita que a sessão caia "do nada" em hospedagem compartilhada: o PHP padrão
+ * apaga sessões paradas há 24 min (session.gc_maxlifetime=1440) e a pasta
+ * padrão é compartilhada com outros sites, cujo coletor de lixo também apaga
+ * as nossas. Por isso usamos pasta própria e prazo próprio.
+ * Deve ser chamada ANTES de session_start().
+ */
+function configurarArmazenamentoSessao(): void
+{
+    $pasta = __DIR__ . '/../../storage/sessoes';
+    if (!is_dir($pasta)) {
+        @mkdir($pasta, 0700, true);
+    }
+    if (is_dir($pasta) && is_writable($pasta)) {
+        if (!file_exists($pasta . '/.htaccess')) {
+            @file_put_contents($pasta . '/.htaccess', "Require all denied\nDeny from all\n");
+        }
+        ini_set('session.save_path', realpath($pasta));
+    }
+    ini_set('session.gc_maxlifetime', (string) SESSAO_DURACAO_MAXIMA_SEGUNDOS);
+    ini_set('session.gc_probability', '1');
+    ini_set('session.gc_divisor', '100');
+}
+
 // ── BASE_URL ─────────────────────────────────────────────────────────────────
 // Caminho (a partir da raiz do servidor web) onde o projeto está instalado.
 // Exemplos: ''  (http://localhost/)  ou  '/tcc'  (http://localhost/tcc/).

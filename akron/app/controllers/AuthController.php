@@ -77,7 +77,9 @@ class AuthController
         $_SESSION['usuario_tema'] = $usuario['tema'] ?? 'automatico';
         $_SESSION['usuario_foto'] = $usuario['foto'] ?? null;
         $_SESSION['login_hora'] = date('Y-m-d H:i:s');
-        $_SESSION['ip_login'] = $ip;
+        $_SESSION['ip_login'] = $ip; // só para auditoria; não derruba a sessão se mudar
+        $_SESSION['ultima_atividade'] = time();
+        $_SESSION['ua_hash'] = hash('sha256', $_SERVER['HTTP_USER_AGENT'] ?? '');
         $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
     }
 
