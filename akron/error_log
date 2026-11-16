@@ -38,3 +38,62 @@ Stack trace:
 [10-Nov-2026 11:04:25 America/Sao_Paulo] Log - Usuário: 1 | Ação: LOGIN_SUCESSO | Descrição: Login: admin - IP: 200.159.43.210
 [10-Nov-2026 11:04:53 America/Sao_Paulo] Log - Usuário: 1 | Ação: LOGIN_SUCESSO | Descrição: Login: admin - IP: 201.64.130.178
 [10-Nov-2026 11:05:07 America/Sao_Paulo] Log - Usuário: 1 | Ação: LOGIN_SUCESSO | Descrição: Login: admin - IP: 200.159.43.210
+[10-Nov-2026 11:31:41 America/Fortaleza] PHP Warning:  require_once(/home2/athenasdev/public_html/akron/includes/../../includes/auth.php): Failed to open stream: No such file or directory in /home2/athenasdev/public_html/akron/includes/auth.php on line 14
+[10-Nov-2026 11:31:41 America/Fortaleza] PHP Fatal error:  Uncaught Error: Failed opening required '/home2/athenasdev/public_html/akron/includes/../../includes/auth.php' (include_path='.:/opt/cpanel/ea-php84/root/usr/share/pear') in /home2/athenasdev/public_html/akron/includes/auth.php:14
+Stack trace:
+#0 /home2/athenasdev/public_html/akron/index.php(15): require_once()
+#1 {main}
+  thrown in /home2/athenasdev/public_html/akron/includes/auth.php on line 14
+[10-Nov-2026 11:31:44 America/Fortaleza] PHP Warning:  require_once(/home2/athenasdev/public_html/akron/includes/../../includes/auth.php): Failed to open stream: No such file or directory in /home2/athenasdev/public_html/akron/includes/auth.php on line 14
+[10-Nov-2026 11:31:44 America/Fortaleza] PHP Fatal error:  Uncaught Error: Failed opening required '/home2/athenasdev/public_html/akron/includes/../../includes/auth.php' (include_path='.:/opt/cpanel/ea-php84/root/usr/share/pear') in /home2/athenasdev/public_html/akron/includes/auth.php:14
+Stack trace:
+#0 /home2/athenasdev/public_html/akron/index.php(15): require_once()
+#1 {main}
+  thrown in /home2/athenasdev/public_html/akron/includes/auth.php on line 14
+[10-Nov-2026 11:31:45 America/Fortaleza] PHP Warning:  require_once(/home2/athenasdev/public_html/akron/includes/../../includes/auth.php): Failed to open stream: No such file or directory in /home2/athenasdev/public_html/akron/includes/auth.php on line 14
+[10-Nov-2026 11:31:45 America/Fortaleza] PHP Fatal error:  Uncaught Error: Failed opening required '/home2/athenasdev/public_html/akron/includes/../../includes/auth.php' (include_path='.:/opt/cpanel/ea-php84/root/usr/share/pear') in /home2/athenasdev/public_html/akron/includes/auth.php:14
+Stack trace:
+#0 /home2/athenasdev/public_html/akron/index.php(15): require_once()
+#1 {main}
+  thrown in /home2/athenasdev/public_html/akron/includes/auth.php on line 14
+[10-Nov-2026 11:31:45 America/Fortaleza] PHP Warning:  require_once(/home2/athenasdev/public_html/akron/includes/../../includes/auth.php): Failed to open stream: No such file or directory in /home2/athenasdev/public_html/akron/includes/auth.php on line 14
+[10-Nov-2026 11:31:45 America/Fortaleza] PHP Fatal error:  Uncaught Error: Failed opening required '/home2/athenasdev/public_html/akron/includes/../../includes/auth.php' (include_path='.:/opt/cpanel/ea-php84/root/usr/share/pear') in /home2/athenasdev/public_html/akron/includes/auth.php:14
+Stack trace:
+#0 /home2/athenasdev/public_html/akron/index.php(15): require_once()
+#1 {main}
+  thrown in /home2/athenasdev/public_html/akron/includes/auth.php on line 14
+[10-Nov-2026 11:32:03 America/Fortaleza] PHP Warning:  require_once(/home2/athenasdev/public_html/akron/includes/../../includes/auth.php): Failed to open stream: No such file or directory in /home2/athenasdev/public_html/akron/includes/auth.php on line 14
+[10-Nov-2026 11:32:03 America/Fortaleza] PHP Fatal error:  Uncaught Error: Failed opening required '/home2/athenasdev/public_html/akron/includes/../../includes/auth.php' (include_path='.:/opt/cpanel/ea-php84/root/usr/share/pear') in /home2/athenasdev/public_html/akron/includes/auth.php:14
+Stack trace:
+#0 /home2/athenasdev/public_html/akron/index.php(15): require_once()
+#1 {main}
+  thrown in /home2/athenasdev/public_html/akron/includes/auth.php on line 14
+[10-Nov-2026 11:33:36 America/Fortaleza] PHP Warning:  require_once(/home2/athenasdev/public_html/akron/includes/../../includes/auth.php): Failed to open stream: No such file or directory in /home2/athenasdev/public_html/akron/includes/auth.php on line 14
+[10-Nov-2026 11:33:36 America/Fortaleza] PHP Fatal error:  Uncaught Error: Failed opening required '/home2/athenasdev/public_html/akron/includes/../../includes/auth.php' (include_path='.:/opt/cpanel/ea-php84/root/usr/share/pear') in /home2/athenasdev/public_html/akron/includes/auth.php:14
+Stack trace:
+#0 /home2/athenasdev/public_html/akron/index.php(15): require_once()
+#1 {main}
+  thrown in /home2/athenasdev/public_html/akron/includes/auth.php on line 14
+[10-Nov-2026 11:35:51 America/Fortaleza] PHP Warning:  require_once(/home2/athenasdev/public_html/akron/includes/../../includes/auth.php): Failed to open stream: No such file or directory in /home2/athenasdev/public_html/akron/includes/auth.php on line 14
+[10-Nov-2026 11:35:51 America/Fortaleza] PHP Fatal error:  Uncaught Error: Failed opening required '/home2/athenasdev/public_html/akron/includes/../../includes/auth.php' (include_path='.:/opt/cpanel/ea-php84/root/usr/share/pear') in /home2/athenasdev/public_html/akron/includes/auth.php:14
+Stack trace:
+#0 /home2/athenasdev/public_html/akron/index.php(15): require_once()
+#1 {main}
+  thrown in /home2/athenasdev/public_html/akron/includes/auth.php on line 14
+[10-Nov-2026 11:35:59 America/Fortaleza] PHP Warning:  require_once(/home2/athenasdev/public_html/akron/includes/../../includes/auth.php): Failed to open stream: No such file or directory in /home2/athenasdev/public_html/akron/includes/auth.php on line 14
+[10-Nov-2026 11:35:59 America/Fortaleza] PHP Fatal error:  Uncaught Error: Failed opening required '/home2/athenasdev/public_html/akron/includes/../../includes/auth.php' (include_path='.:/opt/cpanel/ea-php84/root/usr/share/pear') in /home2/athenasdev/public_html/akron/includes/auth.php:14
+Stack trace:
+#0 /home2/athenasdev/public_html/akron/index.php(15): require_once()
+#1 {main}
+  thrown in /home2/athenasdev/public_html/akron/includes/auth.php on line 14
+[10-Nov-2026 11:48:04 America/Sao_Paulo] Log - Usuário: 1 | Ação: LOGIN_SUCESSO | Descrição: Login: admin - IP: 201.64.130.178
+[10-Nov-2026 11:48:29 America/Sao_Paulo] Log - Usuário: 1 | Ação: LOGIN_SUCESSO | Descrição: Login: admin - IP: 200.159.43.210
+[10-Nov-2026 14:33:26 America/Sao_Paulo] Log - Usuário: 7 | Ação: LOGIN_SUCESSO | Descrição: Login: bianca - IP: 201.64.130.178
+[10-Nov-2026 15:19:27 America/Sao_Paulo] Log - Usuário: 1 | Ação: LOGIN_SUCESSO | Descrição: Login: admin - IP: 201.64.130.178
+[10-Nov-2026 17:53:04 America/Sao_Paulo] Log - Usuário: 1 | Ação: LOGIN_SUCESSO | Descrição: Login: admin - IP: 187.61.132.76
+[10-Nov-2026 17:53:36 America/Sao_Paulo] Log - Usuário: 5 | Ação: LOGIN_SUCESSO | Descrição: Login: lara - IP: 187.61.132.76
+[10-Nov-2026 17:54:18 America/Sao_Paulo] Log - Usuário: 1 | Ação: LOGIN_SUCESSO | Descrição: Login: admin - IP: 187.61.132.76
+[10-Nov-2026 17:54:28 America/Sao_Paulo] Log - Usuário: 1 | Ação: LOGIN_SUCESSO | Descrição: Login: admin - IP: 187.61.132.76
+[11-Nov-2026 19:57:55 America/Sao_Paulo] Log - Usuário: 1 | Ação: LOGIN_SUCESSO | Descrição: Login: admin - IP: 187.61.132.76
+[12-Nov-2026 11:18:28 America/Sao_Paulo] Log - Usuário: 1 | Ação: LOGIN_SUCESSO | Descrição: Login: admin - IP: 200.159.43.210
+[12-Nov-2026 14:44:16 America/Sao_Paulo] Log - Usuário: 1 | Ação: LOGIN_SUCESSO | Descrição: Login: admin - IP: 201.64.130.178
