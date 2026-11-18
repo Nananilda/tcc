@@ -146,4 +146,20 @@ class SensorModel
     {
         return $this->atualizarStatus($id, 'inativo');
     }
+
+    /** Quantidade de leituras e alertas do sensor (histórico que impede a exclusão definitiva). */
+    public function contarHistorico(int $id): int
+    {
+        $q = $this->pdo->prepare('SELECT (SELECT COUNT(*) FROM leitura_sensor WHERE sensor_id=?) + (SELECT COUNT(*) FROM alertas WHERE sensor_id=?)');
+        $q->execute([$id, $id]);
+        return (int) $q->fetchColumn();
+    }
+
+    /** Exclusão definitiva. Só deve ser chamada para sensor sem histórico. */
+    public function apagar(int $id): bool
+    {
+        $q = $this->pdo->prepare('DELETE FROM sensores WHERE id=?');
+        $q->execute([$id]);
+        return $q->rowCount() > 0;
+    }
 }
