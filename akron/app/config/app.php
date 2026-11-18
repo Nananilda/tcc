@@ -220,3 +220,126 @@ function avatarUsuario(array $usuario): string
     if (!empty($usuario['foto'])) return '<img class="avatar" src="'.escapar($usuario['foto']).'" alt="Foto de '.escapar($usuario['nome']??'usuário').'">';
     return '<span class="avatar avatar-padrao" role="img" aria-label="Sem foto de perfil">'.escapar(function_exists('mb_substr') ? mb_substr($usuario['nome']??'U',0,1) : substr($usuario['nome']??'U',0,1)).'</span>';
 }
+
+// ── Navegação: origem, retorno e mensagens ───────────────────────────────────
+// Toda página que leva a outra (listagem → detalhes → edição...) acrescenta o
+// parâmetro `voltar` com o endereço de onde o usuário saiu (filtros, IDs,
+// estoque e modo de gestão incluídos). Voltar/Cancelar e o redirecionamento
+// após salvar usam esse endereço; sem ele (acesso direto), cada página informa
+// um destino padrão válido. O valor é aceito somente se for uma página interna
+// do sistema (lista fechada abaixo) — nunca um endereço externo.
+
+/** Páginas internas aceitas como destino de retorno. */
+const NAV_DESTINO_VALIDO = '#^app/views/(dashboard|estoques|sensores|graficos|relatorios|usuarios)/[a-z_]+\.php(\?[^\s\#]*)?$#';
+
+/** Página atual (caminho + consulta) relativa à raiz do sistema. */
+function origemAtual(): string
+{
+    $uri = (string) ($_SERVER['REQUEST_URI'] ?? '');
+    $caminho = (string) parse_url($uri, PHP_URL_PATH);
+    $consulta = (string) parse_url($uri, PHP_URL_QUERY);
+    if (BASE_URL !== '' && str_starts_with($caminho, BASE_URL . '/')) {
+        $caminho = substr($caminho, strlen(BASE_URL));
+    }
+    $origem = ltrim($caminho, '/') . ($consulta !== '' ? '?' . $consulta : '');
+    if (strlen($origem) > 1200) { // cadeia de retornos muito longa: guarda só esta página
+        parse_str($consulta, $partes);
+        unset($partes['voltar']);
+        $origem = ltrim($caminho, '/') . ($partes ? '?' . http_build_query($partes) : '');
+    }
+    return $origem;
+}
+
+/** Devolve o destino se for uma página interna válida; caso contrário, null. */
+function destinoInternoValido($destino): ?string
+{
+    if (!is_string($destino) || $destino === '' || strlen($destino) > 1800) return null;
+    return preg_match(NAV_DESTINO_VALIDO, $destino) ? $destino : null;
+}
+
+/** Retorno pedido na requisição (GET ou POST), já validado; null se não houver. */
+function voltarInformado(): ?string
+{
+    return destinoInternoValido($_POST['voltar'] ?? $_GET['voltar'] ?? null);
+}
+
+/**
+ * URL de retorno: a página de origem, se informada; senão o padrão da página.
+ * $ignorarDetalhes: após excluir um registro, a página de detalhes dele não existe mais.
+ */
+function urlVoltar(string $padrao, bool $ignorarDetalhes = false): string
+{
+    $voltar = voltarInformado();
+    if ($voltar !== null && $ignorarDetalhes && preg_match('#/detalhes\.php(\?|$)#', $voltar)) $voltar = null;
+    return urlApp($voltar ?? $padrao);
+}
+
+/** Parâmetros de navegação a repassar em links/formulários (apenas `voltar`). */
+function parametrosNavegacao(): array
+{
+    $voltar = voltarInformado();
+    return $voltar !== null ? ['voltar' => $voltar] : [];
+}
+
+/** Campo oculto que mantém o retorno em formulários (GET ou POST). */
+function campoVoltar(): string
+{
+    $voltar = voltarInformado();
+    return $voltar !== null ? '<input type="hidden" name="voltar" value="' . escapar($voltar) . '">' : '';
+}
+
+/** Link para outra página, guardando a atual como origem do botão Voltar. */
+function urlComOrigem(string $rota, array $parametros = []): string
+{
+    $parametros['voltar'] = origemAtual();
+    return urlApp($rota) . '?' . http_build_query($parametros);
+}
+
+/** Botão "Voltar" padrão das páginas de consulta (listagens, detalhes, monitoramento). */
+function linkVoltar(string $padrao, string $rotulo = 'Voltar', bool $ignorarDetalhes = false): string
+{
+    $icone = function_exists('iconeSvg') ? iconeSvg('voltar') : '';
+    return '<a class="btn-secundario btn-voltar" href="' . escapar(urlVoltar($padrao, $ignorarDetalhes)) . '">' . $icone . '<span>' . escapar($rotulo) . '</span></a>';
+}
+
+/** Botão "Cancelar" padrão dos formulários. */
+function linkCancelar(string $padrao): string
+{
+    return '<a class="btn-secundario" href="' . escapar(urlVoltar($padrao)) . '">Cancelar</a>';
+}
+
+/**
+ * Padrão Post/Redirect/Get: guarda a mensagem de sucesso na sessão e redireciona,
+ * de modo que atualizar a página (F5) não reenvie o formulário nem duplique cadastros.
+ */
+function redirecionarComMensagem(string $url, string $mensagem = ''): never
+{
+    if ($mensagem !== '' && session_status() === PHP_SESSION_ACTIVE) {
+        $_SESSION['mensagem_flash'] = $mensagem;
+    }
+    header('Location: ' . $url);
+    exit;
+}
+
+/**
+ * Mensagens padronizadas de sucesso e erro. Inclui (e consome) a mensagem
+ * deixada por redirecionarComMensagem() na requisição anterior.
+ */
+function mensagensPagina(string $mensagem = '', array $erros = []): string
+{
+    if (session_status() === PHP_SESSION_ACTIVE && !empty($_SESSION['mensagem_flash'])) {
+        $mensagem = $mensagem !== '' ? $mensagem : (string) $_SESSION['mensagem_flash'];
+        unset($_SESSION['mensagem_flash']);
+    }
+    $html = '';
+    if ($mensagem !== '') {
+        $html .= '<div class="msg-sucesso" role="status">' . escapar($mensagem) . '</div>';
+    }
+    $erros = array_values(array_filter($erros, 'is_string'));
+    if ($erros) {
+        $html .= '<div class="msg-erro" role="alert"><ul>';
+        foreach ($erros as $erro) $html .= '<li>' . escapar($erro) . '</li>';
+        $html .= '</ul></div>';
+    }
+    return $html;
+}
