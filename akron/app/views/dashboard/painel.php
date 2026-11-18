@@ -10,6 +10,8 @@ require_once __DIR__.'/../../config/conexao.php';
 require_once __DIR__.'/../../controllers/DashboardController.php';
 require_once __DIR__.'/../../models/EstoqueModel.php';
 require_once __DIR__.'/../partials/modulos.php';
+require_once __DIR__.'/../../models/AlertaModel.php';
+AlertaModel::limpezaAutomatica($pdo); // exclusão automática de alertas resolvidos há mais de 30 dias
 $resumo=(new DashboardController($pdo))->obterResumo($_GET);
 $estoqueId=max(0,(int)($_GET['estoque_id']??0));$estoques=(new EstoqueModel($pdo))->listarTodos();
 $tituloPagina='Painel';$cssPagina=['painel.css'];$scriptsRodape=['painel.js'];
@@ -25,7 +27,8 @@ $indicadores=[
     ['estoques_total','Estoques cadastrados','Dentro do seu escopo de acesso','estoque',false,false],
 ];
 $modulos=modulosAkron();$grupos=gruposModulos();$admin=ehAdmin();
-$urlModulo=fn(array $m)=>urlApp('app/views/'.$m['rota']);
+/* Com um estoque selecionado no painel, os módulos guardam o painel (com o estoque) como origem do Voltar. */
+$urlModulo=fn(array $m)=>urlApp('app/views/'.$m['rota']).($estoqueId?(str_contains($m['rota'],'?')?'&':'?').http_build_query(['voltar'=>origemAtual()]):'');
 require __DIR__.'/../partials/cabecalho.php';
 ?>
 <section class="painel-abertura" aria-labelledby="painel-titulo">
@@ -40,7 +43,7 @@ require __DIR__.'/../partials/cabecalho.php';
             <option value="0">Todos os autorizados</option>
             <?php foreach($estoques as $e): ?><option value="<?= (int)$e['id'] ?>" <?= $estoqueId==(int)$e['id']?'selected':'' ?>><?= escapar($e['nome']) ?></option><?php endforeach ?>
         </select>
-        <noscript><button type="submit">Aplicar</button></noscript>
+        <noscript><button type="submit" class="btn-primario">Aplicar</button></noscript>
     </form>
 </section>
 
@@ -88,7 +91,7 @@ require __DIR__.'/../partials/cabecalho.php';
 <section class="card painel-recentes" aria-labelledby="alertas-recentes-titulo">
     <div class="painel-recentes-topo">
         <h2 id="alertas-recentes-titulo">Alertas recentes</h2>
-        <a class="link-seta" href="<?= escapar(urlApp('app/views/graficos/alerta.php').'?estoque_id='.$estoqueId) ?>">Consultar alertas <?= iconeSvg('seta') ?></a>
+        <a class="link-seta" href="<?= escapar(urlComOrigem('app/views/graficos/alerta.php',['estoque_id'=>$estoqueId])) ?>">Consultar alertas <?= iconeSvg('seta') ?></a>
     </div>
     <div id="painel-alertas"></div>
 </section>
