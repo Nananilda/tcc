@@ -172,6 +172,30 @@ class UsuarioController
         }
     }
 
+    /**
+     * Exclusão definitiva: só para usuário sem histórico (alertas atendidos ou
+     * registros de auditoria). Não vale para a própria conta, o administrador
+     * principal nem o último administrador ativo. Nos demais casos, use excluir() (desativar).
+     */
+    public function apagar(int $id): array
+    {
+        if (!$this->ehAdmin) return $this->resposta('', ['Acesso negado.']);
+        if ($id <= 0) return $this->resposta('', ['ID do usuário inválido.']);
+        if ($id === $this->usuarioLogadoId) return $this->resposta('', ['Você não pode excluir seu próprio usuário.']);
+        try {
+            $usuario = $this->model->buscarPorId($id);
+            if (!$usuario) return $this->resposta('', ['Usuário não encontrado.']);
+            if (!empty($usuario['administrador_principal'])) return $this->resposta('', ['O administrador principal não pode ser excluído.']);
+            if ($usuario['tipo'] === 'admin' && $usuario['status'] === 'ativo' && $this->model->contarAdminsAtivos($id) === 0) return $this->resposta('', ['Não é possível excluir o último administrador ativo.']);
+            if ($this->model->contarHistorico($id) > 0) return $this->resposta('', ['Este usuário possui histórico (acessos ou atendimento de alertas) e não pode ser excluído. Use Desativar para bloquear o acesso e preservar os registros.']);
+            if (!$this->model->apagar($id)) return $this->resposta('', ['Usuário não encontrado.']);
+            $this->registrarLog('EXCLUSAO_USUARIO', "Usuário ID $id excluído: {$usuario['login']}");
+            return $this->resposta('Usuário "' . $usuario['login'] . '" excluído com sucesso.', []);
+        } catch (PDOException $e) {
+            return $this->resposta('', ['Não foi possível excluir o usuário. Use Desativar para preservar o histórico.']);
+        }
+    }
+
     // ── Helpers ──────────────────────────────────────────────────────────────
 
     /** Monta o formato padrão de resposta. */
