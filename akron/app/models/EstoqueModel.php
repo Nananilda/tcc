@@ -99,4 +99,28 @@ class EstoqueModel
         }
         return $id;
     }
+
+    /** Sensores, leituras e alertas do estoque (histórico que impede a exclusão definitiva). */
+    public function contarHistorico(int $id): int
+    {
+        $q = $this->pdo->prepare('SELECT (SELECT COUNT(*) FROM sensores WHERE estoque_id=?) + (SELECT COUNT(*) FROM leitura_sensor WHERE estoque_id=?) + (SELECT COUNT(*) FROM alertas WHERE estoque_id=?)');
+        $q->execute([$id, $id, $id]);
+        return (int) $q->fetchColumn();
+    }
+
+    /** Exclusão definitiva (remove antes os vínculos com usuários). Só para estoque sem histórico. */
+    public function apagar(int $id): bool
+    {
+        $this->pdo->beginTransaction();
+        try {
+            $this->pdo->prepare('DELETE FROM usuario_estoque WHERE estoque_id=?')->execute([$id]);
+            $q = $this->pdo->prepare('DELETE FROM estoques WHERE id=?');
+            $q->execute([$id]);
+            $this->pdo->commit();
+            return $q->rowCount() > 0;
+        } catch (PDOException $e) {
+            if ($this->pdo->inTransaction()) $this->pdo->rollBack();
+            throw $e;
+        }
+    }
 }
