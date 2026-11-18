@@ -4,13 +4,14 @@ require_once __DIR__.'/../../models/EstoqueModel.php';
 $estoques=(new EstoqueModel($pdo))->listarTodos();$tituloPagina='Estoques';
 require __DIR__.'/../partials/cabecalho.php';
 ?>
-<header class="page-header"><div><h1>Estoques</h1><p>Acompanhe as condições ambientais dos estoques autorizados. Cada cartão separa a condição ambiental, a comunicação dos sensores e a situação cadastral.</p></div><?php if(ehAdmin()): ?><a class="btn-primario" href="formulario.php">Cadastrar estoque</a><?php endif ?></header>
+<header class="page-header"><div><h1>Estoques</h1><p>Acompanhe as condições ambientais dos estoques autorizados. Cada cartão separa a condição ambiental, a comunicação dos sensores e a situação cadastral.</p></div><div class="actions"><?= linkVoltar('app/views/dashboard/painel.php') ?><?php if(ehAdmin()): ?><a class="btn-primario" href="<?= escapar(urlComOrigem('app/views/estoques/formulario.php')) ?>">Cadastrar estoque</a><?php endif ?></div></header>
+<?= mensagensPagina() ?>
 <?php if(!$estoques): ?><p class="estado-vazio">Nenhum estoque disponível. <?= ehAdmin()?'Cadastre o primeiro estoque para iniciar o monitoramento.':'Solicite a vinculação a um administrador.' ?></p><?php endif ?>
 <div class="estoques-grade">
 <?php foreach($estoques as $e): ?>
 <article class="estoque-card amb-<?= escapar($e['condicao_ambiental']) ?><?= $e['status']==='inativo'?' estoque-inativo':'' ?>">
     <div class="estoque-topo">
-        <h2><a class="estoque-link" href="detalhes.php?id=<?= (int)$e['id'] ?>"><?= escapar($e['nome']) ?></a></h2>
+        <h2><a class="estoque-link" href="<?= escapar(urlComOrigem('app/views/estoques/detalhes.php',['id'=>(int)$e['id']])) ?>"><?= escapar($e['nome']) ?></a></h2>
         <?php if(!empty($e['demonstracao'])): ?><span class="badge badge-demonstracao" title="Dados simulados para demonstração">Demonstração</span><?php endif ?>
     </div>
     <p class="estoque-local"><?= escapar($e['localizacao']?:'Localização não informada') ?></p>
@@ -27,7 +28,7 @@ require __DIR__.'/../partials/cabecalho.php';
         <?php endif ?>
         <p class="alertas-linha<?= (int)$e['alertas_criticos_pendentes']?' tem-critico':'' ?>"><strong>Alertas ativos:</strong> <span class="contador-alertas<?= (int)$e['alertas_ativos']?' com-alertas':'' ?>"><?= (int)$e['alertas_ativos'] ?></span><?php if((int)$e['alertas_criticos_pendentes']): ?> <span class="badge badge-critico"><?= (int)$e['alertas_criticos_pendentes'] ?> crítico(s) pendente(s)</span><?php endif ?></p>
     </div>
-    <div class="acoes-card"><a class="btn-secundario" href="detalhes.php?id=<?= (int)$e['id'] ?>">Ver detalhes</a><?php if(ehAdmin()): ?><a class="btn-secundario" href="formulario.php?id=<?= (int)$e['id'] ?>">Editar estoque</a><?php endif ?></div>
+    <div class="acoes-card"><a class="btn-secundario" href="<?= escapar(urlComOrigem('app/views/estoques/detalhes.php',['id'=>(int)$e['id']])) ?>">Ver detalhes</a><?php if(ehAdmin()): ?><a class="btn-secundario" href="<?= escapar(urlComOrigem('app/views/estoques/formulario.php',['id'=>(int)$e['id']])) ?>">Editar estoque</a><?php endif ?></div>
 </article>
 <?php endforeach ?>
 </div>
