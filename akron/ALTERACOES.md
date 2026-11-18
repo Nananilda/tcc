@@ -15,7 +15,7 @@ Referência: `alterações tcc (1).docx`, fornecido junto com `tcc.zip`. A marca
 | 9. Alertas | Cartões expansíveis; gravidade, mensagem, estoque/sensor, valor, limite, horário e situação. Observações opcionais; reconhecimento, normalização e resolução separados. Filtros combinados e CSV/PDF sem truncamento pela página. |
 | 10. Relatórios | Grade por variável, unidades e limites; estatísticas integrais; páginas de 25/50/100/200 leituras; todos os dados filtrados no CSV/PDF. Janelas de horas também respeitadas ao navegar do monitoramento. |
 | 11. Usuários | Foto/avatar, nome, perfil, situação e estoques. Estoques selecionáveis por cartões no cadastro e edição. Administrador principal protegido também no servidor/API. |
-| 12. Desativação | Primeiro clique exibe consequências e botão vermelho; segundo confirma. Cancelar restaura o botão. Desativar preserva histórico; as rotas antigas chamadas `excluir` continuam desativando, sem apagar dados. Exclusão definitiva não é oferecida; chaves estrangeiras protegem os relacionamentos. |
+| 12. Desativação | Primeiro clique exibe consequências e botão vermelho; segundo confirma. Cancelar restaura o botão. Desativar preserva histórico; as rotas antigas chamadas `excluir` continuam desativando, sem apagar dados. A exclusão definitiva passou a existir na revisão 3.2 (veja abaixo), somente para registros sem histórico. |
 | 13. Celular | Navegação recolhível, formulários em uma coluna, cartões de estoque em uma coluna, gráficos adaptáveis e linhas de tabelas convertidas em cartões com rótulos. |
 | 14. Formulários | Campos obrigatórios, mensagens de validação, preservação do preenchimento, agrupamentos, indicadores de processamento e confirmação ao sair com alterações não salvas. |
 | 15. Histórico e confiabilidade | Carregamento progressivo/paginação; filtros mantidos; médias identificadas; nenhum simulador automático; dados desatualizados sinalizados; consultas com escopo e resumo consistente. |
@@ -62,3 +62,21 @@ Somente apresentação; banco, APIs, rotas, autenticação e permissões não fo
 - **Sensores**: `listar_sensores.php` tem modo consulta e modo gestão (`?modo=gestao`, somente administrador).
 - **CSS**: removidas regras do menu lateral, do botão de tema e do menu antigo de atalhos; tokens de acento por módulo, elevação e movimento em `style.css`; animações respeitam `prefers-reduced-motion`.
 - Gráficos e leituras atuais continuam em Monitoramento; o painel mantém os alertas recentes.
+
+
+## Revisão 3.2 — navegação, padronização e exclusão
+
+Sem mudanças no banco, na autenticação, na integração ESP32, nas APIs nem nas regras de monitoramento. Nenhum arquivo foi criado, movido ou renomeado.
+
+**Navegação (Voltar/Cancelar).** Cada link que sai de uma página leva o parâmetro `voltar` com a página de origem (filtros, página da listagem, ID, estoque e modo de gestão incluídos). Voltar, Cancelar e o destino após salvar usam esse endereço; no acesso direto cada página tem um destino padrão válido (edição → detalhes; cadastro → listagem; monitoramento/relatório → sensor ou estoque filtrado, ou painel). O valor só é aceito se for uma página interna da lista fechada `NAV_DESTINO_VALIDO` (`app/config/app.php`), nunca um endereço externo. Helpers: `urlComOrigem()`, `urlVoltar()`, `linkVoltar()`, `linkCancelar()`, `campoVoltar()`, `parametrosNavegacao()`.
+
+**Envio de formulários.** Cadastro, edição, desativação, exclusão, criação/atendimento de alertas e configurações pessoais usam Post/Redirect/Get (`redirecionarComMensagem()`): atualizar a página não reenvia o formulário nem duplica registros. Em caso de erro a página permanece com os dados digitados.
+
+**Mensagens.** `mensagensPagina()` padroniza sucesso (`msg-sucesso`) e erros (`msg-erro` com lista) em todas as páginas.
+
+**Visual.** Cabeçalho único (`page-header` com título, subtítulo e ações), botões com o mesmo tamanho/alinhamento, cartões, grades de formulário e ações com os mesmos espaçamentos; regras no fim de `revisao.css`. Links duplicados de retorno (`nav-rodape`) removidos. Ajustes de ações empilhadas para celular e tablet.
+
+**Excluir.** Além de Desativar, existe Excluir em sensores, estoques e usuários (somente administrador, com confirmação em dois cliques e somente nas telas web — a API não oferece exclusão definitiva), e exclusão automática de alertas:
+- sensores, estoques e usuários só podem ser excluídos **sem histórico** (leituras/alertas/sensores vinculados; no caso de usuários, também acessos registrados e alertas atendidos). Com histórico, o sistema bloqueia e orienta a usar Desativar. Também continuam protegidos o administrador principal, a própria conta e o último administrador ativo;
+- alertas **resolvidos** são excluídos **automaticamente 30 dias após a resolução**. Alertas pendentes ou reconhecidos nunca são excluídos. Como a hospedagem não deve ser alterada (sem cron), a limpeza roda quando alguém abre o painel ou a página de Alertas, no máximo uma vez por hora por sessão (`AlertaModel::limpezaAutomatica()`). A página de Alertas avisa todos os usuários quando há alertas que serão excluídos nos próximos 7 dias (sugerindo exportar CSV/PDF antes) e cada cartão mostra “será excluído automaticamente em N dia(s)”. Não há botão de exclusão manual de alertas.
+- Registro em auditoria: `SENSOR_EXCLUSAO`, `ESTOQUE_EXCLUSAO`, `EXCLUSAO_USUARIO`, `ALERTA_EXCLUSAO_AUTOMATICA` (sem usuário, com a quantidade).
