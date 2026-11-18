@@ -5,6 +5,8 @@ require_once __DIR__.'/../../models/EstoqueModel.php';
 $c=new ContaController($pdo,(int)$_SESSION['usuario_id']);$r=['erros'=>[],'mensagem'=>''];
 if ($_SERVER['REQUEST_METHOD']==='POST') {
     $r=validarCSRF($_POST['csrf_token']??'') ? $c->salvar($_POST,$_FILES) : ['erros'=>['Confirmação de segurança inválida. Recarregue a página.'],'mensagem'=>''];
+    /* Sucesso: Post/Redirect/Get — atualizar a página não reenvia o formulário. */
+    if(!$r['erros'] && $r['mensagem']!=='') redirecionarComMensagem(urlApp(origemAtual()),$r['mensagem']);
 }
 $usuario=$c->consultar();$estoques=(new EstoqueModel($pdo))->listarTodos();$tituloPagina='Configurações pessoais';
 $nome=$r['erros']&&is_string($_POST['nome']??null)?$_POST['nome']:$usuario['nome'];
@@ -14,9 +16,9 @@ $temaAtual=$r['erros']?($_POST['tema']??$usuario['tema']):$usuario['tema'];
 if(!in_array($temaAtual,['automatico','claro','escuro'],true))$temaAtual='automatico';
 require __DIR__.'/../partials/cabecalho.php';
 ?>
-<header class="page-header"><div><h1>Configurações pessoais</h1><p>Gerencie seu perfil, a aparência do sistema, a segurança da conta e seus acessos.</p></div></header>
-<?php if($r['mensagem']): ?><p class="msg-sucesso" role="status"><?= escapar($r['mensagem']) ?></p><?php endif ?>
-<?php if($r['erros']): ?><div class="msg-erro" role="alert">Confira os campos indicados.<?php if(isset($r['erros']['foto'])): ?> A foto precisa ser selecionada novamente.<?php endif ?><?php foreach($r['erros'] as $e): ?><p><?= escapar($e) ?></p><?php endforeach ?></div><?php endif ?>
+<header class="page-header"><div><h1>Configurações pessoais</h1><p>Gerencie seu perfil, a aparência do sistema, a segurança da conta e seus acessos.</p></div><div class="actions"><?= linkVoltar('app/views/dashboard/painel.php') ?></div></header>
+<?= mensagensPagina($r['mensagem'],array_values($r['erros'])) ?>
+<?php if(isset($r['erros']['foto'])): ?><p class="texto-auxiliar">A foto precisa ser selecionada novamente.</p><?php endif ?>
 
 <nav class="config-indice" aria-label="Seções das configurações">
     <a href="#perfil"><?= iconeSvg('perfil') ?>Perfil</a>
@@ -77,12 +79,12 @@ require __DIR__.'/../partials/cabecalho.php';
     </div></details>
 </section>
 
-<div class="form-acoes config-acoes"><button>Salvar alterações</button><a class="btn-secundario" href="perfil.php">Cancelar</a></div>
+<div class="form-acoes config-acoes"><button type="submit" class="btn-primario">Salvar alterações</button><?= linkCancelar('app/views/dashboard/painel.php') ?></div>
 </form>
 
 <section class="card config-secao" id="acessos" aria-labelledby="titulo-acessos">
     <header class="config-secao-topo"><span class="config-secao-icone"><?= iconeSvg('chave') ?></span><div><h2 id="titulo-acessos">Acessos</h2><p>Estoques que você pode consultar.</p></div></header>
 <?php if(!$estoques): ?><p class="estado-vazio">Nenhum estoque autorizado. Solicite a vinculação ao administrador.</p><?php else: ?>
 <?php if($usuario['tipo']==='admin'): ?><p class="texto-auxiliar">Administradores têm acesso a todos os estoques cadastrados.</p><?php endif ?>
-<div class="estoques-compactos"><?php foreach($estoques as $e): ?><a class="estoque-mini" href="../estoques/detalhes.php?id=<?= (int)$e['id'] ?>"><strong><?= escapar($e['nome']) ?></strong><span><?= escapar($e['localizacao']?:'Localização não informada') ?></span></a><?php endforeach ?></div><?php endif ?></section>
+<div class="estoques-compactos"><?php foreach($estoques as $e): ?><a class="estoque-mini" href="<?= escapar(urlComOrigem('app/views/estoques/detalhes.php',['id'=>(int)$e['id']])) ?>"><strong><?= escapar($e['nome']) ?></strong><span><?= escapar($e['localizacao']?:'Localização não informada') ?></span></a><?php endforeach ?></div><?php endif ?></section>
 <?php require __DIR__.'/../partials/rodape.php'; ?>
