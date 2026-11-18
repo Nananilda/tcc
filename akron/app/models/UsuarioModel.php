@@ -178,6 +178,30 @@ class UsuarioModel
         return $stmt->rowCount() > 0;
     }
 
+    /** Alertas reconhecidos/resolvidos e registros de auditoria do usuário (impedem a exclusão definitiva). */
+    public function contarHistorico(int $id): int
+    {
+        $q = $this->pdo->prepare('SELECT (SELECT COUNT(*) FROM alertas WHERE reconhecido_por=? OR resolvido_por=?) + (SELECT COUNT(*) FROM auditoria WHERE usuario_id=?)');
+        $q->execute([$id, $id, $id]);
+        return (int) $q->fetchColumn();
+    }
+
+    /** Exclusão definitiva (remove antes os vínculos com estoques). Só para usuário sem histórico. */
+    public function apagar(int $id): bool
+    {
+        $this->pdo->beginTransaction();
+        try {
+            $this->pdo->prepare('DELETE FROM usuario_estoque WHERE usuario_id=?')->execute([$id]);
+            $q = $this->pdo->prepare('DELETE FROM usuario WHERE id=?');
+            $q->execute([$id]);
+            $this->pdo->commit();
+            return $q->rowCount() > 0;
+        } catch (PDOException $e) {
+            if ($this->pdo->inTransaction()) $this->pdo->rollBack();
+            throw $e;
+        }
+    }
+
     public function estoquesDoUsuario(int $id): array
     {
         $stmt = $this->pdo->prepare('SELECT estoque_id FROM usuario_estoque WHERE usuario_id=? ORDER BY estoque_id');
