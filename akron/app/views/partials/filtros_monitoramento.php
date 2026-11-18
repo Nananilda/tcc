@@ -7,7 +7,7 @@ $sensoresFiltro=$pdo->query('SELECT s.id,s.nome,s.estoque_id, GROUP_CONCAT(DISTI
 $filtros=$filtros??[];
 foreach($filtros as $chave=>$valor) if(!is_scalar($valor)&&$valor!==null)$filtros[$chave]='';
 ?>
-<form method="get" class="card" aria-label="Filtros">
+<form method="get" class="card" aria-label="Filtros"><?= campoVoltar() ?>
 <?php if(empty($filtroJanela)&&!empty($filtros['horas'])): ?><input type="hidden" name="horas" value="<?= (int)$filtros['horas'] ?>"><p>Período ativo: últimas <?= (int)$filtros['horas'] ?> horas. Informe datas para substituir essa janela.</p><?php endif ?>
 <div class="monitor-filtros">
 <label>Estoque<select name="estoque_id"><option value="0">Todos os autorizados</option><?php foreach($estoquesFiltro as $e):?><option value="<?= (int)$e['id'] ?>" <?= (int)($filtros['estoque_id']??0)===(int)$e['id']?'selected':'' ?>><?= escapar($e['nome']) ?></option><?php endforeach;?></select></label>
@@ -17,5 +17,5 @@ foreach($filtros as $chave=>$valor) if(!is_scalar($valor)&&$valor!==null)$filtro
 <label>Data final<input type="date" name="data_fim" value="<?= escapar($filtros['data_fim']??'') ?>"></label>
 <?php if(!empty($filtroJanela)):?><label>Janela sem datas<select name="horas"><?php foreach(LeituraModel::ROTULOS_PERIODO as $h=>$label):?><option value="<?= $h ?>" <?= (int)($filtros['horas']??24)===$h?'selected':'' ?>><?= escapar($label) ?></option><?php endforeach;?></select></label><?php else:?>
 <label>Valor mínimo<input type="number" step="any" name="val_min" value="<?= escapar($filtros['val_min']??'') ?>"></label><label>Valor máximo<input type="number" step="any" name="val_max" value="<?= escapar($filtros['val_max']??'') ?>"></label><?php endif;?>
-<?php if(empty($filtroJanela)): ?><label>Registros por página<select name="por_pagina"><?php foreach([25,50,100,200] as $n): ?><option value="<?= $n ?>" <?= (int)($filtros['por_pagina']??25)===$n?'selected':'' ?>><?= $n ?></option><?php endforeach ?></select></label><?php endif ?></div><div class="acoes-formulario"><button type="submit">Aplicar filtros</button><a class="btn-secundario" href="<?= escapar(strtok($_SERVER['REQUEST_URI'],'?')) ?>">Limpar filtros</a></div>
+<?php if(empty($filtroJanela)): ?><label>Registros por página<select name="por_pagina"><?php foreach([25,50,100,200] as $n): ?><option value="<?= $n ?>" <?= (int)($filtros['por_pagina']??25)===$n?'selected':'' ?>><?= $n ?></option><?php endforeach ?></select></label><?php endif ?></div><div class="acoes-formulario"><button type="submit" class="btn-primario">Aplicar filtros</button><a class="btn-secundario" href="<?= escapar(strtok($_SERVER['REQUEST_URI'],'?').(parametrosNavegacao()?'?'.http_build_query(parametrosNavegacao()):'')) ?>">Limpar filtros</a></div>
 </form>
