@@ -146,4 +146,51 @@ class AlertaModel
         $q=$this->pdo->prepare("SELECT id FROM alertas WHERE sensor_id=:sensor AND severidade=:grau AND mensagem=:mensagem AND resolvido=0 ORDER BY id DESC LIMIT 1");
         $q->execute([':sensor'=>$sensorId,':grau'=>$severidade,':mensagem'=>$mensagem]); $id=$q->fetchColumn(); return $id===false ? null : (int)$id;
     }
+
+    /** Dias após a resolução em que um alerta resolvido é excluído automaticamente. */
+    const DIAS_PARA_EXCLUSAO = 30;
+    /** Dias de antecedência em que o aviso de exclusão automática aparece. */
+    const DIAS_AVISO_EXCLUSAO = 7;
+    /** Intervalo mínimo (segundos) entre duas limpezas automáticas na mesma sessão. */
+    const INTERVALO_LIMPEZA = 3600;
+
+    /** Dias que faltam para a exclusão automática (null = alerta ainda não resolvido). */
+    public static function diasParaExclusao(array $alerta): ?int
+    {
+        if (empty($alerta['resolvido'])) return null;
+        $base = strtotime((string) (($alerta['resolvido_em'] ?? '') ?: ($alerta['criado_em'] ?? '')));
+        if (!$base) return null;
+        return max(0, (int) ceil(($base + self::DIAS_PARA_EXCLUSAO * 86400 - time()) / 86400));
+    }
+
+    /** Exclui os alertas resolvidos há mais de 30 dias. Alertas pendentes ou reconhecidos nunca são excluídos. */
+    public function excluirExpirados(): int
+    {
+        $q = $this->pdo->prepare('DELETE FROM alertas WHERE resolvido=1 AND COALESCE(resolvido_em,criado_em) <= DATE_SUB(NOW(), INTERVAL ' . self::DIAS_PARA_EXCLUSAO . ' DAY)');
+        $q->execute();
+        return $q->rowCount();
+    }
+
+    /** Limpeza automática: roda no máximo uma vez por hora por sessão e registra na auditoria. Falhas não interrompem a página. */
+    public static function limpezaAutomatica(PDO $pdo): void
+    {
+        if (defined('API_CONTEXT') || session_status() !== PHP_SESSION_ACTIVE) return;
+        if (time() - (int) ($_SESSION['alertas_limpeza_em'] ?? 0) < self::INTERVALO_LIMPEZA) return;
+        $_SESSION['alertas_limpeza_em'] = time();
+        try {
+            $total = (new self($pdo))->excluirExpirados();
+            if ($total > 0 && function_exists('registrarLog')) {
+                registrarLog($pdo, null, 'ALERTA_EXCLUSAO_AUTOMATICA', $total . ' alerta(s) resolvido(s) há mais de ' . self::DIAS_PARA_EXCLUSAO . ' dias');
+            }
+        } catch (PDOException $e) {
+            error_log('[ÁKRON] Limpeza automática de alertas: ' . $e->getMessage());
+        }
+    }
+
+    /** Alertas resolvidos que serão excluídos automaticamente nos próximos 7 dias (dentro do escopo de estoques do usuário). */
+    public function contarExclusaoProxima(string $escopoSql): int
+    {
+        $q = $this->pdo->query('SELECT COUNT(*) FROM alertas a WHERE a.resolvido=1 AND COALESCE(a.resolvido_em,a.criado_em) > DATE_SUB(NOW(), INTERVAL ' . self::DIAS_PARA_EXCLUSAO . ' DAY) AND COALESCE(a.resolvido_em,a.criado_em) <= DATE_SUB(NOW(), INTERVAL ' . (self::DIAS_PARA_EXCLUSAO - self::DIAS_AVISO_EXCLUSAO) . ' DAY) AND ' . $escopoSql);
+        return (int) $q->fetchColumn();
+    }
 }
