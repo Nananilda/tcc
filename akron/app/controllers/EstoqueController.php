@@ -6,10 +6,21 @@ class EstoqueController
     public function executar(string $acao, array $dados): array
     {
         if (!ehAdmin()) return ['mensagem'=>'','erros'=>['Acesso negado.']];
-        if (!in_array($acao,['cadastrar','atualizar','desativar'],true)) return ['mensagem'=>'','erros'=>['Ação desconhecida.']];
+        if (!in_array($acao,['cadastrar','atualizar','desativar','excluir'],true)) return ['mensagem'=>'','erros'=>['Ação desconhecida.']];
         $model=new EstoqueModel($this->pdo);
         $id=filter_var($dados['id'] ?? $dados['estoque_id'] ?? 0, FILTER_VALIDATE_INT);
         if ($acao!='cadastrar' && (!$id || !$model->buscarPorId($id))) return ['mensagem'=>'','erros'=>['Estoque não encontrado.']];
+        if ($acao==='excluir') {
+            if (defined('API_CONTEXT')) return ['mensagem'=>'','erros'=>['Ação desconhecida.']]; // somente telas web
+            if (($dados['confirmacao']??'')!=='excluir') return ['mensagem'=>'','erros'=>['Confirme a exclusão do estoque.']];
+            try {
+                if ($model->contarHistorico($id)>0) return ['mensagem'=>'','erros'=>['Este estoque possui sensores, leituras ou alertas e não pode ser excluído. Use Desativar para preservar o histórico.']];
+                $nome=$model->buscarPorId($id)['nome'];
+                if (!$model->apagar($id)) return ['mensagem'=>'','erros'=>['Estoque não encontrado.']];
+                registrarLog($this->pdo,(int)$_SESSION['usuario_id'],'ESTOQUE_EXCLUSAO','Estoque '.$id.': '.$nome);
+                return ['mensagem'=>'Estoque "'.$nome.'" excluído com sucesso.','erros'=>[]];
+            } catch (PDOException $e) { error_log($e->getMessage()); return ['mensagem'=>'','erros'=>['Não foi possível excluir o estoque. Use Desativar para preservar o histórico.']]; }
+        }
         if ($acao==='desativar') {
             if (($dados['confirmacao']??'')!=='desativar') return ['mensagem'=>'','erros'=>['Confirme a desativação.']];
             $dados=$model->buscarPorId($id); $dados['status']='inativo';
