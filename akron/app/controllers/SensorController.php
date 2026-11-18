@@ -74,6 +74,12 @@ class SensorController
                 [$mensagem, $erros] = $this->toggleStatus($dados);
                 break;
 
+            case 'apagar': // somente telas web (a API não expõe exclusão definitiva)
+                if (defined('API_CONTEXT')) return ['mensagem' => '', 'erros' => ['Ação desconhecida.']];
+                // exclusão definitiva (só sem histórico); 'excluir' continua sendo a desativação da API
+                [$mensagem, $erros] = $this->apagar($dados);
+                break;
+
             default:
                 return ['mensagem' => '', 'erros' => ['Ação desconhecida.']];
         }
@@ -258,6 +264,31 @@ class SensorController
         }
 
         return [$mensagem, []];
+    }
+
+    /**
+     * Exclusão definitiva — somente admin, com confirmação "excluir" e só para
+     * sensor sem leituras nem alertas (caso contrário, orienta a desativar).
+     */
+    private function apagar(array $dados): array
+    {
+        if (!$this->ehAdmin) return ['', ['Acesso negado.']];
+        $sensorId = filter_var($dados['sensor_id'] ?? null, FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]) ?: 0;
+        if ($sensorId <= 0) return ['', ['ID de sensor inválido.']];
+        if (($dados['confirmacao'] ?? '') !== 'excluir') return ['', ['Confirme a exclusão do sensor.']];
+        try {
+            $sensor = $this->model->buscarPorId($sensorId);
+            if (!$sensor) return ['', ['Sensor não encontrado.']];
+            if ($this->model->contarHistorico($sensorId) > 0) {
+                return ['', ['Este sensor possui leituras ou alertas e não pode ser excluído. Use Desativar para preservar o histórico.']];
+            }
+            if (!$this->model->apagar($sensorId)) return ['', ['Sensor não encontrado.']];
+            $this->registrarLog('SENSOR_EXCLUSAO', "Sensor ID $sensorId: {$sensor['nome']}");
+            return ["Sensor \"{$sensor['nome']}\" excluído com sucesso.", []];
+        } catch (PDOException $e) {
+            if ($e->getCode() === '23000') return ['', ['Este sensor possui registros vinculados e não pode ser excluído. Use Desativar.']];
+            return ['', [$this->erroDeBanco('excluir o sensor', $e)]];
+        }
     }
 
     /**
