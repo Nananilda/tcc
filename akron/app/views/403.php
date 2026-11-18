@@ -12,11 +12,6 @@ $tituloPagina = 'Acesso negado';
 require __DIR__ . '/partials/cabecalho.php';
 ?>
 
-<div class="card">
-    <h1>Acesso negado</h1>
-    <p>Esta área é exclusiva para administradores do sistema. Se você acredita que deveria ter acesso,
-        fale com um administrador.</p>
-    <p><a class="btn" href="<?php echo urlApp('app/views/dashboard/painel.php'); ?>">← Voltar ao painel</a></p>
-</div>
+<header class="page-header"><div><h1>Acesso negado</h1><p>Esta área é exclusiva para administradores do sistema. Se você acredita que deveria ter acesso, fale com um administrador.</p></div><div class="actions"><?= linkVoltar('app/views/dashboard/painel.php', 'Voltar ao painel') ?></div></header>
 
 <?php require __DIR__ . '/partials/rodape.php'; ?>
