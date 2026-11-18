@@ -50,15 +50,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['atualizar_usuario']))
         $sucesso = $resposta['mensagem'];
 
         if ($sucesso !== '') {
-            // Recarrega do banco o que foi gravado e renova o token CSRF
-            $usuarioEncontrado = $controller->buscarPorLogin(trim($_POST['login'] ?? '')) ?: null;
-            $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
-
             // Se o admin editou a PRÓPRIA conta, mantém a topbar em dia
-            if ($usuarioEncontrado && (int) $usuarioEncontrado['id'] === (int) $_SESSION['usuario_id']) {
-                $_SESSION['usuario_nome'] = $usuarioEncontrado['nome'];
-                $_SESSION['usuario_tipo'] = $usuarioEncontrado['tipo'];
+            $editado = $controller->buscarPorLogin(trim($_POST['login'] ?? '')) ?: null;
+            if ($editado && (int) $editado['id'] === (int) $_SESSION['usuario_id']) {
+                $_SESSION['usuario_nome'] = $editado['nome'];
+                $_SESSION['usuario_tipo'] = $editado['tipo'];
             }
+            // Post/Redirect/Get: atualizar a página não reenvia o formulário; volta à origem
+            $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
+            redirecionarComMensagem(urlVoltar('app/views/usuarios/gestao_usuarios.php'), $sucesso);
         } else {
             // Houve erro: mantém o formulário aberto com o que foi digitado
             $usuarioEncontrado = [
@@ -81,33 +81,23 @@ $csrf_token = gerarCSRF();
 // Lista de usuários já existentes (exibida no final da página)
 $usuarios = $controller->listar();
 
-$tituloPagina = 'Editar Usuário';
+$tituloPagina = 'Editar usuário';
+$padraoVoltar = 'app/views/usuarios/gestao_usuarios.php';
 
 $cssPagina = ['usuarios.css'];
 require __DIR__ . '/../partials/cabecalho.php';
 ?>
 
-<header class="page-header"><div><h1>Editar usuário</h1><p>Busque um usuário pelo login e edite suas informações.</p></div></header>
+<header class="page-header"><div><h1>Editar usuário</h1><p><?= $usuarioEncontrado ? 'Altere os dados, o perfil, a situação da conta e os estoques autorizados.' : 'Busque um usuário pelo login e edite suas informações.' ?></p></div></header>
 
-<?php if ($sucesso): ?>
-    <div class="msg-sucesso" role="status"><?php echo escapar($sucesso); ?></div>
-<?php endif; ?>
+<?= mensagensPagina('', $erros) ?>
 
-<?php if (!empty($erros)): ?>
-    <div class="msg-erro" role="alert">
-        <strong>Corrija os seguintes erros:</strong>
-        <ul>
-            <?php foreach ($erros as $erro): ?>
-                <li><?php echo escapar($erro); ?></li>
-            <?php endforeach; ?>
-        </ul>
-    </div>
-<?php endif; ?>
-
-<!-- Passo 1: busca -->
+<!-- Passo 1: busca (somente no acesso direto; vindo da listagem, o usuário já está selecionado) -->
+<?php if (!$usuarioEncontrado): ?>
 <div class="card">
     <form method="POST" autocomplete="off">
         <input type="hidden" name="csrf_token" value="<?php echo escapar($csrf_token); ?>">
+        <?= campoVoltar() ?>
         <div class="usuarios-grid">
             <div>
                 <label for="login_busca">Login do usuário a buscar</label>
@@ -116,11 +106,13 @@ require __DIR__ . '/../partials/cabecalho.php';
             </div>
             <div>
                 <label>&nbsp;</label>
-                <button type="submit" name="buscar_usuario" value="1">Buscar</button>
+                <button type="submit" name="buscar_usuario" value="1" class="btn-primario">Buscar</button>
             </div>
         </div>
+        <div class="form-acoes"><?= linkCancelar($padraoVoltar) ?></div>
     </form>
 </div>
+<?php endif; ?>
 
 <!-- Passo 2: edição (aparece depois de encontrar o usuário) -->
 <?php if ($usuarioEncontrado): ?>
@@ -130,6 +122,7 @@ require __DIR__ . '/../partials/cabecalho.php';
             <input type="hidden" name="csrf_token" value="<?php echo escapar($csrf_token); ?>">
             <input type="hidden" name="id" value="<?php echo (int) $usuarioEncontrado['id']; ?>">
             <input type="hidden" name="atualizar_usuario" value="1">
+            <?= campoVoltar() ?>
 
             <div class="usuarios-secao">
                 <div class="usuarios-secao-titulo">Dados do usuário</div>
@@ -195,12 +188,23 @@ require __DIR__ . '/../partials/cabecalho.php';
             <fieldset><legend>Estoques autorizados</legend>
 <p class="usuarios-dica">Administradores acessam todos os estoques. Usuários comuns acessam apenas os selecionados. Nenhuma seleção significa nenhum acesso.</p>
 <?php $selecionados=$usuarioEncontrado['estoque_ids']??[];require __DIR__.'/../partials/selecao_estoques.php'; ?></fieldset>
-<button type="submit">Salvar Alterações</button> <a class="btn-secundario" href="gestao_usuarios.php">Cancelar</a>
+<div class="form-acoes"><button type="submit" class="btn-primario">Salvar alterações</button><?= linkCancelar($padraoVoltar) ?></div>
         </form>
     </div>
+<?php if ((int) $usuarioEncontrado['id'] !== (int) $_SESSION['usuario_id']): $paramsAcao = ['id' => (int) $usuarioEncontrado['id'], 'voltar' => voltarInformado() ?? $padraoVoltar]; ?>
+    <section class="card card-perigo" aria-labelledby="zona-perigo">
+        <h2 id="zona-perigo">Desativar ou excluir</h2>
+        <p class="texto-auxiliar">Desativar bloqueia o acesso e preserva o histórico. Excluir remove o usuário definitivamente e só é possível quando ele não tem histórico.</p>
+        <div class="form-acoes">
+            <?php if ($usuarioEncontrado['status'] === 'ativo'): ?><a class="btn-secundario" href="<?= escapar(urlApp('app/views/usuarios/excluir.php') . '?' . http_build_query($paramsAcao)) ?>">Desativar usuário</a><?php endif; ?>
+            <a class="btn btn-perigo" href="<?= escapar(urlApp('app/views/usuarios/excluir.php') . '?' . http_build_query($paramsAcao + ['modo' => 'excluir'])) ?>">Excluir usuário</a>
+        </div>
+    </section>
+<?php endif; ?>
 <?php endif; ?>
 
-<!-- Lista de usuários cadastrados -->
+<!-- Lista de usuários cadastrados (acesso direto) -->
+<?php if (!$usuarioEncontrado): ?>
 <div class="card">
     <h2>Usuários cadastrados</h2>
     <p class="usuarios-dica">Use a lista abaixo para conferir os logins existentes.</p>
@@ -239,9 +243,6 @@ require __DIR__ . '/../partials/cabecalho.php';
     <?php endif; ?>
 </div>
 
-<div class="nav-rodape">
-    <a href="gestao_usuarios.php">← Voltar à gestão de usuários</a>
-    <a href="../dashboard/painel.php">← Voltar ao painel</a>
-</div>
+<?php endif; ?>
 
 <?php require __DIR__ . '/../partials/rodape.php'; ?>
