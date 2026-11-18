@@ -8,7 +8,8 @@ $sensores=(new LeituraModel($pdo))->atuais($id);
 $tituloPagina=$estoque['nome'];$cssPagina=['graficos.css','monitoramento.css'];$scriptsHead=['vendor/chart.umd.js','graficos.js','monitoramento.js'];
 require __DIR__.'/../partials/cabecalho.php';
 ?>
-<header class="page-header"><div><h1><?= escapar($estoque['nome']) ?></h1><p><?= escapar($estoque['localizacao']?:'Localização não informada') ?></p><p><?= escapar($estoque['descricao']?:'Acompanhamento ambiental do estoque.') ?></p></div><?php if(ehAdmin()): ?><a class="btn-secundario" href="formulario.php?id=<?= $id ?>">Editar estoque</a><?php endif ?></header>
+<header class="page-header"><div><h1><?= escapar($estoque['nome']) ?></h1><p><?= escapar($estoque['localizacao']?:'Localização não informada') ?></p><p><?= escapar($estoque['descricao']?:'Acompanhamento ambiental do estoque.') ?></p></div><div class="actions"><?= linkVoltar('app/views/estoques/listar.php','Voltar aos estoques') ?><?php if(ehAdmin()): ?><a class="btn-primario" href="<?= escapar(urlComOrigem('app/views/estoques/formulario.php',['id'=>$id])) ?>">Editar estoque</a><?php endif ?></div></header>
+<?= mensagensPagina() ?>
 <section class="card condicao-destaque amb-<?= escapar($resumo['condicao_ambiental']) ?>"><h2>Estado do estoque</h2>
 <div class="estado-tripla">
 <div><span class="estado-rotulo">Condição ambiental</span><span class="badge badge-<?= escapar($resumo['condicao_ambiental']) ?>"><?= escapar($resumo['condicao_ambiental_rotulo']) ?></span>
@@ -20,6 +21,6 @@ require __DIR__.'/../partials/cabecalho.php';
 <div><span class="estado-rotulo">Alertas ativos</span><strong class="contador-alertas<?= (int)$resumo['alertas_ativos']?' com-alertas':'' ?>"><?= (int)$resumo['alertas_ativos'] ?></strong>
 <small><?= (int)$resumo['alertas_criticos_pendentes'] ?> crítico(s) pendente(s)</small></div>
 </div></section>
-<nav class="actions"><a class="btn-secundario" href="../sensores/listar_sensores.php?estoque_id=<?= $id ?>">Sensores do estoque</a><a class="btn-secundario" href="../graficos/graficos_sensores.php?estoque_id=<?= $id ?>">Monitoramento</a><a class="btn-secundario" href="listar.php">Voltar aos estoques</a></nav>
+<nav class="actions" aria-label="Atalhos do estoque"><a class="btn-secundario" href="<?= escapar(urlComOrigem('app/views/sensores/listar_sensores.php',['estoque_id'=>$id])) ?>">Sensores do estoque</a><a class="btn-secundario" href="<?= escapar(urlComOrigem('app/views/graficos/graficos_sensores.php',['estoque_id'=>$id])) ?>">Monitoramento</a><?php if(ehAdmin()): ?><a class="btn-secundario" href="<?= escapar(urlComOrigem('app/views/sensores/editar_sensores.php',['estoque_id'=>$id])) ?>">Cadastrar sensor</a><?php endif ?></nav>
 <section class="card"><h2>Sensores e leituras atuais</h2><div id="estoque-atuais" class="sensores-grid"></div></section><script>mostrarAtuais('estoque-atuais',<?= jsonParaScript($sensores) ?>);</script>
 <?php $escopoHistorico=['estoque_id'=>$id];$entidade='estoque';require __DIR__.'/../partials/historico_entidade.php';require __DIR__.'/../partials/rodape.php'; ?>
