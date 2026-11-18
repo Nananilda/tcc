@@ -36,9 +36,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $erros = $resposta['erros'];
         $sucesso = $resposta['mensagem'];
 
-        // Cadastro concluído: limpa o formulário para o próximo
+        // Cadastro concluído: Post/Redirect/Get — atualizar a página não envia o cadastro de novo (sem duplicar o usuário)
         if ($sucesso !== '') {
-            $dados = ['nome' => '', 'login' => '', 'tipo' => 'usuario', 'status' => 'ativo'];
+            redirecionarComMensagem(urlVoltar('app/views/usuarios/gestao_usuarios.php'), $sucesso);
         }
     }
 }
@@ -46,32 +46,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 $estoques = $pdo->query('SELECT id,nome,status,localizacao,descricao FROM estoques ORDER BY nome')->fetchAll();
 $csrf_token = gerarCSRF();
 
-$tituloPagina = 'Cadastro de Usuário';
+$tituloPagina = 'Cadastrar usuário';
 
 $cssPagina = ['usuarios.css'];
 require __DIR__ . '/../partials/cabecalho.php';
 ?>
 
-<header class="page-header"><div><h1>Cadastro de usuário</h1><p>Crie a conta, defina o perfil e selecione os estoques autorizados.</p></div></header>
+<header class="page-header"><div><h1>Cadastrar usuário</h1><p>Crie a conta, defina o perfil e selecione os estoques autorizados.</p></div></header>
 
-<?php if ($sucesso): ?>
-    <div class="msg-sucesso" role="status"><?php echo escapar($sucesso); ?></div>
-<?php endif; ?>
-
-<?php if (!empty($erros)): ?>
-    <div class="msg-erro" role="alert">
-        Corrija os seguintes erros:
-        <ul>
-            <?php foreach ($erros as $erro): ?>
-                <li><?php echo escapar($erro); ?></li>
-            <?php endforeach; ?>
-        </ul>
-    </div>
-<?php endif; ?>
+<?= mensagensPagina('', $erros) ?>
 
 <div class="card">
     <form method="POST" autocomplete="off">
         <input type="hidden" name="csrf_token" value="<?php echo escapar($csrf_token); ?>">
+        <?= campoVoltar() ?>
 
         <!-- Dados pessoais -->
         <div class="usuarios-secao">
@@ -139,7 +127,7 @@ require __DIR__ . '/../partials/cabecalho.php';
         <fieldset><legend>Estoques autorizados</legend>
 <p class="usuarios-dica">Administradores acessam todos os estoques. Usuários comuns acessam apenas os selecionados. Nenhuma seleção significa nenhum acesso.</p>
 <?php $selecionados=$dados['estoque_ids']??[];require __DIR__.'/../partials/selecao_estoques.php'; ?></fieldset>
-<button type="submit">Cadastrar Usuário</button> <a class="btn-secundario" href="gestao_usuarios.php">Cancelar</a>
+<div class="form-acoes"><button type="submit" class="btn-primario">Cadastrar usuário</button><?= linkCancelar('app/views/usuarios/gestao_usuarios.php') ?></div>
     </form>
 </div>
 
@@ -151,10 +139,5 @@ require __DIR__ . '/../partials/cabecalho.php';
         }, this);
     });
 </script>
-
-<div class="nav-rodape">
-    <a href="gestao_usuarios.php">← Voltar à gestão de usuários</a>
-    <a href="../dashboard/painel.php">← Voltar ao painel</a>
-</div>
 
 <?php require __DIR__ . '/../partials/rodape.php'; ?>
