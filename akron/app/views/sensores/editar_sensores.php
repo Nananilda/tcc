@@ -5,8 +5,16 @@ require_once __DIR__ . '/../../config/conexao.php';
 require_once __DIR__ . '/../../controllers/SensorController.php';
 $controller = new SensorController($pdo, true);
 $resultado = ['mensagem' => '', 'erros' => []];
-if ($_SERVER['REQUEST_METHOD'] === 'POST') $resultado = $controller->processarRequisicao();
 $id = (int) ($_POST['sensor_id'] ?? $_GET['id'] ?? 0);
+/* Retorno: página de origem; no acesso direto, os detalhes do sensor (edição) ou a gestão de sensores (cadastro),
+   sempre no modo de gestão e com o estoque de origem preservado. */
+$padraoVoltar = $id ? 'app/views/sensores/detalhes.php?id=' . $id
+    : 'app/views/sensores/listar_sensores.php?modo=gestao' . (($_GET['estoque_id'] ?? 0) ? '&estoque_id=' . (int) $_GET['estoque_id'] : '');
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $resultado = $controller->processarRequisicao();
+    /* Sucesso: Post/Redirect/Get — atualizar a página não reenvia o formulário nem duplica o cadastro. */
+    if (!$resultado['erros'] && $resultado['mensagem'] !== '') redirecionarComMensagem(urlVoltar($padraoVoltar), $resultado['mensagem']);
+}
 $sensor = $id ? $controller->buscarSensor($id) : null;
 if ($id && !$sensor) { http_response_code(404); $resultado['erros'][] = 'Sensor não encontrado.'; }
 $dados = $sensor ?: ['nome'=>'','tipo'=>'temperatura','estoque_id'=>$_GET['estoque_id'] ?? '', 'localizacao'=>'','status'=>'ativo','intervalo_comunicacao'=>300];
@@ -18,13 +26,13 @@ $cssPagina = ['sensores.css'];
 require __DIR__ . '/../partials/cabecalho.php';
 ?>
 <header class="page-header"><div><h1><?= escapar($tituloPagina) ?></h1><p>Configure o sensor e os limites adequados aos materiais armazenados. Campos com * são obrigatórios.</p></div></header>
-<?php if ($resultado['mensagem']): ?><div class="msg-sucesso" role="status"><?= escapar($resultado['mensagem']) ?></div><?php endif ?>
-<?php if ($resultado['erros']): ?><div class="msg-erro" role="alert"><ul><?php foreach ($resultado['erros'] as $erro): ?><li><?= escapar($erro) ?></li><?php endforeach ?></ul></div><?php endif ?>
+<?= mensagensPagina('', $resultado['erros']) ?>
+<?php if ($id && !$sensor): ?><div class="actions"><?= linkVoltar('app/views/sensores/listar_sensores.php?modo=gestao', 'Voltar aos sensores') ?></div><?php endif ?>
 <?php if (!$id || $sensor): ?>
 <form method="post" class="card">
 <input type="hidden" name="csrf_token" value="<?= escapar(gerarCSRF()) ?>">
 <input type="hidden" name="acao" value="<?= $id ? 'atualizar' : 'cadastrar' ?>">
-<input type="hidden" name="sensor_id" value="<?= $id ?>">
+<input type="hidden" name="sensor_id" value="<?= $id ?>"><?= campoVoltar() ?>
 <fieldset><legend>Identificação</legend><div class="sensores-form-novo">
 <div><label for="sensor-nome">Nome *</label><input id="sensor-nome" name="nome" required minlength="3" maxlength="100" value="<?= escapar($dados['nome']) ?>"></div>
 <div><label for="sensor-tipo">Tipo *</label><select id="sensor-tipo" name="tipo" required><?php foreach (SensorModel::TIPOS as $tipo => $meta): ?><option value="<?= escapar($tipo) ?>" <?= $dados['tipo'] === $tipo ? 'selected' : '' ?>><?= escapar(SensorModel::rotuloComUnidade($tipo)) ?></option><?php endforeach ?></select></div>
@@ -41,7 +49,13 @@ require __DIR__ . '/../partials/cabecalho.php';
 <div><label for="sensor-status">Status *</label><select name="status" id="sensor-status"><option value="ativo" <?= $dados['status']==='ativo'?'selected':'' ?>>Ativo</option><option value="inativo" <?= $dados['status']==='inativo'?'selected':'' ?>>Inativo</option></select></div>
 <div><label for="sensor-intervalo">Prazo sem leitura para perder comunicação (segundos) *</label><input type="number" name="intervalo_comunicacao" id="sensor-intervalo" min="1" max="86400" required value="<?= (int) $dados['intervalo_comunicacao'] ?>"></div>
 </div></fieldset>
-<div class="form-acoes"><button type="submit">Salvar sensor</button><a class="btn-secundario" href="listar_sensores.php">Cancelar</a></div>
-</form><?php endif ?>
+<div class="form-acoes"><button type="submit" class="btn-primario">Salvar sensor</button><?= linkCancelar($padraoVoltar) ?></div>
+</form>
+<?php if ($id): $paramsAcao = ['id' => $id, 'voltar' => voltarInformado() ?? $padraoVoltar]; ?>
+<section class="card card-perigo" aria-labelledby="zona-perigo"><h2 id="zona-perigo">Desativar ou excluir</h2>
+<p class="texto-auxiliar">Desativar interrompe o recebimento de leituras e preserva o histórico. Excluir remove o sensor definitivamente e só é possível quando ele não tem leituras nem alertas.</p>
+<div class="form-acoes"><?php if ($sensor['status'] === 'ativo'): ?><a class="btn-secundario" href="<?= escapar(urlApp('app/views/sensores/excluir_sensores.php') . '?' . http_build_query($paramsAcao)) ?>">Desativar sensor</a><?php endif ?><a class="btn-perigo btn" href="<?= escapar(urlApp('app/views/sensores/excluir_sensores.php') . '?' . http_build_query($paramsAcao + ['modo' => 'excluir'])) ?>">Excluir sensor</a></div></section>
+<?php endif ?>
+<?php endif ?>
 
 <?php require __DIR__ . '/../partials/rodape.php'; ?>
