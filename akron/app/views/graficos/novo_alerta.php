@@ -47,6 +47,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $resposta = (new AlertaController($pdo, true))->executar('criar', $_POST);
         $erros = $resposta['erros'];
         $mensagem = $resposta['mensagem'];
+        // Alerta criado: Post/Redirect/Get — atualizar a página não cria o alerta de novo; volta à listagem
+        if ($mensagem !== '') redirecionarComMensagem(urlVoltar('app/views/graficos/alerta.php'), $mensagem);
         if ($mensagem === '') {
             foreach (array_keys($formAlerta) as $campo) {
                 $formAlerta[$campo] = trim((string) ($_POST[$campo] ?? $formAlerta[$campo]));
@@ -57,6 +59,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $erros = $resposta['erros'];
         $mensagem = $resposta['mensagem'];
         $alertaGerado = $resposta['alerta'] ?? null;
+        // Leitura registrada: Post/Redirect/Get na própria página (não registra a leitura duas vezes ao atualizar)
+        if ($mensagem !== '') redirecionarComMensagem(urlApp(origemAtual()), $mensagem . ($alertaGerado !== null ? ' Consulte o alerta gerado na listagem de alertas.' : ''));
         if ($mensagem === '') {
             $formLeitura = ['sensor_id' => trim((string) ($_POST['sensor_id'] ?? '')), 'valor' => trim((string) ($_POST['valor'] ?? ''))];
         }
@@ -87,24 +91,7 @@ require __DIR__ . '/../partials/cabecalho.php';
 
 <header class="page-header"><div><h1>Novo alerta</h1><p>Crie um alerta manualmente ou registre uma leitura para ver os alertas automáticos em ação.</p></div></header>
 
-<?php if ($mensagem): ?>
-    <div class="msg-sucesso" role="status">
-        <?php echo escapar($mensagem); ?>
-        <?php if ($aba === 'criar' || $alertaGerado !== null): ?>
-            <a href="alerta.php">Ver alertas →</a>
-        <?php endif; ?>
-    </div>
-<?php endif; ?>
-
-<?php if (!empty($erros)): ?>
-    <div class="msg-erro" role="alert">
-        <ul>
-            <?php foreach ($erros as $erro): ?>
-                <li><?php echo escapar($erro); ?></li>
-            <?php endforeach; ?>
-        </ul>
-    </div>
-<?php endif; ?>
+<?= mensagensPagina($mensagem, $erros) ?>
 
 <!-- ── 1) Alerta manual ──────────────────────────────────────────────────── -->
 <div class="card">
@@ -112,6 +99,7 @@ require __DIR__ . '/../partials/cabecalho.php';
     <form method="POST" class="alertas-form" autocomplete="off">
         <input type="hidden" name="csrf_token" value="<?php echo escapar($csrf_token); ?>">
         <input type="hidden" name="acao" value="criar">
+        <?= campoVoltar() ?>
 
         <div>
             <label for="alerta_sensor">Sensor *</label>
@@ -152,7 +140,7 @@ require __DIR__ . '/../partials/cabecalho.php';
         </div>
 
         <div class="campo-full">
-            <button type="submit">Criar alerta</button> <a class="btn-secundario" href="alerta.php">Cancelar</a>
+            <div class="form-acoes"><button type="submit" class="btn-primario">Criar alerta</button><?= linkCancelar('app/views/graficos/alerta.php') ?></div>
         </div>
     </form>
 </div>
@@ -168,6 +156,7 @@ require __DIR__ . '/../partials/cabecalho.php';
     <form method="POST" class="alertas-form" autocomplete="off">
         <input type="hidden" name="csrf_token" value="<?php echo escapar($csrf_token); ?>">
         <input type="hidden" name="acao" value="registrar_leitura">
+        <?= campoVoltar() ?>
 
         <div>
             <label for="leitura_sensor">Sensor ativo *</label>
@@ -190,7 +179,7 @@ require __DIR__ . '/../partials/cabecalho.php';
         </div>
 
         <div class="alertas-form-botao">
-            <button type="submit">Registrar leitura</button>
+            <button type="submit" class="btn-primario">Registrar leitura</button>
         </div>
     </form>
 </div>
@@ -218,12 +207,7 @@ require __DIR__ . '/../partials/cabecalho.php';
             </tbody>
         </table>
     </div>
-    <p class="alertas-dica">Para ajustar os limites, acesse a edição do sensor em Estoques → Sensores.</p>
-</div>
-
-<div class="nav-rodape">
-    <a href="alerta.php">← Voltar aos alertas</a>
-    <a href="../dashboard/painel.php">← Voltar ao painel</a>
+    <p class="alertas-dica">Para ajustar os limites, acesse a edição do sensor em Gestão de sensores.</p>
 </div>
 
 <?php require __DIR__ . '/../partials/rodape.php'; ?>
