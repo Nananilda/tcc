@@ -375,17 +375,37 @@
     margin-top: 20px;
 }
 
-.painel-recentes-topo {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    justify-content: space-between;
-    gap: 8px 16px;
+/* Cabeçalho do cartão: mesmo ícone, texto e seta dos módulos, sem caixa própria (o cartão inteiro reage ao passar o mouse) */
+.modulo-card.painel-recentes-topo {
+    padding: 0;
     margin-bottom: 8px;
+    background: transparent;
+    border: 0;
+    box-shadow: none;
+    border-radius: 0;
+    overflow: visible;
 }
 
-.painel-recentes-topo h2 {
-    margin: 0;
+.modulo-card.painel-recentes-topo::before {
+    display: none;
+}
+
+.modulo-card.painel-recentes-topo:hover,
+.modulo-card.painel-recentes-topo:focus-visible {
+    transform: none;
+    border: 0;
+    box-shadow: none;
+}
+
+.painel-recentes {
+    transition: transform var(--dur) var(--ease), border-color var(--dur) var(--ease), box-shadow var(--dur) var(--ease);
+}
+
+.painel-recentes:has(.painel-recentes-topo:hover),
+.painel-recentes:has(.painel-recentes-topo:focus-visible) {
+    transform: translateY(-3px);
+    border-color: color-mix(in srgb, var(--acento) 55%, var(--cor-borda));
+    box-shadow: var(--sombra-elevada);
 }
 
 .alerta-resumo {
