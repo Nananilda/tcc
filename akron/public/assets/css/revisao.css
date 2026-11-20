@@ -1,62 +1,172 @@
-<?php
-/**
- * app/views/partials/head.php
- * Abre o documento HTML e monta o <head> comum a TODAS as páginas do sistema:
- * codificação, título padronizado, favicons, script de tema e folhas de estilo.
- *
- * Variáveis que a página define ANTES de incluir este arquivo (todas opcionais):
- *   $tituloPagina  string  Título da aba, sem o nome do sistema. Ex.: 'Painel'
- *                          (vira "Painel — ÁKRON"). Sem ele: "ÁKRON — Sistema de ...".
- *   $cssPagina     array   CSS específicos da página (arquivos de public/assets/css), carregados
- *                          ANTES dos estilos compartilhados.
- *   $cssPaginaFinal array  CSS que deve vencer os compartilhados (ex.: login.css), carregados por último.
- *   $scriptsHead   array   Scripts extras no <head> (caminhos relativos a public/assets/js).
- *
- * Requer includes/auth.php ou app/config/conexao.php já carregados (urlApp, escapar).
- * O <body>, a topbar e o fechamento ficam em cabecalho.php e rodape.php.
- */
+/* ÁKRON — revisão 3.1. Carregado depois de componentes.css.
+ * Usa somente as variáveis de tema já existentes (claro/escuro). */
 
-$tituloCompleto = !empty($tituloPagina)
-    ? $tituloPagina . ' — ' . APP_NOME
-    : APP_NOME . ' — ' . APP_DESCRICAO;
-$cssPagina = $cssPagina ?? [];
-$cssPaginaFinal = $cssPaginaFinal ?? [];
-/* URL do CSS com a data de modificação do arquivo: após atualizar o site, o navegador não reutiliza uma versão antiga em cache. */
-$urlCss = function (string $css): string {
-    $arquivo = __DIR__ . '/../../../public/assets/css/' . $css;
-    $versao = is_file($arquivo) ? '?v=' . filemtime($arquivo) : '';
-    return urlApp('public/assets/css/' . $css) . $versao;
-};
-$scriptsHead = $scriptsHead ?? [];
-?>
-<!DOCTYPE html>
-<html lang="pt-BR" data-usuario="<?= (int)($_SESSION['usuario_id']??0) ?>" data-preferencia-tema="<?= escapar($_SESSION['usuario_tema']??'automatico') ?>" data-conta-url="<?= escapar(urlApp('routes/conta.php')) ?>" data-csrf="<?= escapar(gerarCSRF()) ?>">
+/* ── Estados ambiental, de comunicação e cadastral ─────────────────────────── */
+.badge-indisponivel,.badge-sem_sensores{color:var(--cor-texto-suave);background:var(--cor-fundo-card-alt);border:1px dashed var(--cor-borda-forte)}
+.badge-todos_online,.badge-ativo{color:var(--cor-sucesso);background:var(--cor-sucesso-fundo)}
+.badge-parcial{color:var(--cor-alerta);background:var(--cor-alerta-fundo);border:1px solid var(--cor-alerta-borda)}
+.badge-demonstracao{color:var(--cor-link);background:var(--cor-info-fundo);border:1px solid var(--cor-borda)}
+.badge-critico{border:1px solid var(--cor-erro-borda)}
 
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><?php echo escapar($tituloCompleto); ?></title>
+/* ── Cartões de estoque ────────────────────────────────────────────────────── */
+.estoques-grade{align-items:stretch}
+.estoque-card{display:flex;flex-direction:column;align-items:stretch;border-left:4px solid var(--cor-borda-forte);min-height:340px}
+.estoque-card.amb-normal{border-left-color:var(--cor-sucesso)}
+.estoque-card.amb-atencao{border-left-color:var(--cor-alerta)}
+.estoque-card.amb-critico{border-left-color:var(--cor-erro)}
+.estoque-card.estoque-inativo{opacity:.85}
+.estoque-topo{display:flex;align-items:flex-start;justify-content:space-between;gap:10px}
+.estoque-card h2{margin:0 0 4px;font-size:1.15rem}
+.estoque-local{margin:0 0 14px;color:var(--cor-texto-suave);font-size:.9rem;min-height:1.4em}
+.estado-estoque{display:grid;grid-template-columns:auto 1fr;gap:8px 14px;align-items:center;margin:0 0 14px;padding:12px 0;border-top:1px solid var(--cor-borda);border-bottom:1px solid var(--cor-borda)}
+.estado-estoque dt{font-weight:500;font-size:.82rem;color:var(--cor-texto-suave)}
+.estado-estoque dd{margin:0}
+.estoque-metricas{min-height:64px;font-size:.9rem}
+.estoque-metricas p{margin:0 0 6px;line-height:1.5}
+.aviso-sem-sensores{color:var(--cor-texto-suave);font-style:italic}
+.contador-alertas{display:inline-block;min-width:1.6em;text-align:center;padding:0 7px;border-radius:999px;background:var(--cor-fundo-card-alt);font-weight:700}
+.contador-alertas.com-alertas{background:var(--cor-alerta-fundo);color:var(--cor-alerta)}
+.alertas-linha.tem-critico .contador-alertas{background:var(--cor-erro-fundo);color:var(--cor-erro)}
+.estoque-card .acoes-card{margin-top:auto;padding-top:16px;display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.estoque-card .acoes-card .btn-secundario{text-align:center;justify-content:center}
+.estoque-card .acoes-card:has(> :only-child){grid-template-columns:1fr}
 
-    <!-- Ícones do navegador: SVG (moderno) com fallbacks em ICO/PNG -->
-    <link rel="icon" href="<?php echo urlApp('public/assets/img/favicon.ico'); ?>" sizes="any">
-    <link rel="icon" type="image/svg+xml" href="<?php echo urlApp('public/assets/img/favicon.svg'); ?>">
-    <link rel="icon" type="image/png" sizes="32x32" href="<?php echo urlApp('public/assets/img/favicon-32.png'); ?>">
-    <link rel="apple-touch-icon" href="<?php echo urlApp('public/assets/img/apple-touch-icon.png'); ?>">
+/* ── Estado do estoque (detalhes) ──────────────────────────────────────────── */
+.estado-tripla{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,210px),1fr));gap:18px}
+.estado-tripla>div{display:flex;flex-direction:column;gap:6px;align-items:flex-start}
+.estado-tripla small{color:var(--cor-texto-suave);line-height:1.45}
+.estado-rotulo{font-size:.78rem;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:var(--cor-texto-suave)}
+.estado-tripla .contador-alertas{font-size:1.2rem}
+.condicao-destaque.amb-normal{border-left-color:var(--cor-sucesso)}
+.condicao-destaque.amb-atencao{border-left-color:var(--cor-alerta)}
+.condicao-destaque.amb-critico{border-left-color:var(--cor-erro)}
+.lista-dados{display:grid;grid-template-columns:minmax(120px,.8fr) 1.4fr;gap:10px 14px;margin:0 0 8px}
+.lista-dados dt{font-weight:500;color:var(--cor-texto-suave);font-size:.88rem}
+.lista-dados dd{margin:0}
 
-    <!-- Tema claro/escuro: carregado SEM defer para aplicar o tema antes da primeira pintura -->
-    <script src="<?php echo urlApp('public/assets/js/tema.js'); ?>"></script>
+/* ── Gráficos recolhíveis ──────────────────────────────────────────────────── */
+.monitor-controles{display:flex;flex-wrap:wrap;gap:12px 20px;align-items:center;justify-content:space-between;margin:16px 0}
+.monitor-controles:empty{display:none}
+.tipos-medicao{display:flex;flex-wrap:wrap;gap:8px;align-items:center;border:0;padding:0;margin:0}
+.tipos-medicao legend{float:left;margin-right:6px;padding:0;font-size:.85rem;color:var(--cor-texto-suave)}
+.chip-tipo{display:inline-flex;align-items:center;gap:8px;padding:6px 12px;border:1px solid var(--cor-borda);border-radius:999px;cursor:pointer;font-size:.88rem;background:var(--cor-fundo-card)}
+.chip-tipo:has(input:checked){border-color:var(--cor-primaria);background:var(--cor-info-fundo)}
+.chip-tipo input{width:16px;min-height:16px;margin:0}
+.acoes-grafico{display:flex;gap:8px;flex-wrap:wrap}
+.acoes-grafico button{min-height:36px;padding:6px 12px;font-size:.85rem}
+.graficos-recolhiveis{display:grid;gap:14px}
+.grafico-recolhivel{padding:0;margin:0}
+.grafico-recolhivel>summary{display:flex;flex-wrap:wrap;align-items:baseline;gap:6px 14px;padding:14px 20px;list-style:none;cursor:pointer;color:var(--cor-texto)}
+.grafico-recolhivel>summary::-webkit-details-marker{display:none}
+.grafico-recolhivel>summary::before{content:'▸';color:var(--cor-texto-suave);transition:transform .15s}
+.grafico-recolhivel[open]>summary::before{transform:rotate(90deg)}
+.grafico-recolhivel>summary h2{margin:0;font-size:1.05rem}
+.resumo-grafico{font-size:.82rem;color:var(--cor-texto-suave);font-weight:400}
+.grafico-recolhivel .grafico-area{padding:0 20px;width:auto}
+.nota-grafico{padding:8px 20px 16px;margin:0}
+.grafico-recolhivel[open]>summary{border-bottom:1px solid var(--cor-borda);margin-bottom:12px}
 
-    <link rel="stylesheet" href="<?php echo $urlCss('style.css'); ?>">
-    <?php foreach ($cssPagina as $css): ?>
-        <link rel="stylesheet" href="<?php echo $urlCss($css); ?>">
-    <?php endforeach; ?>
-    <link rel="stylesheet" href="<?php echo $urlCss('componentes.css'); ?>">
-    <link rel="stylesheet" href="<?php echo $urlCss('revisao.css'); ?>">
-    <?php foreach ($cssPaginaFinal as $css): ?>
-        <link rel="stylesheet" href="<?php echo $urlCss($css); ?>">
-    <?php endforeach; ?>
-    <script defer src="<?= urlApp('public/assets/js/interface.js') ?>"></script>
-    <?php foreach ($scriptsHead as $script): ?>
-        <script src="<?php echo urlApp('public/assets/js/' . $script); ?>"></script>
-    <?php endforeach; ?>
-</head>
+/* ── Alertas ───────────────────────────────────────────────────────────────── */
+.faixa-critica{border:1px solid var(--cor-erro-borda);background:var(--cor-erro-fundo);color:var(--cor-texto);padding:12px 16px;border-radius:var(--raio);margin:0 0 16px}
+.faixa-critica strong{color:var(--cor-erro)}
+.alerta-card.critico-pendente{border-left-width:8px;border-color:var(--cor-erro-borda);background:linear-gradient(0deg,var(--cor-erro-fundo),var(--cor-erro-fundo)),var(--cor-fundo-card)}
+.selo-urgente{display:inline-block;font-size:.75rem;font-weight:700;color:var(--cor-erro);margin-left:4px}
+.alerta-card.st-pendente .badge-pendente{background:var(--cor-alerta);color:var(--cor-fundo-card);font-weight:700}
+.alerta-card.st-reconhecido{border-top:1px dashed var(--cor-borda-forte)}
+.alerta-card.st-normalizado .badge-normalizado{border:1px solid var(--cor-sucesso-borda)}
+.alerta-card.st-resolvido{opacity:.82}
+.alerta-card.st-resolvido .badge-resolvido{background:var(--cor-fundo-card-alt);color:var(--cor-texto-suave);border:1px solid var(--cor-borda)}
+.paginacao{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-top:16px}
+.paginacao>span{color:var(--cor-texto-suave);font-size:.9rem}
+
+/* ── Minha conta ───────────────────────────────────────────────────────────── */
+.conta-dados{margin:0;display:grid;grid-template-columns:auto auto;gap:6px 16px;margin-left:auto}
+.conta-dados dt{color:var(--cor-texto-suave);font-size:.85rem}
+.conta-dados dd{margin:0}
+.arquivo-oculto{position:absolute;width:1px;height:1px;opacity:0;overflow:hidden;pointer-events:none}
+.foto-previa .avatar{width:96px;height:96px;font-size:2rem}
+.foto-botoes{display:flex;flex-wrap:wrap;gap:12px;align-items:center}
+.btn-arquivo{display:inline-flex;align-items:center;cursor:pointer;padding:0 18px}
+.arquivo-oculto:focus-visible+.foto-botoes .btn-arquivo,.btn-arquivo:focus-visible{outline:2px solid var(--cor-foco);outline-offset:2px}
+.campo-erro{color:var(--cor-erro);margin:6px 0 0;min-height:0}
+.secao-senha{border:1px solid var(--cor-borda);border-radius:var(--raio);padding:4px 20px 18px;margin:24px 0}
+.secao-senha>summary{padding:12px 0}
+.estoques-compactos{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,230px),1fr));gap:12px}
+.estoque-mini{display:flex;flex-direction:column;gap:2px;padding:12px 14px;border:1px solid var(--cor-borda);border-radius:var(--raio);text-decoration:none;color:var(--cor-texto);background:var(--cor-fundo-card)}
+.estoque-mini:hover{border-color:var(--cor-primaria)}
+.estoque-mini span{font-size:.85rem;color:var(--cor-texto-suave)}
+
+/* ── Alinhamento à esquerda (logos, títulos e textos) ──────────────────────── */
+.page-header>div,.page-heading>div{text-align:left}
+
+/* ── Seletores e filtros: botões de ação ao lado dos campos ───────────────── */
+.card.filtros-linha{display:grid;grid-template-columns:auto minmax(200px,420px) auto auto;gap:12px 14px;align-items:center;justify-content:start}
+.card.filtros-linha label{margin:0}
+.card.filtros-linha select{margin:0;width:100%}
+.card.filtros-linha .btn-primario,.card.filtros-linha .btn-secundario,.card.filtros-linha button{margin:0;white-space:nowrap}
+@media (max-width:760px){.card.filtros-linha{grid-template-columns:1fr 1fr}.card.filtros-linha label,.card.filtros-linha select{grid-column:1/-1}}
+
+/* ── Tabelas no celular: cada linha vira um bloco legível, sem rolagem lateral ─ */
+@media (max-width:760px){
+  .tabela-rolagem,.table-wrapper{overflow:visible}
+  td{max-width:100%}
+  .conta-dados{margin-left:0}
+  .estado-estoque{grid-template-columns:1fr 1fr}
+  .grafico-recolhivel .grafico-area{padding:0 8px}
+  .grafico-recolhivel>summary{padding:12px 14px}
+  .monitor-controles{align-items:flex-start}
+}
+
+/* O atributo hidden deve sempre prevalecer sobre display de componentes. */
+[hidden]{display:none!important}
+.graficos-grid>:only-child{grid-column:1/-1}
+.estoque-opcao:has(input:checked){border-color:var(--cor-primaria);background:var(--cor-info-fundo)}
+.acoes-tabela{display:flex;flex-wrap:wrap;gap:4px 14px}
+
+/* ═══ Padronização de navegação, botões, cabeçalhos e mensagens (revisão 3.2) ═══
+   Mesmo cabeçalho, mesmos botões e mesmo espaçamento em todas as páginas internas. */
+.page-header,.page-heading{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:16px;margin:0 0 24px}
+.page-header h1,.page-heading h1{margin:0}
+.page-header p,.page-heading p,.page-header .subtitulo{margin:6px 0 0;color:var(--cor-texto-suave);font-size:.92rem;line-height:1.55}
+.page-header .actions,.page-heading .actions{display:flex;flex-wrap:wrap;gap:10px;margin:0;justify-content:flex-end}
+
+/* Botões: mesmo tamanho, peso e alinhamento — links (.btn-*) e <button> */
+.btn,.btn-primario,.btn-secundario,.btn-perigo,button{min-height:44px;padding:10px 18px;font-size:.92rem;font-weight:600;line-height:1.35;border-radius:8px}
+.btn-secundario,button.btn-secundario{display:inline-flex;align-items:center;justify-content:center;gap:8px;background:var(--cor-fundo-card);color:var(--cor-texto);border:1px solid var(--cor-borda-forte);text-decoration:none}
+.btn-secundario:hover,button.btn-secundario:hover{background:var(--cor-fundo-card-alt);color:var(--cor-texto)}
+a.btn,a.btn-primario{display:inline-flex;align-items:center;justify-content:center;gap:8px;text-decoration:none}
+.btn-perigo,button.btn-perigo{border:1px solid var(--cor-erro)}
+.btn-voltar svg,.btn-primario svg,.btn-secundario svg{width:16px;height:16px;flex-shrink:0;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+/* sem margens soltas dentro de linhas de ação (evita botões desalinhados) */
+:is(.actions,.form-acoes,.acoes-formulario,.acoes-card,.acoes-alerta,.paginacao,.filtros-linha,.page-header,.page-heading,.foto-botoes) :is(button,.btn,.btn-primario,.btn-secundario,.btn-perigo){margin:0}
+td .btn,td .btn-secundario,td button{min-height:34px;padding:7px 10px;font-size:.8rem}
+/* ações em tabelas e cartões: links de texto, com a exclusão destacada */
+.acoes-tabela a,.acoes-card>a:not([class]){font-weight:600}
+.acoes-tabela .acao-perigo,.acoes-card .acao-perigo{color:var(--cor-erro)}
+.acoes-tabela form,.acoes-card form{display:inline;margin:0}
+
+/* Cartões: espaçamento igual em todas as páginas (graficos.css não muda mais o topo) */
+.container .card:not(.painel-recentes){margin-top:0;margin-bottom:20px} /* painel-recentes mantém o espaçamento do painel.css */
+.container .card:not(.painel-recentes)+.card{margin-top:0}
+.container .card.painel-recentes{margin-top:20px;margin-bottom:20px}
+/* Formulários: mesma grade e mesmo espaçamento de campos */
+.sensores-form-novo,.usuarios-grid,.alertas-form,.form-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,220px),1fr));gap:16px;align-items:start}
+.sensores-form-novo .campo-full,.alertas-form .campo-full,.usuarios-grid .campo-full{grid-column:1/-1}
+.form-acoes{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-top:20px}
+.card.card-perigo{border-color:var(--cor-erro-borda)}
+.card.card-perigo h2{color:var(--cor-erro)}
+.msg-sucesso,.msg-erro,.msg-alerta{margin:0 0 18px}
+.msg-alerta.confirmacao{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+
+/* Telas pequenas: cabeçalho e ações empilhados, botões de largura total */
+@media (max-width:760px){
+  .page-header .actions,.page-heading .actions{width:100%;justify-content:stretch}
+  .page-header .actions>*,.page-heading .actions>*{flex:1 1 auto}
+  .form-acoes>*,.acoes-formulario>*{flex:1 1 auto}
+  .acoes-tabela{gap:8px 16px}
+  .paginacao{justify-content:space-between}
+  .alertas-form .campo-full .btn-secundario{margin-top:10px}
+}
+@media (min-width:761px) and (max-width:1000px){
+  .page-header .actions{justify-content:flex-start}
+}
