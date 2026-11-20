@@ -88,11 +88,15 @@ require __DIR__.'/../partials/cabecalho.php';
     </div>
 </section>
 <?php if($chaveGrupo==='monitoramento'): ?>
-<section class="card painel-recentes" aria-labelledby="alertas-recentes-titulo">
-    <div class="painel-recentes-topo">
-        <h2 id="alertas-recentes-titulo">Alertas recentes</h2>
-        <a class="link-seta" href="<?= escapar(urlComOrigem('app/views/graficos/alerta.php',['estoque_id'=>$estoqueId])) ?>">Consultar alertas <?= iconeSvg('seta') ?></a>
-    </div>
+<section class="card painel-recentes mod-alertas" aria-labelledby="alertas-recentes-titulo">
+    <a class="modulo-card mod-alertas painel-recentes-topo" href="<?= escapar(urlComOrigem('app/views/graficos/alerta.php',['estoque_id'=>$estoqueId])) ?>">
+        <span class="modulo-icone"><?= iconeSvg('alerta') ?></span>
+        <span class="modulo-texto">
+            <span class="modulo-nome" id="alertas-recentes-titulo">Alertas recentes</span>
+            <span class="modulo-descricao">Últimas irregularidades detectadas. Toque para consultar todos os alertas.</span>
+        </span>
+        <span class="modulo-seta" aria-hidden="true"><?= iconeSvg('seta') ?></span>
+    </a>
     <div id="painel-alertas"></div>
 </section>
 <?php endif ?>
