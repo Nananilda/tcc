@@ -21,6 +21,12 @@ $tituloCompleto = !empty($tituloPagina)
     : APP_NOME . ' — ' . APP_DESCRICAO;
 $cssPagina = $cssPagina ?? [];
 $cssPaginaFinal = $cssPaginaFinal ?? [];
+/* URL do CSS com a data de modificação do arquivo: após atualizar o site, o navegador não reutiliza uma versão antiga em cache. */
+$urlCss = function (string $css): string {
+    $arquivo = __DIR__ . '/../../../public/assets/css/' . $css;
+    $versao = is_file($arquivo) ? '?v=' . filemtime($arquivo) : '';
+    return urlApp('public/assets/css/' . $css) . $versao;
+};
 $scriptsHead = $scriptsHead ?? [];
 ?>
 <!DOCTYPE html>
@@ -40,14 +46,14 @@ $scriptsHead = $scriptsHead ?? [];
     <!-- Tema claro/escuro: carregado SEM defer para aplicar o tema antes da primeira pintura -->
     <script src="<?php echo urlApp('public/assets/js/tema.js'); ?>"></script>
 
-    <link rel="stylesheet" href="<?php echo urlApp('public/assets/css/style.css'); ?>">
+    <link rel="stylesheet" href="<?php echo $urlCss('style.css'); ?>">
     <?php foreach ($cssPagina as $css): ?>
-        <link rel="stylesheet" href="<?php echo urlApp('public/assets/css/' . $css); ?>">
+        <link rel="stylesheet" href="<?php echo $urlCss($css); ?>">
     <?php endforeach; ?>
-    <link rel="stylesheet" href="<?php echo urlApp('public/assets/css/componentes.css'); ?>">
-    <link rel="stylesheet" href="<?php echo urlApp('public/assets/css/revisao.css'); ?>">
+    <link rel="stylesheet" href="<?php echo $urlCss('componentes.css'); ?>">
+    <link rel="stylesheet" href="<?php echo $urlCss('revisao.css'); ?>">
     <?php foreach ($cssPaginaFinal as $css): ?>
-        <link rel="stylesheet" href="<?php echo urlApp('public/assets/css/' . $css); ?>">
+        <link rel="stylesheet" href="<?php echo $urlCss($css); ?>">
     <?php endforeach; ?>
     <script defer src="<?= urlApp('public/assets/js/interface.js') ?>"></script>
     <?php foreach ($scriptsHead as $script): ?>
